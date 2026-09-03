@@ -30,11 +30,26 @@ Ringen:
   `φ(B) = ∑_{G ⊆ E(B) zusammenhängend aufspannend auf B} (-1)^{|G|}`
   (`ursellSetSum`). Das ist die endliche Exponentialstruktur der
   Cluster-Entwicklung: iteriert erzeugt sie die Cluster-Reihe von
-  `log Z`.
+  `log Z`;
+
+* das **Brückenlemma** (`ursellInt_eq_ursellSetSum`): für injektive
+  Tupel stimmt die Ursell-Funktion der Tupelebene mit der
+  mengenwertigen Ursell-Summe des Bildes überein — `Sym2.map γ` ist
+  eine vorzeichenerhaltende Bijektion der Summationsbereiche;
+
+* die **Cluster-Faktorisierung** (`Z_eq_sum_clusterCollections`): das
+  geschlossene Iterat der Rekursion,
+
+  `Z Λ = ∑_C ∏_{B ∈ C} (∏_{γ∈B} w γ) · φ(B)`,
+
+  Summe über alle Kollektionen `C` paarweise disjunkter, nichtleerer
+  Cluster in `Λ` (`IsClusterCollection`) — die endliche
+  Exponentialformel in Mengenform, per Induktion über die Kardinalität
+  entlang `Z_cluster_recursion`.
 
 Kein `sorry` in dieser Datei. Bewusst offen (nur genannt, nichts
 Unbewiesenes behauptet): der Logarithmus- und Konvergenzschritt —
-die Identifikation der iterierten Rekursion mit der Reihe für `log Z`
+die Identifikation der Cluster-Reihe mit `log Z`
 unter der Kotecký-Preiss-Bedingung.
 
 Referenzen: Mayer–Montroll (J. Chem. Phys. 9, 1941); Friedli–Velenik,
@@ -655,5 +670,423 @@ theorem Z_cluster_recursion {R : Type*} [CommRing R] (w : ι → R)
   exact Finset.sum_congr rfl fun B hB => by
     obtain ⟨hBpow, hγB⟩ := Finset.mem_filter.mp hB
     exact fiber_sum P w (Finset.mem_powerset.mp hBpow) hγB
+
+/-! ## Das Brückenlemma: Tupel- und Mengenebene
+
+Für ein injektives Polymer-Tupel `γ : Fin (n+1) → ι` stimmt die
+Ursell-Funktion der Tupelebene (`ursellInt`) mit der mengenwertigen
+Ursell-Vorzeichensumme (`ursellSetSum`) des Bildes überein:
+`Sym2.map γ` liefert eine kardinalitäts- und damit
+vorzeichenerhaltende Bijektion der beiden Summationsbereiche. -/
+
+/-- Ein Weg im Graphen einer Kantenmenge überträgt sich entlang einer
+injektiven Abbildung auf das Bild der Kantenmenge. -/
+theorem walk_map {α β : Type*} [DecidableEq β] {f : α → β}
+    (hf : Function.Injective f) {G : Finset (Sym2 α)} :
+    ∀ {u v : α}, (graphOf G).Walk u v →
+      (graphOf (G.image (Sym2.map f))).Reachable (f u) (f v) := by
+  intro u v p
+  induction p with
+  | nil => exact SimpleGraph.Reachable.refl _
+  | @cons a b c hadj q ih =>
+    obtain ⟨hmem, hne⟩ := graphOf_adj.mp hadj
+    have himg : s(f a, f b) ∈ G.image (Sym2.map f) := by
+      have h := Finset.mem_image_of_mem (Sym2.map f) hmem
+      rwa [Sym2.map_mk] at h
+    have hadj' : (graphOf (G.image (Sym2.map f))).Adj (f a) (f b) :=
+      graphOf_adj.mpr ⟨himg, fun h => hne (hf h)⟩
+    exact hadj'.reachable.trans ih
+
+/-- Ein Weg zwischen Punkten einer kantenabgeschlossenen Menge `B` zieht
+sich entlang einer Abbildung `f` mit Schnitt `g` (also `g ∘ f = id` auf
+`B`) auf das Bild der Kantenmenge zurück. -/
+theorem walk_pull {α β : Type*} [DecidableEq β] {g : β → α} {f : α → β}
+    {B : Finset α} {G : Finset (Sym2 α)}
+    (hin : ∀ e ∈ G, ∀ y ∈ e, y ∈ B) (hgf : ∀ x ∈ B, g (f x) = x) :
+    ∀ {u v : α}, (graphOf G).Walk u v → u ∈ B →
+      (graphOf (G.image (Sym2.map f))).Reachable (f u) (f v) := by
+  intro u v p
+  induction p with
+  | nil => exact fun _ => SimpleGraph.Reachable.refl _
+  | @cons a b c hadj q ih =>
+    intro ha
+    obtain ⟨hmem, hne⟩ := graphOf_adj.mp hadj
+    have hb : b ∈ B := hin _ hmem b (Sym2.mem_mk_right a b)
+    have himg : s(f a, f b) ∈ G.image (Sym2.map f) := by
+      have h := Finset.mem_image_of_mem (Sym2.map f) hmem
+      rwa [Sym2.map_mk] at h
+    have hne' : f a ≠ f b := fun heq => hne (by rw [← hgf a ha, ← hgf b hb, heq])
+    have hadj' : (graphOf (G.image (Sym2.map f))).Adj (f a) (f b) :=
+      graphOf_adj.mpr ⟨himg, hne'⟩
+    exact hadj'.reachable.trans (ih hb)
+
+/-- **Brückenlemma zwischen Tupel- und Mengenebene**: für ein injektives
+Polymer-Tupel `γ` stimmt die Ursell-Funktion `ursellInt P γ` mit der
+mengenwertigen Ursell-Vorzeichensumme des Bildes überein. Der Beweis
+transportiert die Summationsbereiche mit `G ↦ G.image (Sym2.map γ)`
+(Rückrichtung entlang einer Inversen von `γ` auf dem Bild); die Bijektion
+erhält Kardinalitäten und damit die Vorzeichen. -/
+theorem ursellInt_eq_ursellSetSum {n : ℕ} {γ : Fin (n + 1) → ι}
+    (hinj : Function.Injective γ) :
+    (ursellInt P γ : ℤ) = ursellSetSum P (Finset.univ.image γ) := by
+  set B : Finset ι := Finset.univ.image γ with hB
+  obtain ⟨δ, hδγ⟩ : ∃ δ : ι → Fin (n + 1), ∀ i, δ (γ i) = i :=
+    ⟨Function.invFun γ, fun i => Function.leftInverse_invFun hinj i⟩
+  have hγδ : ∀ x ∈ B, γ (δ x) = x := by
+    intro x hx
+    rw [hB] at hx
+    obtain ⟨i, -, rfl⟩ := Finset.mem_image.mp hx
+    rw [hδγ]
+  have hmemB : ∀ i, γ i ∈ B := by
+    intro i
+    rw [hB]
+    exact Finset.mem_image_of_mem γ (Finset.mem_univ i)
+  have hcomp : ∀ e : Sym2 (Fin (n + 1)), Sym2.map δ (Sym2.map γ e) = e := by
+    intro e
+    induction e using Sym2.ind with
+    | _ i j => rw [Sym2.map_mk, Sym2.map_mk, hδγ, hδγ]
+  -- Kanten-Korrespondenz zwischen den beiden Trägern.
+  have hedge : ∀ i j : Fin (n + 1),
+      s(γ i, γ j) ∈ incompatEdges P B ↔ s(i, j) ∈ clusterEdges P γ := by
+    intro i j
+    rw [mem_incompatEdges, mem_clusterEdges]
+    constructor
+    · rintro ⟨-, -, hne, hinc⟩
+      exact ⟨fun heq => hne (congrArg γ heq), hinc⟩
+    · rintro ⟨hne, hinc⟩
+      exact ⟨hmemB i, hmemB j, fun heq => hne (hinj heq), hinc⟩
+  unfold ursellInt ursellSum ursellSetSum
+  refine Finset.sum_nbij' (fun G => G.image (Sym2.map γ))
+    (fun G' => G'.image (Sym2.map δ)) ?_ ?_ ?_ ?_ ?_
+  -- Hinrichtung: das Bild eines zusammenhängenden Teilgraphen verbindet `B`.
+  · intro G hG
+    obtain ⟨hGpow, hGconn⟩ := Finset.mem_filter.mp hG
+    have hGsub := Finset.mem_powerset.mp hGpow
+    refine Finset.mem_filter.mpr ⟨Finset.mem_powerset.mpr ?_, ?_⟩
+    · intro e he
+      obtain ⟨e₀, he₀, rfl⟩ := Finset.mem_image.mp he
+      revert he₀
+      induction e₀ using Sym2.ind with
+      | _ i j =>
+        intro he₀
+        rw [Sym2.map_mk]
+        exact (hedge i j).mpr (hGsub he₀)
+    · intro u hu v hv
+      rw [hB] at hu hv
+      obtain ⟨i, -, rfl⟩ := Finset.mem_image.mp hu
+      obtain ⟨j, -, rfl⟩ := Finset.mem_image.mp hv
+      obtain ⟨p⟩ := hGconn.preconnected i j
+      exact walk_map hinj p
+  -- Rückrichtung: das Urbild eines `B` verbindenden Graphen ist zusammenhängend.
+  · intro G' hG'
+    obtain ⟨hG'pow, hG'reach⟩ := Finset.mem_filter.mp hG'
+    have hG'sub := Finset.mem_powerset.mp hG'pow
+    have hin : ∀ e ∈ G', ∀ y ∈ e, y ∈ B :=
+      fun e he => incompatEdges_mem_of_mem P (hG'sub he)
+    refine Finset.mem_filter.mpr ⟨Finset.mem_powerset.mpr ?_, ?_⟩
+    · intro e he
+      obtain ⟨e₀, he₀, rfl⟩ := Finset.mem_image.mp he
+      revert he₀
+      induction e₀ using Sym2.ind with
+      | _ u v =>
+        intro he₀
+        obtain ⟨huB, hvB, hne, hinc⟩ := (mem_incompatEdges P).mp (hG'sub he₀)
+        rw [Sym2.map_mk]
+        refine (mem_clusterEdges P).mpr ⟨?_, ?_⟩
+        · intro heq
+          exact hne (by rw [← hγδ u huB, ← hγδ v hvB, heq])
+        · rw [hγδ u huB, hγδ v hvB]
+          exact hinc
+    · refine SimpleGraph.Connected.mk fun i j => ?_
+      obtain ⟨p⟩ := hG'reach (γ i) (hmemB i) (γ j) (hmemB j)
+      have h := walk_pull hin hγδ p (hmemB i)
+      rwa [hδγ i, hδγ j] at h
+  -- Linksinverse: `Sym2.map δ ∘ Sym2.map γ = id`.
+  · intro G _
+    show (G.image (Sym2.map γ)).image (Sym2.map δ) = G
+    rw [Finset.image_image]
+    exact (Finset.image_congr fun e _ => hcomp e).trans Finset.image_id
+  -- Rechtsinverse: auf Kanten mit Endpunkten in `B` ist `γ ∘ δ = id`.
+  · intro G' hG'
+    have hG'sub := Finset.mem_powerset.mp (Finset.mem_filter.mp hG').1
+    change (G'.image (Sym2.map δ)).image (Sym2.map γ) = G'
+    rw [Finset.image_image]
+    refine (Finset.image_congr ?_).trans Finset.image_id
+    intro e he
+    rw [Finset.mem_coe] at he
+    revert he
+    induction e using Sym2.ind with
+    | _ u v =>
+      intro he
+      obtain ⟨huB, hvB, -, -⟩ := (mem_incompatEdges P).mp (hG'sub he)
+      change Sym2.map γ (Sym2.map δ s(u, v)) = s(u, v)
+      rw [Sym2.map_mk, Sym2.map_mk, hγδ u huB, hγδ v hvB]
+  -- Werte: die Bijektion erhält die Kardinalität, also das Vorzeichen.
+  · intro G _
+    change ((-1 : ℤ)) ^ G.card = (-1 : ℤ) ^ (G.image (Sym2.map γ)).card
+    rw [Finset.card_image_of_injective G (Function.LeftInverse.injective hcomp)]
+
+/-! ## Cluster-Kollektionen und die Cluster-Faktorisierung -/
+
+/-- Eine Cluster-Kollektion: eine endliche Menge paarweise disjunkter,
+nichtleerer Cluster. -/
+def IsClusterCollection (C : Finset (Finset ι)) : Prop :=
+  (∀ B ∈ C, B.Nonempty) ∧ ∀ B₁ ∈ C, ∀ B₂ ∈ C, B₁ ≠ B₂ → Disjoint B₁ B₂
+
+omit [DecidableEq ι] in
+/-- Die Kollektionseigenschaft vererbt sich auf Teilkollektionen. -/
+theorem IsClusterCollection.mono {C D : Finset (Finset ι)} (hCD : C ⊆ D)
+    (hD : IsClusterCollection D) : IsClusterCollection C :=
+  ⟨fun B hB => hD.1 B (hCD hB),
+   fun B₁ h₁ B₂ h₂ hne => hD.2 B₁ (hCD h₁) B₂ (hCD h₂) hne⟩
+
+/-- Einfügen eines nichtleeren, zu allen Blöcken disjunkten Blocks
+erhält die Kollektionseigenschaft. -/
+private theorem isClusterCollection_insert {B₀ : Finset ι}
+    {C : Finset (Finset ι)} (hB₀ : B₀.Nonempty) (hC : IsClusterCollection C)
+    (hdisj : ∀ B ∈ C, Disjoint B₀ B) : IsClusterCollection (insert B₀ C) := by
+  constructor
+  · intro B hB
+    rcases mem_insert.mp hB with rfl | hB'
+    · exact hB₀
+    · exact hC.1 B hB'
+  · intro B₁ h₁ B₂ h₂ hne
+    rcases mem_insert.mp h₁ with rfl | h₁' <;>
+      rcases mem_insert.mp h₂ with rfl | h₂'
+    · exact absurd rfl hne
+    · exact hdisj B₂ h₂'
+    · exact (hdisj B₁ h₁').symm
+    · exact hC.2 B₁ h₁' B₂ h₂' hne
+
+/-- In einer Cluster-Kollektion enthält höchstens ein Block ein festes
+Polymer: der Filter nach `γ₀ ∈ B` ist ein Singleton. -/
+private theorem filter_mem_eq_singleton {C : Finset (Finset ι)} {γ₀ : ι}
+    {B₀ : Finset ι} (hC : IsClusterCollection C) (hB₀ : B₀ ∈ C)
+    (hγ : γ₀ ∈ B₀) : C.filter (fun B => γ₀ ∈ B) = {B₀} := by
+  ext B
+  rw [mem_filter, mem_singleton]
+  constructor
+  · rintro ⟨hBC, hγB⟩
+    by_contra hne
+    exact disjoint_left.mp (hC.2 B hBC B₀ hB₀ hne) hγB hγ
+  · rintro rfl
+    exact ⟨hB₀, hγ⟩
+
+/-- Die Zustandssumme der leeren Polymermenge ist `1` — in jedem
+kommutativen Ring. -/
+private theorem Z_empty_comm {R : Type*} [CommRing R] (w : ι → R) :
+    Z P w (∅ : Finset ι) = 1 := by
+  have hind : Indep P (∅ : Finset ι) := fun γ hγ => absurd hγ (notMem_empty γ)
+  simp [Z, filter_singleton, hind]
+
+/-- Über der leeren Polymermenge überlebt nur die leere Kollektion:
+`{∅}` verletzt die Nichtleerheit, und das leere Produkt ist `1`. -/
+private theorem sum_clusterCollections_empty {R : Type*} [CommRing R]
+    (w : ι → R) :
+    ∑ C ∈ (∅ : Finset ι).powerset.powerset.filter IsClusterCollection,
+      ∏ B ∈ C, ((∏ γ ∈ B, w γ) * ursellSetSum P B) = 1 := by
+  have hyes : IsClusterCollection (∅ : Finset (Finset ι)) :=
+    ⟨fun B hB => absurd hB (notMem_empty B),
+     fun B₁ h₁ => absurd h₁ (notMem_empty B₁)⟩
+  have hno : ¬ IsClusterCollection ({∅} : Finset (Finset ι)) :=
+    fun h => not_nonempty_empty (h.1 ∅ (mem_singleton_self ∅))
+  have hpp : ((∅ : Finset ι).powerset.powerset : Finset (Finset (Finset ι)))
+      = {∅, {∅}} := by
+    rw [powerset_empty]
+    ext C
+    rw [mem_powerset, subset_singleton_iff, mem_insert, mem_singleton]
+  rw [hpp, filter_insert, if_pos hyes,
+    filter_singleton, if_neg hno, insert_empty, sum_singleton, prod_empty]
+
+/-- Kern der Induktion: die Cluster-Faktorisierung für alle `Λ` mit
+`Λ.card ≤ n`, per starker Induktion über `n`. Der Schritt spaltet mit
+`Z_cluster_recursion` nach dem `γ₀`-Block auf: Kollektionen ohne
+`γ₀`-Block leben über `Λ ∖ {γ₀}`; Kollektionen mit (genau einem)
+`γ₀`-Block `B₀` zerfallen bijektiv in `B₀` und eine Restkollektion
+über `Λ ∖ B₀`. -/
+private theorem Z_eq_sum_clusterCollections_aux {R : Type*} [CommRing R]
+    (w : ι → R) :
+    ∀ n : ℕ, ∀ Λ : Finset ι, Λ.card ≤ n →
+      Z P w Λ = ∑ C ∈ Λ.powerset.powerset.filter IsClusterCollection,
+        ∏ B ∈ C, ((∏ γ ∈ B, w γ) * ursellSetSum P B) := by
+  intro n
+  induction n with
+  | zero =>
+    intro Λ hcard
+    have hΛ : Λ = ∅ := card_eq_zero.mp (Nat.le_zero.mp hcard)
+    subst hΛ
+    rw [Z_empty_comm, sum_clusterCollections_empty]
+  | succ n IHn =>
+    intro Λ hcard
+    rcases Λ.eq_empty_or_nonempty with rfl | hne
+    · rw [Z_empty_comm, sum_clusterCollections_empty]
+    obtain ⟨γ₀, hγ₀⟩ := hne
+    rw [Z_cluster_recursion P w Λ γ₀,
+      ← sum_filter_add_sum_filter_not
+        (Λ.powerset.powerset.filter IsClusterCollection)
+        (fun C => ∀ B ∈ C, γ₀ ∉ B)]
+    congr 1
+    -- Teil (i): Kollektionen ohne `γ₀`-Block ↔ Kollektionen über `Λ ∖ {γ₀}`.
+    · have hidx : (Λ.powerset.powerset.filter IsClusterCollection).filter
+          (fun C => ∀ B ∈ C, γ₀ ∉ B)
+          = (Λ.erase γ₀).powerset.powerset.filter IsClusterCollection := by
+        ext C
+        constructor
+        · intro hC
+          obtain ⟨hC', hno⟩ := mem_filter.mp hC
+          obtain ⟨hCpp, hICC⟩ := mem_filter.mp hC'
+          refine mem_filter.mpr
+            ⟨mem_powerset.mpr fun B hB => mem_powerset.mpr ?_, hICC⟩
+          exact subset_erase.mpr
+            ⟨mem_powerset.mp (mem_powerset.mp hCpp hB), hno B hB⟩
+        · intro hC
+          obtain ⟨hCpp, hICC⟩ := mem_filter.mp hC
+          have hsub : ∀ B ∈ C, B ⊆ Λ.erase γ₀ :=
+            fun B hB => mem_powerset.mp (mem_powerset.mp hCpp hB)
+          refine mem_filter.mpr ⟨mem_filter.mpr ⟨mem_powerset.mpr fun B hB =>
+            mem_powerset.mpr ((hsub B hB).trans (erase_subset γ₀ Λ)), hICC⟩,
+            fun B hB hγB => (mem_erase.mp (hsub B hB hγB)).1 rfl⟩
+      rw [hidx]
+      have hcard' : (Λ.erase γ₀).card ≤ n := by
+        have h1 := card_erase_of_mem hγ₀
+        omega
+      exact IHn (Λ.erase γ₀) hcard'
+    -- Teil (ii): Kollektionen mit `γ₀`-Block ↔ Paare (Block, Rest).
+    · have hcard2 : ∀ B₀ ∈ Λ.powerset.filter (fun B => γ₀ ∈ B),
+          (Λ \ B₀).card ≤ n := by
+        intro B₀ hB₀
+        obtain ⟨-, hγ⟩ := mem_filter.mp hB₀
+        have hsub : Λ \ B₀ ⊆ Λ.erase γ₀ := by
+          intro x hx
+          obtain ⟨hxΛ, hxB⟩ := mem_sdiff.mp hx
+          exact mem_erase.mpr ⟨fun h => hxB (h ▸ hγ), hxΛ⟩
+        have h1 := card_le_card hsub
+        have h2 := card_erase_of_mem hγ₀
+        omega
+      calc ∑ B₀ ∈ Λ.powerset.filter (fun B => γ₀ ∈ B),
+            (∏ γ ∈ B₀, w γ) * ursellSetSum P B₀ * Z P w (Λ \ B₀)
+          = ∑ B₀ ∈ Λ.powerset.filter (fun B => γ₀ ∈ B),
+              ∑ C' ∈ (Λ \ B₀).powerset.powerset.filter IsClusterCollection,
+                (∏ γ ∈ B₀, w γ) * ursellSetSum P B₀
+                  * ∏ B ∈ C', ((∏ γ ∈ B, w γ) * ursellSetSum P B) := by
+            refine sum_congr rfl fun B₀ hB₀ => ?_
+            rw [IHn (Λ \ B₀) (hcard2 B₀ hB₀), mul_sum]
+        _ = ∑ q ∈ (Λ.powerset.filter (fun B => γ₀ ∈ B)).sigma
+              (fun B₀ =>
+                (Λ \ B₀).powerset.powerset.filter IsClusterCollection),
+              (∏ γ ∈ q.1, w γ) * ursellSetSum P q.1
+                * ∏ B ∈ q.2, ((∏ γ ∈ B, w γ) * ursellSetSum P B) :=
+            sum_sigma' _ _ _
+        _ = ∑ C ∈ (Λ.powerset.powerset.filter IsClusterCollection).filter
+              (fun C => ¬ ∀ B ∈ C, γ₀ ∉ B),
+              ∏ B ∈ C, ((∏ γ ∈ B, w γ) * ursellSetSum P B) := by
+            symm
+            refine sum_nbij'
+              (fun C => ⟨(C.filter (fun B => γ₀ ∈ B)).sup id,
+                C.filter (fun B => γ₀ ∉ B)⟩)
+              (fun q => insert q.1 q.2) ?_ ?_ ?_ ?_ ?_
+            -- Hinrichtung: die Faser landet in der Sigma-Menge.
+            · intro C hC
+              obtain ⟨hC', hnot⟩ := mem_filter.mp hC
+              obtain ⟨hCpp, hICC⟩ := mem_filter.mp hC'
+              have hCpow : C ⊆ Λ.powerset := mem_powerset.mp hCpp
+              push Not at hnot
+              obtain ⟨B₀, hB₀C, hγB₀⟩ := hnot
+              have hsup : (C.filter (fun B => γ₀ ∈ B)).sup id = B₀ := by
+                rw [filter_mem_eq_singleton hICC hB₀C hγB₀, sup_singleton,
+                  id_eq]
+              refine mem_sigma.mpr ⟨?_, ?_⟩
+              · dsimp only
+                rw [hsup]
+                exact mem_filter.mpr ⟨hCpow hB₀C, hγB₀⟩
+              · dsimp only
+                rw [hsup]
+                refine mem_filter.mpr ⟨mem_powerset.mpr fun B hB => ?_,
+                  hICC.mono (filter_subset _ _)⟩
+                obtain ⟨hBC, hγnB⟩ := mem_filter.mp hB
+                have hne : B ≠ B₀ := fun h => hγnB (h ▸ hγB₀)
+                refine mem_powerset.mpr fun x hx => mem_sdiff.mpr
+                  ⟨mem_powerset.mp (hCpow hBC) hx,
+                   disjoint_left.mp (hICC.2 B hBC B₀ hB₀C hne) hx⟩
+            -- Rückrichtung: `insert B₀ C'` liegt in der Faser.
+            · rintro ⟨B₀, C'⟩ hq
+              obtain ⟨hB₀, hC'⟩ := mem_sigma.mp hq
+              obtain ⟨hB₀pow, hγB₀⟩ := mem_filter.mp hB₀
+              have hB₀Λ : B₀ ⊆ Λ := mem_powerset.mp hB₀pow
+              obtain ⟨hC'pp, hICC'⟩ := mem_filter.mp hC'
+              have hC'sub : ∀ B ∈ C', B ⊆ Λ \ B₀ :=
+                fun B hB => mem_powerset.mp (mem_powerset.mp hC'pp hB)
+              have hdisj : ∀ B ∈ C', Disjoint B₀ B :=
+                fun B hB => disjoint_right.mpr
+                  fun x hx => (mem_sdiff.mp (hC'sub B hB hx)).2
+              refine mem_filter.mpr
+                ⟨mem_filter.mpr ⟨mem_powerset.mpr ?_, ?_⟩, ?_⟩
+              · intro B hB
+                rcases mem_insert.mp hB with rfl | hB'
+                · exact mem_powerset.mpr hB₀Λ
+                · exact mem_powerset.mpr ((hC'sub B hB').trans sdiff_subset)
+              · exact isClusterCollection_insert ⟨γ₀, hγB₀⟩ hICC' hdisj
+              · intro hall
+                exact hall B₀ (mem_insert_self B₀ C') hγB₀
+            -- Linksinverse: Wiederzusammensetzen liefert `C`.
+            · intro C hC
+              obtain ⟨hC', hnot⟩ := mem_filter.mp hC
+              obtain ⟨-, hICC⟩ := mem_filter.mp hC'
+              push Not at hnot
+              obtain ⟨B₀, hB₀C, hγB₀⟩ := hnot
+              have hfil : C.filter (fun B => γ₀ ∈ B) = {B₀} :=
+                filter_mem_eq_singleton hICC hB₀C hγB₀
+              dsimp only
+              rw [hfil, sup_singleton, id_eq, ← singleton_union, ← hfil,
+                filter_union_filter_not_eq]
+            -- Rechtsinverse: Zerlegen von `insert B₀ C'` liefert `(B₀, C')`.
+            · rintro ⟨B₀, C'⟩ hq
+              obtain ⟨hB₀, hC'⟩ := mem_sigma.mp hq
+              obtain ⟨-, hγB₀⟩ := mem_filter.mp hB₀
+              obtain ⟨hC'pp, hICC'⟩ := mem_filter.mp hC'
+              have hC'sub : ∀ B ∈ C', B ⊆ Λ \ B₀ :=
+                fun B hB => mem_powerset.mp (mem_powerset.mp hC'pp hB)
+              have hγnot : ∀ B ∈ C', γ₀ ∉ B :=
+                fun B hB hγB => (mem_sdiff.mp (hC'sub B hB hγB)).2 hγB₀
+              have hdisj : ∀ B ∈ C', Disjoint B₀ B :=
+                fun B hB => disjoint_right.mpr
+                  fun x hx => (mem_sdiff.mp (hC'sub B hB hx)).2
+              have hICCins : IsClusterCollection (insert B₀ C') :=
+                isClusterCollection_insert ⟨γ₀, hγB₀⟩ hICC' hdisj
+              have h1 : ((insert B₀ C').filter (fun B => γ₀ ∈ B)).sup id
+                  = B₀ := by
+                rw [filter_mem_eq_singleton hICCins
+                  (mem_insert_self B₀ C') hγB₀, sup_singleton, id_eq]
+              have h2 : (insert B₀ C').filter (fun B => γ₀ ∉ B) = C' := by
+                rw [filter_insert, if_neg (not_not_intro hγB₀),
+                  filter_true_of_mem hγnot]
+              dsimp only
+              rw [h1, h2]
+            -- Die Summanden stimmen überein: `Finset.prod_insert`.
+            · intro C hC
+              obtain ⟨hC', hnot⟩ := mem_filter.mp hC
+              obtain ⟨-, hICC⟩ := mem_filter.mp hC'
+              push Not at hnot
+              obtain ⟨B₀, hB₀C, hγB₀⟩ := hnot
+              have hfil : C.filter (fun B => γ₀ ∈ B) = {B₀} :=
+                filter_mem_eq_singleton hICC hB₀C hγB₀
+              have hnotmem : B₀ ∉ C.filter (fun B => γ₀ ∉ B) :=
+                fun h => (mem_filter.mp h).2 hγB₀
+              have hrepr : insert B₀ (C.filter (fun B => γ₀ ∉ B)) = C := by
+                rw [← singleton_union, ← hfil, filter_union_filter_not_eq]
+              dsimp only
+              rw [hfil, sup_singleton, id_eq]
+              conv_lhs => rw [← hrepr]
+              rw [prod_insert hnotmem]
+
+/-- **Cluster-Faktorisierung**: die Zustandssumme als Summe über
+Kollektionen paarweise disjunkter, nichtleerer Cluster — die endliche
+Exponentialformel in Mengenform. Jede Kollektion trägt das Produkt
+ihrer Blockgewichte `(∏_{γ ∈ B} w γ) · φ(B)` bei. -/
+theorem Z_eq_sum_clusterCollections {R : Type*} [CommRing R] (w : ι → R)
+    (Λ : Finset ι) :
+    Z P w Λ = ∑ C ∈ Λ.powerset.powerset.filter IsClusterCollection,
+      ∏ B ∈ C, ((∏ γ ∈ B, w γ) * ursellSetSum P B) :=
+  Z_eq_sum_clusterCollections_aux P w Λ.card Λ le_rfl
 
 end ClusterExpansion
