@@ -119,7 +119,17 @@ All in `KPLean/ClusterExpansion.lean`, namespace `ClusterExpansion`:
   over connected spanning subgraphs of `B`'s incompatibility graph
   (`ursellSetSum`; `φ({γ}) = 1`, `φ({γ, δ}) = −1` for an incompatible
   pair). This is the finite exponential structure of the cluster
-  expansion: iterating it generates the cluster series of `log Z`;
+  expansion: iterating it generates the cluster series of `log Z`.
+  The closed iterate is proved as the **cluster factorisation**
+
+  `Z Λ = Σ_C Π_{B ∈ C} (Π_{γ ∈ B} w γ) · φ(B)`
+
+  over all collections `C` of pairwise disjoint nonempty clusters in
+  `Λ` (`IsClusterCollection`, `Z_eq_sum_clusterCollections`) — the
+  finite exponential formula in set form; and the **bridge lemma**
+  `ursellInt_eq_ursellSetSum` identifies the tuple-level Ursell
+  function of an injective tuple with the set-level sign sum of its
+  image;
 
 - **the cluster series as a convergent analytic object**
   (`KPLean/ClusterSeries.lean`): the series

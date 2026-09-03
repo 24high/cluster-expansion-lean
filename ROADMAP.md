@@ -60,15 +60,24 @@ formalised, with no `sorry`s at any completed step.
       `e · |w γ₀| / (1 − e · Σ_Λ |w|)` — proportional to the anchor
       weight, uniformly in the volume (`pinnedOrderSum`,
       `pinnedOrderSum_le`, `tsum_pinned_le`).
+- [x] **The structural sub-steps of the exponential formula**, over any
+      commutative ring: the **bridge lemma** — for injective tuples the
+      tuple-level Ursell function equals the set-level Ursell sum of the
+      image (`ursellInt_eq_ursellSetSum`) — and the **cluster
+      factorisation**, the closed iterate of the cluster recursion
+      `Z Λ = Σ_C ∏_{B ∈ C} (∏_B w) · φ(B)` over all collections of
+      pairwise disjoint nonempty clusters
+      (`IsClusterCollection`, `Z_eq_sum_clusterCollections`) — the
+      finite exponential formula in set form.
 
 ## Next
 
 - [ ] **The exponential formula**: identify the cluster series with
       `log Z`, i.e. `log Z Λ = clusterSeries P w Λ` in the convergence
-      regime. Structural sub-steps: the set-level cluster factorisation
-      of `Z` (collections of disjoint clusters), the bridge between
-      tuple-level and set-level Ursell values, and the log/exp
-      identification itself.
+      regime. With the set-level factorisation and the bridge lemma in
+      place, what remains is the symmetrisation over labelled tuples
+      (multinomial regrouping of ordered set partitions, with repeats)
+      and the log/exp identification itself.
 - [ ] **The sharp Kotecký–Preiss summability estimate** over clusters:
       replace the root-tree count `(n+1)ⁿ` by counts of labelled trees
       with prescribed degrees, so that the anchored series is controlled

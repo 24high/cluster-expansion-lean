@@ -49,9 +49,12 @@ graph expansion of $Z$ together with the finite cluster recursion
 $Z(\Lambda) = Z(\Lambda \setminus \{\gamma_0\})
 + \sum_{\gamma_0 \in B \subseteq \Lambda} w^{B} \varphi(B)
 Z(\Lambda \setminus B)$ — the exponential structure of the expansion —
-over arbitrary commutative rings. On the analytic side, the cluster
-series of $\log Z$ is defined as a genuine infinite sum over orders and
-proved absolutely convergent in the small-weight regime
+over arbitrary commutative rings, together with its closed iterate, the
+cluster factorisation of $Z$ over collections of pairwise disjoint
+clusters — the finite exponential formula in set form. On the analytic
+side, the cluster series of $\log Z$ is defined as a genuine infinite
+sum over orders and proved absolutely convergent in the small-weight
+regime
 $e \sum_{\Lambda} \lvert w \rvert < 1$, with geometric term bounds via a
 root-tree count extracted from the Penrose scheme, and with an anchored
 bound proportional to the weight of the anchoring polymer, uniformly in
@@ -114,7 +117,7 @@ expansion — over arbitrary commutative rings
 (Section~\ref{sec:mayer}). Seventh, the cluster series of $\log Z$ as an
 analytic object, with absolute convergence and anchored bounds in the
 small-weight regime (Section~\ref{sec:series}). The development is about
-3100 lines of Lean in four files, compiles against current
+3600 lines of Lean in four files, compiles against current
 \textsf{mathlib}, and contains no \texttt{sorry} placeholders.
 Section~\ref{sec:kp} documents a claim made in an earlier version of this
 note that the formalisation subsequently refuted.
@@ -505,13 +508,35 @@ $Z(\Lambda \setminus B)$ by Theorem~\ref{thm:mayer} in pair form
 (\texttt{Z\_eq\_sum\_pairs}).
 \end{proof}
 
-Iterating Theorem~\ref{thm:cluster} generates the cluster series; what
-remains for the full expansion of $\log Z$ is the analytic layer — the
-identification of the iterated recursion with the convergent series and
-the Kotecký--Preiss summability estimate over clusters, for which
-Theorem~\ref{thm:penrose} supplies the tree--graph input. The first
-analytic step, the series itself and its convergence in the small-weight
-regime, is formalised in Section~\ref{sec:series}.
+The closed form of the iteration is also proved: the \emph{cluster
+factorisation}
+
+\begin{theorem}[\texttt{Z\_eq\_sum\_clusterCollections}]\label{thm:fact}
+\[
+  Z(\Lambda) = \sum_{C} \prod_{B \in C}
+  \Bigl(\prod_{\gamma \in B} w(\gamma)\Bigr)\, \varphi(B),
+\]
+the sum running over all collections $C$ of pairwise disjoint nonempty
+subsets of $\Lambda$ (\texttt{IsClusterCollection}) — the finite
+exponential formula in set form, by strong induction on
+$\lvert \Lambda \rvert$ along Theorem~\ref{thm:cluster}: collections
+without a $\gamma_0$-block live over $\Lambda \setminus \{\gamma_0\}$,
+and collections with (by disjointness exactly one) $\gamma_0$-block
+split bijectively into that block and a remainder collection over the
+complement.
+\end{theorem}
+
+A companion \emph{bridge lemma} (\texttt{ursellInt\_eq\_ursellSetSum})
+identifies the tuple-level Ursell function of an injective tuple with
+the set-level sign sum $\varphi$ of its image, via the sign-preserving
+relabelling bijection $G \mapsto \mathrm{Sym}^2(\gamma)(G)$ of
+summation ranges. What remains for the full expansion of $\log Z$ is
+the symmetrisation over labelled tuples (with repeats) and the log/exp
+identification, together with the sharp Kotecký--Preiss summability
+estimate over clusters, for which Theorem~\ref{thm:penrose} supplies
+the tree--graph input. The first analytic step, the series itself and
+its convergence in the small-weight regime, is formalised in
+Section~\ref{sec:series}.
 
 \section{The cluster series and its convergence in the small-weight
 regime}\label{sec:series}
