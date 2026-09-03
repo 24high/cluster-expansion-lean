@@ -29,10 +29,9 @@ analytic question:
 Nonvanishing is what makes `log Z` and ratios of partition functions
 well-defined; the ratio and log bounds are the input to thermodynamic
 limits, analyticity of free energies, and the convergence estimates of
-the expansion. This repository machine-checks the three classical answers
-— the criteria of Kotecký–Preiss, Dobrushin, and (as a hypothesis, see
-the roadmap) Fernández–Procacci — together with the recursion they all
-rest on.
+the expansion. This repository machine-checks the three classical
+answers — the criteria of Kotecký–Preiss, Dobrushin, and
+Fernández–Procacci — together with the recursion they all rest on.
 
 ## Main results
 
@@ -66,12 +65,23 @@ All in `KPLean/ClusterExpansion.lean`, namespace `ClusterExpansion`:
   and in Kotecký–Preiss form
   `|log |Z Λ|| ≤ Σ |w γ| * exp (a γ)` (`abs_log_abs_Z_le_of_kp`);
 
+- the **Fernández–Procacci criterion**, the sharpest of the three: the
+  FP condition (`FPCondition`) replaces the Dobrushin product by the
+  independence polynomial of the neighbourhood — which is `Z` itself at
+  the weights `μ` — and still implies `Z Λ ≠ 0`
+  (`Z_ne_zero_of_fp`) with the ratio bound
+  `|Z (Λ \ {x})| ≤ (1 + μ x) * |Z Λ|` (`Z_ratio_bound_of_fp`). The
+  proof follows the inductive argument of Fialho (J. Stat. Phys. 178,
+  2020): positivity of the alternating gas `Z(-|w|)`
+  (`Z_neg_pos_of_fp`), via submultiplicativity of the independence
+  polynomial (`Z_union_le_mul`), followed by the comparison
+  `Z(-|w|) ≤ |Z(w)|` in the style of Scott–Sokal;
+
 - the **hierarchy of hypotheses** KP ⟹ Dobrushin ⟹ Fernández–Procacci
-  (`KPCondition.dobrushin`, `DobrushinCondition.fp`, `KPCondition.fp`),
-  where the Fernández–Procacci condition (`FPCondition`) replaces the
-  Dobrushin product by the independence polynomial of the
-  neighbourhood — which is `Z` itself at the weights `μ` — via
-  `Z_A(μ) ≤ ∏_{δ ∈ A} (1 + μ δ)` (`Z_le_prod_one_add`).
+  (`KPCondition.dobrushin`, `DobrushinCondition.fp`, `KPCondition.fp`)
+  via `Z_A(μ) ≤ ∏_{δ ∈ A} (1 + μ δ)` (`Z_le_prod_one_add`); since the
+  FP condition is the weakest, nonvanishing under FP subsumes the other
+  two criteria.
 
 The hierarchy is strict: a single self-incompatible polymer of weight
 `1/2` satisfies the Dobrushin condition with `μ = 1`, while
@@ -107,7 +117,10 @@ field theory; see Kotecký–Preiss (Comm. Math. Phys. 103, 1986),
 Friedli–Velenik, *Statistical Mechanics of Lattice Systems* (CUP, 2017),
 Chapter 5, Scott–Sokal (J. Stat. Phys. 118, 2005), and
 Fernández–Procacci (Comm. Math. Phys. 274, 2007) for the criteria
-treated here. The longer-term aim of this project is machine-checked
+treated here; the formalised proof of the Fernández–Procacci criterion
+follows the inductive argument of Fialho
+([arXiv:2001.00652](https://arxiv.org/abs/2001.00652), J. Stat. Phys.
+178, 2020). The longer-term aim of this project is machine-checked
 infrastructure for the convergence estimates used in rigorous
 renormalisation group analyses of lattice field theories, in the sense
 of the expositions of Balaban's method by Dimock (arXiv:1108.1335,
@@ -139,9 +152,12 @@ intended.
       classical `exp (a γ)` ratio bound, via comparison of hypotheses
 - [x] two-sided volume-linear bounds on `|Z|` and `log |Z|`
 - [x] Fernández–Procacci condition and the hierarchy KP ⟹ Dobrushin ⟹ FP
-- [ ] Fernández–Procacci criterion: nonvanishing under the FP condition
+- [x] Fernández–Procacci criterion: nonvanishing and ratio bound under
+      the FP condition (via Fialho's inductive proof)
 - [ ] convergent cluster (Ursell) series for `log Z` with tree–graph
-      bounds
+      bounds — this requires genuinely new infrastructure (Ursell
+      functions as sums over connected graphs, the exponential formula,
+      and the Penrose/tree–graph inequality) and is the next milestone
 
 Contributions and corrections are welcome; please open an issue.
 

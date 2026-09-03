@@ -35,8 +35,11 @@ form, including its ratio bound $e^{a(\gamma)}$, obtained from the product
 form by the comparison $\mu = \lvert w\rvert e^{a}$ and $1 + x \le e^{x}$;
 two-sided volume-linear bounds
 $\lvert \log \lvert Z(\Lambda)\rvert \rvert \le \sum_{\gamma \in \Lambda}
-\log(1 + \mu(\gamma))$; and the hierarchy of hypotheses
-Kotecký--Preiss $\Rightarrow$ Dobrushin $\Rightarrow$ Fernández--Procacci.
+\log(1 + \mu(\gamma))$; the hierarchy of hypotheses
+Kotecký--Preiss $\Rightarrow$ Dobrushin $\Rightarrow$ Fernández--Procacci;
+and the Fernández--Procacci criterion itself — nonvanishing and the ratio
+bound under the weakest of the three hypotheses — following the inductive
+proof of Fialho.
 An earlier version of this note claimed that the sum form was not
 obtainable from the product form; the formalisation of the comparison
 argument corrected this, and we document both the error and its repair.
@@ -85,10 +88,12 @@ consequences extracted from the product form without further induction:
 telescoped deletion bounds, two-sided volume-linear bounds on
 $\log \lvert Z \rvert$, the classical Kotecký--Preiss sum-form criterion
 via a comparison of hypotheses, and the hierarchy of conditions ending in
-the Fernández--Procacci form. The development is about 730 lines of Lean,
-compiles against current \textsf{mathlib}, and contains no \texttt{sorry}
-placeholders. Section~\ref{sec:kp} documents a claim made in an earlier
-version of this note that the formalisation subsequently refuted.
+the Fernández--Procacci form. Fourth, the Fernández--Procacci criterion
+itself, via the recent inductive proof of Fialho \cite{Fia20}. The
+development is about 1250 lines of Lean, compiles against current
+\textsf{mathlib}, and contains no \texttt{sorry} placeholders.
+Section~\ref{sec:kp} documents a claim made in an earlier version of this
+note that the formalisation subsequently refuted.
 
 \section{The abstract setting}
 
@@ -318,11 +323,48 @@ second implication rests on $\Xi_A(\mu) \le \prod_{\delta \in A}(1 +
 subsets.
 \end{theorem}
 
-The Fernández--Procacci \emph{theorem} — nonvanishing of $Z$ under the
-weakest of the three hypotheses \cite{FP07} — is deliberately not claimed;
-its refined induction is future work, as is the convergent Ursell-series
-expansion of $\log Z$ itself, which requires tree-graph bounds beyond the
-volume-linear control of Theorem~\ref{thm:log}.
+\begin{theorem}[Fernández--Procacci criterion; formalised]\label{thm:fp}
+Let $\mu \ge 0$ on $\Lambda$ and suppose the Fernández--Procacci
+condition holds on $\Lambda$. Then $Z(\Lambda) \neq 0$, and for every
+$x \in \Lambda$,
+$\lvert Z(\Lambda \setminus \{x\})\rvert \le (1 + \mu(x))\,
+\lvert Z(\Lambda)\rvert$.
+\end{theorem}
+
+\begin{proof}[Proof (as formalised)]
+We follow the inductive argument of Fialho \cite{Fia20}, in two stages,
+both division-free strong inductions on the cardinality of
+$S \subseteq \Lambda$. Write $Q_S = Z_S(-p)$ for the alternating gas at
+activities $p = \lvert w \rvert$, and $\Xi_A = Z_A(\mu)$.
+
+\emph{Stage 1.} $Q_S > 0$, together with the ratio comparison against
+the $\mu$-complements:
+$Q_{S \setminus x} \, \Xi_{\Lambda \setminus S} \le
+Q_S \, \Xi_{\Lambda \setminus (S \setminus x)}$ for $x \in S$.
+The single-deletion comparisons telescope along the incompatibility
+neighbourhood of $x$ inside $S$; the deletion identity applied to
+$\Xi$ at the point $x$ adjoined to $\Lambda \setminus S$, the
+submultiplicativity $\Xi_{A \cup B} \le \Xi_A \Xi_B$ (independent sets
+split injectively into their parts in $A$ and $B \setminus A$), and the
+FP hypothesis $p_x \Xi_{N^*(x)} \le \mu_x$ close the induction. Taking
+$S = \Lambda$ gives $Q_{\Lambda \setminus x} \le (1 + \mu(x))\,
+Q_\Lambda$ and $Q_\Lambda > 0$.
+
+\emph{Stage 2.} The comparison $Q_S \le \lvert Z_S(w) \rvert$, together
+with the transferred ratio bound
+$\lvert Z_{S \setminus x}(w)\rvert \, Q_S \le
+Q_{S \setminus x} \, \lvert Z_S(w)\rvert$ — the finite-volume instance
+of the minoration principle of Scott--Sokal \cite[Thm.~2.10]{SS05}. The
+induction runs on the same recursion, with the triangle inequality in
+place of positivity. Combining the two stages yields the theorem.
+\end{proof}
+
+Since the FP condition is the weakest of the three hypotheses,
+Theorem~\ref{thm:fp} subsumes the nonvanishing statements of
+Theorems~\ref{thm:dob} and~\ref{thm:kp}. What remains open is the
+convergent Ursell-series expansion of $\log Z$ itself, which requires
+tree-graph bounds beyond the volume-linear control of
+Theorem~\ref{thm:log}.
 
 \section{A corrected claim}\label{sec:kp}
 
@@ -389,6 +431,10 @@ Press, 2017.
 \bibitem{FP07} R.~Fernández and A.~Procacci, \emph{Cluster expansion for
 abstract polymer models: new bounds from an old approach}, Comm. Math. Phys.
 \textbf{274} (2007), 123--140.
+
+\bibitem{Fia20} P.~M.~S.~Fialho, \emph{Abstract polymer gas: a simple
+inductive proof of the Fernández--Procacci criterion}, J. Stat. Phys.
+\textbf{178} (2020), 1354--1361; arXiv:2001.00652.
 
 \bibitem{SS05} A.~D.~Scott and A.~D.~Sokal, \emph{The repulsive lattice
 gas, the independent-set polynomial, and the Lovász local lemma}, J. Stat.

@@ -25,18 +25,23 @@ die Fundamentalrekursion `Z Λ = Z (Λ ∖ {γ}) + w γ * Z (Λ ohne N(γ))`
 * **volumenlineare Kontrolle des Logarithmus**:
   `|log |Z Λ|| ≤ ∑_{γ ∈ Λ} log (1 + μ γ) ≤ ∑_{γ ∈ Λ} μ γ`,
   aus zweiseitigen Schranken `(∏ (1 + μ))⁻¹ ≤ |Z Λ| ≤ ∏ (1 + μ)`;
-* die **Fernández-Procacci-Bedingung** samt Hierarchie
-  `KP ⟹ Dobrushin ⟹ FP`.
+* das **Fernández-Procacci-Kriterium**, die schärfste der drei
+  klassischen Bedingungen: unter `|w γ| · Ξ_{N(γ)}(μ) ≤ μ γ` (mit dem
+  Unabhängigkeitspolynom `Ξ` der Nachbarschaft) gilt `Z ≠ 0` und
+  `|Z (Λ ∖ {x})| ≤ (1 + μ x) · |Z Λ|` — über die Positivität des
+  alternierenden Gases `Z(-|w|) > 0` und den Vergleich
+  `Z(-|w|) ≤ |Z(w)|`; dazu die Hierarchie `KP ⟹ Dobrushin ⟹ FP`.
 
-Kein `sorry` in dieser Datei. Bewusst offen (nur definiert bzw. genannt,
-nichts Unbewiesenes behauptet): die Ursell-Reihe von `log Z` mit
-Baumgraphen-Schranken und der FP-Konvergenzsatz.
+Kein `sorry` in dieser Datei. Bewusst offen (nur genannt, nichts
+Unbewiesenes behauptet): die Ursell-Reihe von `log Z` mit
+Baumgraphen-Schranken.
 
 Kontext: DEGRALBA §17.1, „Balaban als Lean-Blueprint“.
 Referenzen: Kotecký–Preiss (Comm. Math. Phys. 103, 1986);
 Friedli–Velenik, *Statistical Mechanics of Lattice Systems*, Kap. 5;
 Scott–Sokal (J. Stat. Phys. 118, 2005); Fernández–Procacci
-(Comm. Math. Phys. 274, 2007).
+(Comm. Math. Phys. 274, 2007); Fialho (J. Stat. Phys. 178, 2020,
+arXiv:2001.00652) für den induktiven FP-Beweis.
 -/
 
 open Finset
@@ -678,12 +683,24 @@ section FernandezProcacci
 Die FP-Bedingung ersetzt im Dobrushin-Produkt `∏ (1 + μ δ)` durch das
 Unabhängigkeitspolynom der Nachbarschaft — die Summe läuft nur noch über
 unabhängige Teilmengen statt über alle. Das ist genau `Z` mit den
-Gewichten `μ`, es braucht also keine neue Definition. Bewiesen wird hier
-die Hierarchie der Bedingungen `KP ⟹ Dobrushin ⟹ FP` über
-`Z_A(μ) ≤ ∏_{δ ∈ A} (1 + μ δ)`. Der FP-Konvergenzsatz selbst
-(Nichtverschwinden von `Z` unter der FP-Bedingung, Fernández–Procacci,
-Comm. Math. Phys. 274, 2007) ist der nächste offene Baustein; er braucht
-eine verfeinerte Induktion und wird hier bewusst nicht behauptet.
+Gewichten `μ`, es braucht also keine neue Definition. Bewiesen werden
+hier die Hierarchie der Bedingungen `KP ⟹ Dobrushin ⟹ FP` über
+`Z_A(μ) ≤ ∏_{δ ∈ A} (1 + μ δ)` — und der **FP-Konvergenzsatz selbst**
+(Fernández–Procacci, Comm. Math. Phys. 274, 2007), dem induktiven
+Beweis von Fialho (J. Stat. Phys. 178, 2020; arXiv:2001.00652) folgend:
+
+1. `fp_aux`: für Aktivitäten `p ≥ 0` ist das alternierende Gas
+   `Q_S = Z_S(-p)` positiv, mit der Quotientenschranke gegen die
+   μ-Komplemente `Q_{S∖x} · Z_{Λ∖S}(μ) ≤ Q_S · Z_{Λ∖(S∖x)}(μ)`.
+   Werkzeuge: Submultiplikativität `Z_{A∪B}(μ) ≤ Z_A(μ)·Z_B(μ)`,
+   Monotonie und die Fundamentalrekursion, angewandt auf beide Gase.
+2. `fp_transfer_aux`: der Vergleichssatz `Z_S(-|w|) ≤ |Z_S(w)|`
+   (Scott-Sokal Thm. 2.10), wieder per Teleskop-Induktion.
+
+Daraus `Z_ne_zero_of_fp` und `Z_ratio_bound_of_fp`. Da die
+FP-Bedingung die schwächste der Hierarchie ist, subsumiert das
+Nichtverschwinden unter FP die Kriterien von Dobrushin und
+Kotecký-Preiss.
 -/
 
 variable (wr : ι → ℝ) (μ : ι → ℝ)
@@ -695,6 +712,110 @@ def FPCondition (Λ : Finset ι) : Prop :=
   (∀ γ ∈ Λ, 0 ≤ μ γ) ∧
   ∀ γ ∈ Λ,
     |wr γ| * Z P μ (Λ.filter (fun δ => P.incomp γ δ = true)) ≤ μ γ
+
+/-- Nichtnegativität: `0 ≤ Z_A(μ)` für `μ ≥ 0` auf `A`. -/
+theorem Z_nonneg_of_nonneg (A : Finset ι) (hpos : ∀ δ ∈ A, 0 ≤ μ δ) :
+    0 ≤ Z P μ A :=
+  Finset.sum_nonneg fun S hS => Finset.prod_nonneg fun δ hδ =>
+    hpos δ (mem_powerset.mp (mem_filter.mp hS).1 hδ)
+
+/-- Die leere Menge trägt `1` bei: `1 ≤ Z_A(μ)` für `μ ≥ 0` auf `A`. -/
+theorem one_le_Z_of_nonneg (A : Finset ι) (hpos : ∀ δ ∈ A, 0 ≤ μ δ) :
+    1 ≤ Z P μ A := by
+  have hempty : (∅ : Finset ι) ∈ A.powerset.filter (fun S => Indep P S) :=
+    mem_filter.mpr ⟨mem_powerset.mpr (empty_subset A),
+      fun γ hγ => absurd hγ (notMem_empty γ)⟩
+  calc (1:ℝ) = ∏ δ ∈ (∅ : Finset ι), μ δ := (prod_empty).symm
+    _ ≤ ∑ S ∈ A.powerset.filter (fun S => Indep P S), ∏ δ ∈ S, μ δ :=
+        Finset.single_le_sum (fun S hS => Finset.prod_nonneg fun δ hδ =>
+          hpos δ (mem_powerset.mp (mem_filter.mp hS).1 hδ)) hempty
+    _ = Z P μ A := rfl
+
+/-- Positivität: `0 < Z_A(μ)` für `μ ≥ 0` auf `A`. -/
+theorem Z_pos_of_nonneg (A : Finset ι) (hpos : ∀ δ ∈ A, 0 ≤ μ δ) :
+    0 < Z P μ A :=
+  lt_of_lt_of_le one_pos (one_le_Z_of_nonneg P μ A hpos)
+
+/-- Monotonie: `Z_A(μ) ≤ Z_B(μ)` für `A ⊆ B` und `μ ≥ 0` auf `B`. -/
+theorem Z_mono_of_nonneg {A B : Finset ι} (hAB : A ⊆ B)
+    (hpos : ∀ δ ∈ B, 0 ≤ μ δ) : Z P μ A ≤ Z P μ B := by
+  unfold Z
+  refine sum_le_sum_of_subset_of_nonneg
+    (filter_subset_filter _ (powerset_mono.mpr hAB)) fun S hS _ => ?_
+  exact prod_nonneg fun δ hδ => hpos δ (mem_powerset.mp (mem_filter.mp hS).1 hδ)
+
+/-- Einpunktmengen: `Z_{x}(μ) = 1 + μ x`. -/
+theorem Z_singleton (x : ι) : Z P μ {x} = 1 + μ x := by
+  have h := Z_recursion P μ {x} x (mem_singleton_self x)
+  have h1 : ({x} : Finset ι).erase x = ∅ := erase_singleton x
+  have h2 : compat P {x} x = ∅ := by
+    rw [compat, h1]
+    exact filter_empty _
+  rw [h, h1, h2, Z_empty]
+  ring
+
+/-- **Submultiplikativität des Unabhängigkeitspolynoms:**
+`Z_{A ∪ B}(μ) ≤ Z_A(μ) · Z_B(μ)` für `μ ≥ 0`. Jede unabhängige Menge
+zerfällt injektiv in ihre Anteile in `A` und in `B ∖ A`. -/
+theorem Z_union_le_mul (A B : Finset ι) (hpos : ∀ δ ∈ A ∪ B, 0 ≤ μ δ) :
+    Z P μ (A ∪ B) ≤ Z P μ A * Z P μ B := by
+  classical
+  have hsplit : ∀ K : Finset ι, ∏ δ ∈ K, μ δ
+      = (∏ δ ∈ K ∩ A, μ δ) * ∏ δ ∈ K \ A, μ δ := by
+    intro K
+    rw [← prod_union (disjoint_left.mpr fun y hy hy' =>
+      (mem_sdiff.mp hy').2 (mem_inter.mp hy).2)]
+    congr 1
+    ext y
+    simp only [mem_union, mem_inter, mem_sdiff]
+    tauto
+  have hinj : ∀ K₁ ∈ (A ∪ B).powerset.filter (fun S => Indep P S),
+      ∀ K₂ ∈ (A ∪ B).powerset.filter (fun S => Indep P S),
+      (fun K => (K ∩ A, K \ A)) K₁ = (fun K => (K ∩ A, K \ A)) K₂ →
+        K₁ = K₂ := by
+    intro K₁ _ K₂ _ heq
+    have h1 : K₁ ∩ A = K₂ ∩ A := congrArg Prod.fst heq
+    have h2 : K₁ \ A = K₂ \ A := congrArg Prod.snd heq
+    ext y
+    constructor <;> intro hy <;> by_cases hyA : y ∈ A
+    · exact (mem_inter.mp (h1 ▸ mem_inter.mpr ⟨hy, hyA⟩)).1
+    · exact (mem_sdiff.mp (h2 ▸ mem_sdiff.mpr ⟨hy, hyA⟩)).1
+    · exact (mem_inter.mp (h1.symm ▸ mem_inter.mpr ⟨hy, hyA⟩)).1
+    · exact (mem_sdiff.mp (h2.symm ▸ mem_sdiff.mpr ⟨hy, hyA⟩)).1
+  calc Z P μ (A ∪ B)
+      = ∑ K ∈ (A ∪ B).powerset.filter (fun S => Indep P S),
+          (∏ δ ∈ K ∩ A, μ δ) * ∏ δ ∈ K \ A, μ δ := by
+        unfold Z
+        exact sum_congr rfl fun K _ => hsplit K
+    _ = ∑ q ∈ ((A ∪ B).powerset.filter (fun S => Indep P S)).image
+          (fun K => (K ∩ A, K \ A)),
+          (∏ δ ∈ q.1, μ δ) * ∏ δ ∈ q.2, μ δ := by rw [sum_image hinj]
+    _ ≤ ∑ q ∈ (A.powerset.filter (fun S => Indep P S))
+          ×ˢ (B.powerset.filter (fun S => Indep P S)),
+          (∏ δ ∈ q.1, μ δ) * ∏ δ ∈ q.2, μ δ := by
+        refine sum_le_sum_of_subset_of_nonneg ?_ fun q hq _ => ?_
+        · intro q hq
+          obtain ⟨K, hK, rfl⟩ := mem_image.mp hq
+          have h1 := mem_filter.mp hK
+          have hKsub := mem_powerset.mp h1.1
+          refine mem_product.mpr ⟨mem_filter.mpr
+            ⟨mem_powerset.mpr inter_subset_right,
+              h1.2.mono P inter_subset_left⟩,
+            mem_filter.mpr ⟨mem_powerset.mpr fun y hy => ?_,
+              h1.2.mono P sdiff_subset⟩⟩
+          have hym := mem_sdiff.mp hy
+          rcases mem_union.mp (hKsub hym.1) with hA | hB
+          · exact absurd hA hym.2
+          · exact hB
+        · have hq' := mem_product.mp hq
+          have hq1 := mem_powerset.mp (mem_filter.mp hq'.1).1
+          have hq2 := mem_powerset.mp (mem_filter.mp hq'.2).1
+          exact mul_nonneg
+            (prod_nonneg fun δ hδ => hpos δ (mem_union_left B (hq1 hδ)))
+            (prod_nonneg fun δ hδ => hpos δ (mem_union_right A (hq2 hδ)))
+    _ = Z P μ A * Z P μ B := by
+        unfold Z
+        rw [sum_mul_sum, Finset.sum_product]
 
 /-- Das Unabhängigkeitspolynom liegt unter dem vollen Produkt:
 `Z_A(μ) ≤ ∏_{δ ∈ A} (1 + μ δ)` für `μ ≥ 0` auf `A` — Summe über
@@ -727,6 +848,442 @@ theorem KPCondition.fp {Λ : Finset ι} {a : ι → ℝ}
     (h : KPCondition P wr a Λ) :
     FPCondition P wr (fun γ => |wr γ| * Real.exp (a γ)) Λ :=
   h.dobrushin.fp
+
+/-- Kern der FP-Induktion (nach Fialho, arXiv:2001.00652, Prop. 2.1):
+unter der FP-Bedingung mit Aktivitäten `p ≥ 0` ist die alternierende
+Zustandssumme `Q_S = Z_S(-p)` positiv, und für `x ∈ S` gilt
+`Q_{S∖x} · Z_{Λ∖S}(μ) ≤ Q_S · Z_{Λ∖(S∖x)}(μ)` — die Quotientenschranke
+gegen die μ-Komplemente, divisionsfrei. Starke Induktion über `|S|`. -/
+private theorem fp_aux (Λ : Finset ι) (p : ι → ℝ)
+    (hμ : ∀ γ ∈ Λ, 0 ≤ μ γ) (hp : ∀ γ ∈ Λ, 0 ≤ p γ)
+    (hfp : ∀ γ ∈ Λ,
+      p γ * Z P μ (Λ.filter (fun δ => P.incomp γ δ = true)) ≤ μ γ) :
+    ∀ n : ℕ, ∀ S : Finset ι, S ⊆ Λ → S.card ≤ n →
+      0 < Z P (fun γ => -(p γ)) S ∧
+      ∀ x ∈ S, Z P (fun γ => -(p γ)) (S.erase x) * Z P μ (Λ \ S)
+        ≤ Z P (fun γ => -(p γ)) S * Z P μ (Λ \ S.erase x) := by
+  intro n
+  induction n with
+  | zero =>
+    intro S hSΛ hcard
+    have hS : S = ∅ := card_eq_zero.mp (Nat.le_zero.mp hcard)
+    subst hS
+    exact ⟨by rw [Z_empty]; exact one_pos,
+      fun x hx => absurd hx (notMem_empty x)⟩
+  | succ n IHn =>
+    intro S hSΛ hcard
+    have hμS : ∀ A : Finset ι, A ⊆ Λ → 0 < Z P μ A := fun A hA =>
+      Z_pos_of_nonneg P μ A (fun δ hδ => hμ δ (hA hδ))
+    have hQpos : ∀ U : Finset ι, U ⊆ Λ → U.card ≤ n →
+        0 < Z P (fun γ => -(p γ)) U := fun U hU hc => (IHn U hU hc).1
+    -- Teil 2 zuerst: die Quotientenschranke für jedes x ∈ S.
+    have part2 : ∀ x ∈ S,
+        Z P (fun γ => -(p γ)) (S.erase x) * Z P μ (Λ \ S)
+        ≤ Z P (fun γ => -(p γ)) S * Z P μ (Λ \ S.erase x) := by
+      intro x hxS
+      have hxΛ : x ∈ Λ := hSΛ hxS
+      set T := S.erase x with hT
+      have hTS : T ⊆ S := erase_subset x S
+      have hTΛ : T ⊆ Λ := hTS.trans hSΛ
+      have hTcard : T.card ≤ n := by
+        have h1 := card_erase_of_mem hxS
+        rw [← hT] at h1
+        omega
+      have hΛT : Λ \ T = insert x (Λ \ S) := by
+        ext y
+        simp only [hT, mem_sdiff, mem_erase, mem_insert]
+        constructor
+        · rintro ⟨hyΛ, hy⟩
+          by_cases hyx : y = x
+          · exact Or.inl hyx
+          · exact Or.inr ⟨hyΛ, fun hyS => hy ⟨hyx, hyS⟩⟩
+        · rintro (rfl | ⟨hyΛ, hyS⟩)
+          · exact ⟨hxΛ, fun h => h.1 rfl⟩
+          · exact ⟨hyΛ, fun h => hyS h.2⟩
+      set D := T.filter (fun δ => P.incomp x δ = true) with hD
+      have hDT : D ⊆ T := filter_subset _ _
+      have hTD : T \ D = compat P S x := by
+        rw [hD, hT, ← filter_not]
+        simp only [compat, Bool.not_eq_true]
+      -- Kettenlemma: Löschen von E ⊆ D aus T, gegen die μ-Komplemente.
+      have chain : ∀ E : Finset ι, E ⊆ D →
+          Z P (fun γ => -(p γ)) (T \ E) * Z P μ (Λ \ T)
+          ≤ Z P (fun γ => -(p γ)) T * Z P μ (Λ \ (T \ E)) := by
+        intro E
+        induction E using Finset.induction_on with
+        | empty =>
+          intro _
+          rw [sdiff_empty]
+        | @insert δ E' hδE' IHe =>
+          intro hE
+          have hδD : δ ∈ D := hE (mem_insert_self δ E')
+          have hE'D : E' ⊆ D := fun y hy => hE (mem_insert_of_mem hy)
+          have hδT : δ ∈ T := hDT hδD
+          set U := T \ E' with hU
+          have hUT : U ⊆ T := sdiff_subset
+          have hUΛ : U ⊆ Λ := hUT.trans hTΛ
+          have hUcard : U.card ≤ n := le_trans (card_le_card hUT) hTcard
+          have hδU : δ ∈ U := mem_sdiff.mpr ⟨hδT, hδE'⟩
+          have hset : T \ insert δ E' = U.erase δ := by
+            rw [hU]
+            ext y
+            simp only [mem_sdiff, mem_erase, mem_insert]
+            tauto
+          have hstep := (IHn U hUΛ hUcard).2 δ hδU
+          have hprev := IHe hE'D
+          have hQU : 0 < Z P (fun γ => -(p γ)) U := hQpos U hUΛ hUcard
+          have hZU : 0 < Z P μ (Λ \ U) := hμS _ sdiff_subset
+          rw [hset]
+          have hkey : (Z P (fun γ => -(p γ)) (U.erase δ) * Z P μ (Λ \ T))
+              * Z P μ (Λ \ U)
+              ≤ (Z P (fun γ => -(p γ)) T * Z P μ (Λ \ U.erase δ))
+              * Z P μ (Λ \ U) := by
+            calc (Z P (fun γ => -(p γ)) (U.erase δ) * Z P μ (Λ \ T))
+                  * Z P μ (Λ \ U)
+                = (Z P (fun γ => -(p γ)) (U.erase δ) * Z P μ (Λ \ U))
+                  * Z P μ (Λ \ T) := by ring
+              _ ≤ (Z P (fun γ => -(p γ)) U * Z P μ (Λ \ U.erase δ))
+                  * Z P μ (Λ \ T) :=
+                  mul_le_mul_of_nonneg_right hstep (hμS _ sdiff_subset).le
+              _ = (Z P (fun γ => -(p γ)) U * Z P μ (Λ \ T))
+                  * Z P μ (Λ \ U.erase δ) := by ring
+              _ ≤ (Z P (fun γ => -(p γ)) T * Z P μ (Λ \ U))
+                  * Z P μ (Λ \ U.erase δ) :=
+                  mul_le_mul_of_nonneg_right hprev (hμS _ sdiff_subset).le
+              _ = (Z P (fun γ => -(p γ)) T * Z P μ (Λ \ U.erase δ))
+                  * Z P μ (Λ \ U) := by ring
+          exact le_of_mul_le_mul_right hkey hZU
+      -- Rekursion für Q an der Stelle x.
+      have hxA : x ∉ Λ \ S := fun h => (mem_sdiff.mp h).2 hxS
+      have hrecQ : Z P (fun γ => -(p γ)) S
+          = Z P (fun γ => -(p γ)) T
+            + -(p x) * Z P (fun γ => -(p γ)) (compat P S x) := by
+        rw [hT]
+        exact Z_recursion P (fun γ => -(p γ)) S x hxS
+      -- Rekursion für Zμ am eingefügten Punkt x.
+      have hrecμ : Z P μ (insert x (Λ \ S))
+          = Z P μ (Λ \ S)
+            + μ x * Z P μ ((Λ \ S).filter (fun δ => P.incomp x δ = false)) := by
+        have h := Z_recursion P μ (insert x (Λ \ S)) x (mem_insert_self x _)
+        rw [erase_insert hxA] at h
+        have hc : compat P (insert x (Λ \ S)) x
+            = (Λ \ S).filter (fun δ => P.incomp x δ = false) := by
+          unfold compat
+          rw [erase_insert hxA]
+        rw [hc] at h
+        exact h
+      -- Die Vergleichsabschätzung: p x · Zμ(Λ ∖ compat) ≤ μ x · Zμ(A').
+      have hApos : ∀ δ ∈ (Λ \ S).filter (fun δ => P.incomp x δ = false),
+          δ ∈ Λ := fun δ hδ => (mem_sdiff.mp ((filter_subset _ _) hδ)).1
+      have hsub : Λ \ compat P S x
+          ⊆ Λ.filter (fun δ => P.incomp x δ = true)
+            ∪ (Λ \ S).filter (fun δ => P.incomp x δ = false) := by
+        intro y hy
+        have hyΛ : y ∈ Λ := (mem_sdiff.mp hy).1
+        have hyc : y ∉ compat P S x := (mem_sdiff.mp hy).2
+        rcases Bool.eq_false_or_eq_true (P.incomp x y) with hinc | hcy
+        · exact mem_union_left _ (mem_filter.mpr ⟨hyΛ, hinc⟩)
+        · refine mem_union_right _ (mem_filter.mpr
+            ⟨mem_sdiff.mpr ⟨hyΛ, ?_⟩, hcy⟩)
+          intro hyS
+          have hyx : y ≠ x := by
+            intro heq
+            rw [heq, P.refl x] at hcy
+            exact Bool.noConfusion hcy
+          exact hyc (mem_filter.mpr ⟨mem_erase.mpr ⟨hyx, hyS⟩, hcy⟩)
+      have hNsub : Λ.filter (fun δ => P.incomp x δ = true)
+          ∪ (Λ \ S).filter (fun δ => P.incomp x δ = false) ⊆ Λ :=
+        union_subset (filter_subset _ _) (fun δ hδ => hApos δ hδ)
+      have hdagger : p x * Z P μ (Λ \ compat P S x)
+          ≤ μ x * Z P μ ((Λ \ S).filter (fun δ => P.incomp x δ = false)) := by
+        have h1 : Z P μ (Λ \ compat P S x)
+            ≤ Z P μ (Λ.filter (fun δ => P.incomp x δ = true))
+              * Z P μ ((Λ \ S).filter (fun δ => P.incomp x δ = false)) := by
+          calc Z P μ (Λ \ compat P S x)
+              ≤ Z P μ (Λ.filter (fun δ => P.incomp x δ = true)
+                  ∪ (Λ \ S).filter (fun δ => P.incomp x δ = false)) :=
+                Z_mono_of_nonneg P μ hsub (fun δ hδ => hμ δ (hNsub hδ))
+            _ ≤ Z P μ (Λ.filter (fun δ => P.incomp x δ = true))
+                * Z P μ ((Λ \ S).filter (fun δ => P.incomp x δ = false)) :=
+                Z_union_le_mul P μ _ _ (fun δ hδ => hμ δ (hNsub hδ))
+        calc p x * Z P μ (Λ \ compat P S x)
+            ≤ p x * (Z P μ (Λ.filter (fun δ => P.incomp x δ = true))
+                * Z P μ ((Λ \ S).filter (fun δ => P.incomp x δ = false))) :=
+              mul_le_mul_of_nonneg_left h1 (hp x hxΛ)
+          _ = (p x * Z P μ (Λ.filter (fun δ => P.incomp x δ = true)))
+              * Z P μ ((Λ \ S).filter (fun δ => P.incomp x δ = false)) := by
+              ring
+          _ ≤ μ x * Z P μ ((Λ \ S).filter (fun δ => P.incomp x δ = false)) :=
+              mul_le_mul_of_nonneg_right (hfp x hxΛ)
+                (Z_nonneg_of_nonneg P μ _ (fun δ hδ => hμ δ (hApos δ hδ)))
+      -- Kette bei E = D, umgeschrieben auf compat und insert.
+      have hchainD := chain D (Finset.Subset.refl D)
+      rw [hTD, hΛT] at hchainD
+      -- Alles zusammensetzen.
+      have hQT : 0 < Z P (fun γ => -(p γ)) T := hQpos T hTΛ hTcard
+      have hkey : p x * (Z P (fun γ => -(p γ)) (compat P S x)
+            * Z P μ (insert x (Λ \ S)))
+          ≤ (Z P μ (insert x (Λ \ S)) - Z P μ (Λ \ S))
+            * Z P (fun γ => -(p γ)) T := by
+        have hμZA : μ x * Z P μ ((Λ \ S).filter
+              (fun δ => P.incomp x δ = false))
+            = Z P μ (insert x (Λ \ S)) - Z P μ (Λ \ S) := by
+          linarith [hrecμ]
+        calc p x * (Z P (fun γ => -(p γ)) (compat P S x)
+              * Z P μ (insert x (Λ \ S)))
+            ≤ p x * (Z P (fun γ => -(p γ)) T * Z P μ (Λ \ compat P S x)) :=
+              mul_le_mul_of_nonneg_left hchainD (hp x hxΛ)
+          _ = (p x * Z P μ (Λ \ compat P S x))
+              * Z P (fun γ => -(p γ)) T := by ring
+          _ ≤ (μ x * Z P μ ((Λ \ S).filter (fun δ => P.incomp x δ = false)))
+              * Z P (fun γ => -(p γ)) T :=
+              mul_le_mul_of_nonneg_right hdagger hQT.le
+          _ = (Z P μ (insert x (Λ \ S)) - Z P μ (Λ \ S))
+              * Z P (fun γ => -(p γ)) T := by rw [hμZA]
+      rw [hΛT]
+      have hexp : Z P (fun γ => -(p γ)) S * Z P μ (insert x (Λ \ S))
+          = Z P (fun γ => -(p γ)) T * Z P μ (insert x (Λ \ S))
+            - p x * (Z P (fun γ => -(p γ)) (compat P S x)
+              * Z P μ (insert x (Λ \ S))) := by
+        rw [hrecQ]
+        ring
+      linarith [hkey, hexp]
+    -- Teil 1: Positivität.
+    have part1 : 0 < Z P (fun γ => -(p γ)) S := by
+      rcases S.eq_empty_or_nonempty with rfl | ⟨x, hxS⟩
+      · rw [Z_empty]
+        exact one_pos
+      · have h2 := part2 x hxS
+        have hTΛ : S.erase x ⊆ Λ := (erase_subset x S).trans hSΛ
+        have hTcard : (S.erase x).card ≤ n := by
+          have h1 := card_erase_of_mem hxS
+          omega
+        have hQT : 0 < Z P (fun γ => -(p γ)) (S.erase x) :=
+          hQpos _ hTΛ hTcard
+        have hZ1 : 0 < Z P μ (Λ \ S) := hμS _ sdiff_subset
+        have hZ2 : 0 < Z P μ (Λ \ S.erase x) := hμS _ sdiff_subset
+        by_contra hcon
+        push_neg at hcon
+        have hle : Z P (fun γ => -(p γ)) S * Z P μ (Λ \ S.erase x) ≤ 0 := by
+          calc Z P (fun γ => -(p γ)) S * Z P μ (Λ \ S.erase x)
+              ≤ 0 * Z P μ (Λ \ S.erase x) :=
+                mul_le_mul_of_nonneg_right hcon hZ2.le
+            _ = 0 := zero_mul _
+        have hgt : 0 < Z P (fun γ => -(p γ)) (S.erase x) * Z P μ (Λ \ S) :=
+          mul_pos hQT hZ1
+        linarith
+    exact ⟨part1, part2⟩
+
+/-- Transfer auf reelle Gewichte (Vergleichssatz im Stil von Scott-Sokal,
+Thm. 2.10): unter der FP-Bedingung minorisiert die alternierende
+Zustandssumme mit `p = |w|` den Betrag, `Z_S(-|w|) ≤ |Z_S(w)|`, samt
+Quotienten-Vergleich. Wieder starke Induktion über `|S|`. -/
+private theorem fp_transfer_aux (Λ : Finset ι) (h : FPCondition P wr μ Λ) :
+    ∀ n : ℕ, ∀ S : Finset ι, S ⊆ Λ → S.card ≤ n →
+      Z P (fun γ => -|wr γ|) S ≤ |Z P wr S| ∧
+      ∀ x ∈ S, |Z P wr (S.erase x)| * Z P (fun γ => -|wr γ|) S
+        ≤ Z P (fun γ => -|wr γ|) (S.erase x) * |Z P wr S| := by
+  obtain ⟨hμ, hfp⟩ := h
+  have hQ : ∀ S : Finset ι, S ⊆ Λ → 0 < Z P (fun γ => -|wr γ|) S := by
+    intro S hSΛ
+    exact (fp_aux P μ Λ (fun γ => |wr γ|) hμ (fun γ _ => abs_nonneg _) hfp
+      S.card S hSΛ le_rfl).1
+  intro n
+  induction n with
+  | zero =>
+    intro S hSΛ hcard
+    have hS : S = ∅ := card_eq_zero.mp (Nat.le_zero.mp hcard)
+    subst hS
+    refine ⟨?_, fun x hx => absurd hx (notMem_empty x)⟩
+    rw [Z_empty, Z_empty]
+    norm_num
+  | succ n IHn =>
+    intro S hSΛ hcard
+    have part2 : ∀ x ∈ S,
+        |Z P wr (S.erase x)| * Z P (fun γ => -|wr γ|) S
+        ≤ Z P (fun γ => -|wr γ|) (S.erase x) * |Z P wr S| := by
+      intro x hxS
+      have hxΛ : x ∈ Λ := hSΛ hxS
+      set T := S.erase x with hT
+      have hTS : T ⊆ S := erase_subset x S
+      have hTΛ : T ⊆ Λ := hTS.trans hSΛ
+      have hTcard : T.card ≤ n := by
+        have h1 := card_erase_of_mem hxS
+        rw [← hT] at h1
+        omega
+      set D := T.filter (fun δ => P.incomp x δ = true) with hD
+      have hDT : D ⊆ T := filter_subset _ _
+      have hTD : T \ D = compat P S x := by
+        rw [hD, hT, ← filter_not]
+        simp only [compat, Bool.not_eq_true]
+      -- Kettenlemma für den Betrag gegen Q.
+      have chain : ∀ E : Finset ι, E ⊆ D →
+          |Z P wr (T \ E)| * Z P (fun γ => -|wr γ|) T
+          ≤ |Z P wr T| * Z P (fun γ => -|wr γ|) (T \ E) := by
+        intro E
+        induction E using Finset.induction_on with
+        | empty =>
+          intro _
+          rw [sdiff_empty]
+        | @insert δ E' hδE' IHe =>
+          intro hE
+          have hδD : δ ∈ D := hE (mem_insert_self δ E')
+          have hE'D : E' ⊆ D := fun y hy => hE (mem_insert_of_mem hy)
+          have hδT : δ ∈ T := hDT hδD
+          set U := T \ E' with hU
+          have hUT : U ⊆ T := sdiff_subset
+          have hUΛ : U ⊆ Λ := hUT.trans hTΛ
+          have hUcard : U.card ≤ n := le_trans (card_le_card hUT) hTcard
+          have hδU : δ ∈ U := mem_sdiff.mpr ⟨hδT, hδE'⟩
+          have hset : T \ insert δ E' = U.erase δ := by
+            rw [hU]
+            ext y
+            simp only [mem_sdiff, mem_erase, mem_insert]
+            tauto
+          have hstep := (IHn U hUΛ hUcard).2 δ hδU
+          have hprev := IHe hE'D
+          have hQU : 0 < Z P (fun γ => -|wr γ|) U := hQ U hUΛ
+          have hQUδ : 0 ≤ Z P (fun γ => -|wr γ|) (U.erase δ) :=
+            (hQ (U.erase δ) ((erase_subset δ U).trans hUΛ)).le
+          have hQT' : 0 ≤ Z P (fun γ => -|wr γ|) T := (hQ T hTΛ).le
+          rw [hset]
+          have hkey : (|Z P wr (U.erase δ)| * Z P (fun γ => -|wr γ|) T)
+              * Z P (fun γ => -|wr γ|) U
+              ≤ (|Z P wr T| * Z P (fun γ => -|wr γ|) (U.erase δ))
+              * Z P (fun γ => -|wr γ|) U := by
+            calc (|Z P wr (U.erase δ)| * Z P (fun γ => -|wr γ|) T)
+                  * Z P (fun γ => -|wr γ|) U
+                = (|Z P wr (U.erase δ)| * Z P (fun γ => -|wr γ|) U)
+                  * Z P (fun γ => -|wr γ|) T := by ring
+              _ ≤ (Z P (fun γ => -|wr γ|) (U.erase δ) * |Z P wr U|)
+                  * Z P (fun γ => -|wr γ|) T :=
+                  mul_le_mul_of_nonneg_right hstep hQT'
+              _ = (|Z P wr U| * Z P (fun γ => -|wr γ|) T)
+                  * Z P (fun γ => -|wr γ|) (U.erase δ) := by ring
+              _ ≤ (|Z P wr T| * Z P (fun γ => -|wr γ|) U)
+                  * Z P (fun γ => -|wr γ|) (U.erase δ) :=
+                  mul_le_mul_of_nonneg_right hprev hQUδ
+              _ = (|Z P wr T| * Z P (fun γ => -|wr γ|) (U.erase δ))
+                  * Z P (fun γ => -|wr γ|) U := by ring
+          exact le_of_mul_le_mul_right hkey hQU
+      have hchainD := chain D (Finset.Subset.refl D)
+      rw [hTD] at hchainD
+      -- Rekursionen und Dreiecksungleichung.
+      have hrecW : Z P wr S
+          = Z P wr T + wr x * Z P wr (compat P S x) := by
+        rw [hT]
+        exact Z_recursion P wr S x hxS
+      have hrecQ : Z P (fun γ => -|wr γ|) S
+          = Z P (fun γ => -|wr γ|) T
+            + -|wr x| * Z P (fun γ => -|wr γ|) (compat P S x) := by
+        rw [hT]
+        exact Z_recursion P (fun γ => -|wr γ|) S x hxS
+      have habs : |Z P wr T|
+          ≤ |Z P wr S| + |wr x| * |Z P wr (compat P S x)| := by
+        have hz : Z P wr T = Z P wr S - wr x * Z P wr (compat P S x) := by
+          rw [hrecW]
+          ring
+        calc |Z P wr T|
+            = |Z P wr S - wr x * Z P wr (compat P S x)| := by rw [hz]
+          _ ≤ |Z P wr S| + |wr x * Z P wr (compat P S x)| := by
+              have h1 := abs_add_le (Z P wr S)
+                (-(wr x * Z P wr (compat P S x)))
+              simpa [sub_eq_add_neg, abs_neg] using h1
+          _ = |Z P wr S| + |wr x| * |Z P wr (compat P S x)| := by
+              rw [abs_mul]
+      have hQT : 0 < Z P (fun γ => -|wr γ|) T := hQ T hTΛ
+      have h1 : |Z P wr T| * Z P (fun γ => -|wr γ|) T
+          ≤ (|Z P wr S| + |wr x| * |Z P wr (compat P S x)|)
+            * Z P (fun γ => -|wr γ|) T :=
+        mul_le_mul_of_nonneg_right habs hQT.le
+      have h2 : |wr x| * (|Z P wr (compat P S x)| * Z P (fun γ => -|wr γ|) T)
+          ≤ |wr x| * (|Z P wr T| * Z P (fun γ => -|wr γ|) (compat P S x)) :=
+        mul_le_mul_of_nonneg_left hchainD (abs_nonneg _)
+      have hexp : |Z P wr T| * Z P (fun γ => -|wr γ|) S
+          = |Z P wr T| * Z P (fun γ => -|wr γ|) T
+            - |wr x| * (|Z P wr T|
+              * Z P (fun γ => -|wr γ|) (compat P S x)) := by
+        rw [hrecQ]
+        ring
+      linarith [h1, h2, hexp]
+    have part1 : Z P (fun γ => -|wr γ|) S ≤ |Z P wr S| := by
+      rcases S.eq_empty_or_nonempty with rfl | ⟨x, hxS⟩
+      · rw [Z_empty, Z_empty]
+        norm_num
+      · have h2 := part2 x hxS
+        have hTΛ : S.erase x ⊆ Λ := (erase_subset x S).trans hSΛ
+        have hTcard : (S.erase x).card ≤ n := by
+          have h1 := card_erase_of_mem hxS
+          omega
+        have hIH := (IHn (S.erase x) hTΛ hTcard).1
+        have hQS : 0 ≤ Z P (fun γ => -|wr γ|) S := (hQ S hSΛ).le
+        have hQT : 0 < Z P (fun γ => -|wr γ|) (S.erase x) := hQ _ hTΛ
+        have hstep : Z P (fun γ => -|wr γ|) (S.erase x)
+              * Z P (fun γ => -|wr γ|) S
+            ≤ Z P (fun γ => -|wr γ|) (S.erase x) * |Z P wr S| := by
+          calc Z P (fun γ => -|wr γ|) (S.erase x)
+                * Z P (fun γ => -|wr γ|) S
+              ≤ |Z P wr (S.erase x)| * Z P (fun γ => -|wr γ|) S :=
+                mul_le_mul_of_nonneg_right hIH hQS
+            _ ≤ Z P (fun γ => -|wr γ|) (S.erase x) * |Z P wr S| := h2
+        exact le_of_mul_le_mul_left hstep hQT
+    exact ⟨part1, part2⟩
+
+/-- **Positivität des alternierenden Polymergases** unter der
+FP-Bedingung: `0 < Z_Λ(-|w|)`. -/
+theorem Z_neg_pos_of_fp (Λ : Finset ι) (h : FPCondition P wr μ Λ) :
+    0 < Z P (fun γ => -|wr γ|) Λ :=
+  (fp_aux P μ Λ (fun γ => |wr γ|) h.1 (fun γ _ => abs_nonneg _) h.2
+    Λ.card Λ (Finset.Subset.refl Λ) le_rfl).1
+
+/-- **Fernández-Procacci-Kriterium, Teil 1** (Fernández–Procacci,
+Comm. Math. Phys. 274, 2007; induktiver Beweis nach Fialho,
+J. Stat. Phys. 178, 2020): unter der FP-Bedingung — der schwächsten der
+drei klassischen Bedingungen — verschwindet die Zustandssumme nicht.
+Beweis über `0 < Z_Λ(-|w|) ≤ |Z_Λ(w)|`. -/
+theorem Z_ne_zero_of_fp (Λ : Finset ι) (h : FPCondition P wr μ Λ) :
+    Z P wr Λ ≠ 0 := by
+  have h1 := Z_neg_pos_of_fp P wr μ Λ h
+  have h2 := (fp_transfer_aux P wr μ Λ h Λ.card Λ
+    (Finset.Subset.refl Λ) le_rfl).1
+  intro hz
+  rw [hz, abs_zero] at h2
+  linarith
+
+/-- **Fernández-Procacci-Kriterium, Teil 2:** die Quotientenschranke
+`|Z (Λ ∖ {x})| ≤ (1 + μ x) · |Z Λ|` — wie bei Dobrushin, nur unter der
+schwächeren FP-Bedingung. -/
+theorem Z_ratio_bound_of_fp (Λ : Finset ι) (h : FPCondition P wr μ Λ)
+    (x : ι) (hx : x ∈ Λ) :
+    |Z P wr (Λ.erase x)| ≤ (1 + μ x) * |Z P wr Λ| := by
+  have haux := fp_aux P μ Λ (fun γ => |wr γ|) h.1 (fun γ _ => abs_nonneg _)
+    h.2 Λ.card Λ (Finset.Subset.refl Λ) le_rfl
+  have htrans := fp_transfer_aux P wr μ Λ h Λ.card Λ
+    (Finset.Subset.refl Λ) le_rfl
+  have hQΛ : 0 < Z P (fun γ => -|wr γ|) Λ := haux.1
+  have hstar := haux.2 x hx
+  rw [sdiff_self, bot_eq_empty, Z_empty] at hstar
+  have hset2 : Λ \ Λ.erase x = {x} := by
+    ext y
+    simp only [mem_sdiff, mem_erase, mem_singleton]
+    constructor
+    · rintro ⟨hyΛ, hy⟩
+      by_contra hyx
+      exact hy ⟨hyx, hyΛ⟩
+    · rintro rfl
+      exact ⟨hx, fun hc => hc.1 rfl⟩
+  rw [hset2, Z_singleton, mul_one] at hstar
+  -- hstar : Q (Λ.erase x) ≤ Q Λ * (1 + μ x)
+  have hb := htrans.2 x hx
+  have hZabs : (0:ℝ) ≤ |Z P wr Λ| := abs_nonneg _
+  have hfin : |Z P wr (Λ.erase x)| * Z P (fun γ => -|wr γ|) Λ
+      ≤ ((1 + μ x) * |Z P wr Λ|) * Z P (fun γ => -|wr γ|) Λ := by
+    calc |Z P wr (Λ.erase x)| * Z P (fun γ => -|wr γ|) Λ
+        ≤ Z P (fun γ => -|wr γ|) (Λ.erase x) * |Z P wr Λ| := hb
+      _ ≤ (Z P (fun γ => -|wr γ|) Λ * (1 + μ x)) * |Z P wr Λ| :=
+          mul_le_mul_of_nonneg_right hstar hZabs
+      _ = ((1 + μ x) * |Z P wr Λ|) * Z P (fun γ => -|wr γ|) Λ := by ring
+  exact le_of_mul_le_mul_right hfin hQΛ
 
 end FernandezProcacci
 
