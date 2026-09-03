@@ -6,3 +6,4 @@ Authors: Dennis Michael Heine
 import KPLean.ClusterExpansion
 import KPLean.Ursell
 import KPLean.Mayer
+import KPLean.ClusterSeries

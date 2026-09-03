@@ -611,6 +611,56 @@ theorem abs_ursellSum_le_treeCount (H : Finset (Sym2 V))
         unfold treeCount
         exact_mod_cast Finset.card_le_card hsub
 
+/-! ## Zählen der aufspannenden Bäume
+
+Die Penrose-Elternabbildung bestimmt jeden aufspannenden Baum
+vollständig: ein Baum ist sein eigener Penrose-Baum, und der ist das
+Bild der Elternabbildung. Daraus folgt die grobe Wurzelbaum-Schranke
+`treeCount H ≤ |V| ^ (|V| - 1)` — höchstens so viele Bäume wie
+Elternabbildungen `V ∖ {Wurzel} → V`. -/
+
+/-- Ein aufspannender Baum (ohne Diagonalkanten) ist sein eigener
+Penrose-Baum: die Elternkanten sind Baumkanten, und beide Mengen haben
+`|V| - 1` Elemente. -/
+theorem penroseTree_of_isTree {T : Finset (Sym2 V)}
+    (hdiag : ∀ e ∈ T, ¬ e.IsDiag) (hT : (graphOf T).IsTree) :
+    penroseTree T = T := by
+  have hconn : EdgeConn T := hT.connected
+  have hcardT : T.card + 1 = Fintype.card V := by
+    have h := (SimpleGraph.isTree_iff_connected_and_card.mp hT).2
+    rwa [edgeSet_graphOf hdiag, Nat.card_coe_set_eq, Set.ncard_coe_finset,
+      Nat.card_eq_fintype_card] at h
+  have hcardP := penroseTree_card hconn
+  exact Finset.eq_of_subset_of_card_le (penroseTree_subset hconn) (by omega)
+
+/-- **Wurzelbaum-Schranke an die Baumzahl**: in jedem diagonalfreien
+Träger gibt es höchstens `|V| ^ (|V| - 1)` aufspannende Bäume, denn
+jeder ist durch seine Penrose-Elternabbildung auf `V ∖ {Wurzel}`
+festgelegt. -/
+theorem treeCount_le_pow (H : Finset (Sym2 V))
+    (hH : ∀ e ∈ H, ¬ e.IsDiag) :
+    treeCount H ≤ Fintype.card V ^ (Fintype.card V - 1) := by
+  have hinj : Set.InjOn
+      (fun T => fun v : ↥(Finset.univ.erase (root V)) => par T v.1)
+      ↑(H.powerset.filter (fun T => (graphOf T).IsTree)) := by
+    intro T₁ h₁ T₂ h₂ heq
+    rw [Finset.mem_coe, Finset.mem_filter, Finset.mem_powerset] at h₁ h₂
+    have hd₁ : ∀ e ∈ T₁, ¬ e.IsDiag := fun e he => hH e (h₁.1 he)
+    have hd₂ : ∀ e ∈ T₂, ¬ e.IsDiag := fun e he => hH e (h₂.1 he)
+    have hpar : ∀ v ∈ Finset.univ.erase (root V), par T₁ v = par T₂ v :=
+      fun v hv => congrFun heq ⟨v, hv⟩
+    calc T₁ = penroseTree T₁ := (penroseTree_of_isTree hd₁ h₁.2).symm
+      _ = penroseTree T₂ := Finset.image_congr (fun v hv => by
+            rw [hpar v (Finset.mem_coe.mp hv)])
+      _ = T₂ := penroseTree_of_isTree hd₂ h₂.2
+  have hkey := Finset.card_le_card_of_injOn
+    (t := (Finset.univ : Finset (↥(Finset.univ.erase (root V)) → V)))
+    (fun T => fun v : ↥(Finset.univ.erase (root V)) => par T v.1)
+    (fun T _ => Finset.mem_coe.mpr (Finset.mem_univ _)) hinj
+  unfold treeCount
+  rwa [Finset.card_univ, Fintype.card_fun, Fintype.card_coe,
+    Finset.card_erase_of_mem (Finset.mem_univ _), Finset.card_univ] at hkey
+
 end Penrose
 
 /-! ## Beispiele: die kleinsten Träger -/
@@ -711,6 +761,17 @@ beschränkt. -/
 theorem abs_ursellInt_le_treeCount {n : ℕ} (γ : Fin (n + 1) → ι) :
     |ursellInt P γ| ≤ (treeCount (clusterEdges P γ) : ℤ) :=
   abs_ursellSum_le_treeCount _ (clusterEdges_not_isDiag P γ)
+
+/-- **Wurzelbaum-Schranke für Ursell-Funktionen**:
+`|φᵀ(γ₁, …, γ_{n+1})| ≤ (n + 1) ^ n` — die Baumzahl des
+Unverträglichkeitsgraphen, abgeschätzt durch die Anzahl der
+Elternabbildungen. -/
+theorem abs_ursellInt_le_pow {n : ℕ} (γ : Fin (n + 1) → ι) :
+    |ursellInt P γ| ≤ ((n + 1) ^ n : ℤ) := by
+  refine (abs_ursellInt_le_treeCount P γ).trans ?_
+  have h := treeCount_le_pow (clusterEdges P γ) (clusterEdges_not_isDiag P γ)
+  rw [Fintype.card_fin] at h
+  exact_mod_cast h
 
 /-- Ein einzelnes Polymer: `φᵀ(γ₁) = 1`. -/
 theorem ursellInt_single (γ : Fin 1 → ι) : ursellInt P γ = 1 := by
