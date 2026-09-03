@@ -1,0 +1,326 @@
+% Copyright (c) 2026 Dennis Michael Heine.
+% Released under the CC BY-NC-SA 4.0 license as described in the file LICENSE.
+\documentclass[11pt]{amsart}
+\usepackage[T1]{fontenc}
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage{listings}
+\usepackage[colorlinks=true,linkcolor=blue,citecolor=blue,urlcolor=blue]{hyperref}
+
+\lstset{basicstyle=\ttfamily\small,breaklines=true,columns=fullflexible,
+  keepspaces=true,frame=single,framesep=4pt}
+
+\newtheorem{theorem}{Theorem}[section]
+\newtheorem{lemma}[theorem]{Lemma}
+\newtheorem{definition}[theorem]{Definition}
+\newtheorem{remark}[theorem]{Remark}
+
+\title[A machine-checked Dobrushin criterion]{A machine-checked Dobrushin
+criterion for abstract polymer systems}
+\author{Dennis Michael Heine}
+\date{September 3, 2026. \emph{Preliminary draft.}}
+
+\begin{document}
+
+\begin{abstract}
+We describe a formalisation, in Lean~4 over \textsf{mathlib}, of the core of
+the cluster expansion method for abstract polymer systems. Two results are
+proved in full, with no unproved placeholders: the deletion recursion
+$Z(\Lambda) = Z(\Lambda \setminus \{\gamma\}) + w(\gamma)\,
+Z(\Lambda \setminus N^*(\gamma))$ for the polymer partition function, for
+weights in an arbitrary commutative ring; and, for real weights, the
+Dobrushin convergence criterion in product form: if
+$\lvert w(\gamma)\rvert \prod_{\delta \nsim \gamma} (1 + \mu(\delta)) \le
+\mu(\gamma)$ for some $\mu \ge 0$, then $Z(\Lambda) \neq 0$ and
+$\lvert Z(\Lambda \setminus \{\gamma\})\rvert \le (1 + \mu(\gamma))
+\lvert Z(\Lambda)\rvert$. We record a point that the formalisation forced
+into the open: the ratio-telescoping induction that proves the product-form
+criterion does not prove the classical Kotecký--Preiss criterion in sum
+form, whose formalisation via the cluster-tree induction remains future
+work. The development is a first step of a machine-checked treatment of the
+convergence machinery underlying rigorous renormalisation group analyses of
+lattice field theories.
+\end{abstract}
+
+\maketitle
+
+\section{Introduction}
+
+Cluster expansions are among the basic tools of rigorous statistical
+mechanics and constructive field theory. In the abstract polymer formulation
+one is given a finite set of \emph{polymers}, a symmetric and reflexive
+\emph{incompatibility} relation, and complex or real \emph{weights}; the
+object of interest is the polymer partition function, a sum over collections
+of pairwise compatible polymers. The Kotecký--Preiss criterion
+\cite{KP86} gives a sufficient condition for the logarithm of this partition
+function to be controlled by an absolutely convergent series, uniformly in
+the volume; see \cite{FV17} for a textbook treatment and \cite{FP07} for a
+sharper criterion.
+
+Two circumstances motivate a formalisation. First, applications of the
+method, notably in rigorous renormalisation group analyses of lattice gauge
+theories in the tradition of Balaban (see \cite{Dim13a,Dim13b,Dim13c} for a
+modern exposition), rest on long chains of estimates whose unnamed constants
+have, as far as we are aware, never been verified line by line by a machine;
+the Liquid Tensor Experiment \cite{LTE} has demonstrated that formalisation
+of proofs at this level of technical difficulty is feasible and useful.
+Second, the library situation is favourable: \textsf{mathlib}
+\cite{mathlib20} contains the finite set combinatorics, ordered field and
+special function material needed for the statement of the criterion, and
+recent formalisations in stochastic analysis \cite{BM25} and high energy
+physics tooling \cite{HepLean} indicate growing infrastructure on the
+mathematical physics side. To our knowledge no cluster expansion material is
+currently available in \textsf{mathlib}.
+
+The present note documents the first two steps. First, a machine-checked
+proof of the fundamental recursion for the polymer partition function, in a
+generality (commutative ring valued weights) that covers the real, complex
+and formal power series cases occurring in applications. Second, a complete
+proof of a convergence criterion: the Dobrushin product-form condition
+implies nonvanishing of $Z$ together with the ratio bound that controls the
+effect of deleting a polymer. The development is about 400 lines of Lean,
+compiles against current \textsf{mathlib}, and contains no \texttt{sorry}
+placeholders. The classical Kotecký--Preiss criterion in sum form is stated
+as a definition; the formalisation made unusually explicit why its proof
+requires a different induction, as discussed in Section~\ref{sec:kp}.
+
+\section{The abstract setting}
+
+\begin{definition}
+A \emph{polymer system} on a type $\iota$ consists of a relation
+$\iota \times \iota \to \{\mathrm{true},\mathrm{false}\}$, written
+$\gamma \nsim \delta$, that is symmetric and satisfies
+$\gamma \nsim \gamma$ for every $\gamma$. A finite set
+$S \subseteq \iota$ is \emph{independent} if $\gamma \sim \delta$ for all
+distinct $\gamma, \delta \in S$.
+\end{definition}
+
+\begin{definition}
+Let $R$ be a commutative ring, $w \colon \iota \to R$, and let
+$\Lambda \subseteq \iota$ be finite. The \emph{partition function} is
+\[
+  Z(\Lambda) \;=\; \sum_{\substack{S \subseteq \Lambda \\ S \text{
+  independent}}} \; \prod_{\gamma \in S} w(\gamma),
+\]
+the empty set contributing the term $1$.
+\end{definition}
+
+For $\gamma \in \Lambda$ write
+$N^*(\gamma) = \{\delta \in \Lambda : \delta \nsim \gamma\}$ for the closed
+incompatibility neighbourhood, so that $\gamma \in N^*(\gamma)$, and
+$\Lambda_\gamma = \Lambda \setminus N^*(\gamma)$ for the set of polymers in
+$\Lambda$ compatible with $\gamma$.
+
+\begin{theorem}[fundamental recursion]\label{thm:rec}
+For every finite $\Lambda$ and every $\gamma \in \Lambda$,
+\[
+  Z(\Lambda) \;=\; Z(\Lambda \setminus \{\gamma\})
+  \;+\; w(\gamma)\, Z(\Lambda_\gamma).
+\]
+\end{theorem}
+
+\begin{proof}
+Split the sum defining $Z(\Lambda)$ according to whether $\gamma \in S$.
+The independent sets not containing $\gamma$ are exactly the independent
+subsets of $\Lambda \setminus \{\gamma\}$. The independent sets containing
+$\gamma$ are of the form $S = \{\gamma\} \cup T$ with
+$T \subseteq \Lambda_\gamma$ independent, and this correspondence
+$S \mapsto S \setminus \{\gamma\}$ is a bijection; the associated products
+factor as $w(\gamma) \prod_{\delta \in T} w(\delta)$.
+\end{proof}
+
+The recursion is the engine of the ratio-telescoping induction, which
+yields the following convergence criterion, stated here in the product
+(Dobrushin) form; see \cite{SS05} for the surrounding theory.
+
+\begin{theorem}[Dobrushin criterion; formalised]\label{thm:dob}
+Let $w, \mu \colon \iota \to \mathbb{R}$ with $\mu \ge 0$ on $\Lambda$, and
+suppose that for every $\gamma \in \Lambda$
+\[
+  \lvert w(\gamma)\rvert \prod_{\substack{\delta \in \Lambda \\ \delta
+  \nsim \gamma}} \bigl(1 + \mu(\delta)\bigr) \;\le\; \mu(\gamma),
+\]
+the product running over the closed incompatibility neighbourhood. Then
+$Z(\Lambda) \neq 0$, and for every $\gamma \in \Lambda$,
+\[
+  \lvert Z(\Lambda \setminus \{\gamma\})\rvert \;\le\;
+  \bigl(1 + \mu(\gamma)\bigr)\, \lvert Z(\Lambda)\rvert .
+\]
+\end{theorem}
+
+\begin{proof}[Proof (as formalised)]
+Strong induction on $\lvert\Lambda\rvert$; the two statements are proved
+simultaneously and no division occurs anywhere. Given $\gamma \in \Lambda$,
+one first shows by an inner induction that deleting any set $E$ from a
+proper subset $S$ costs at most the factor $\prod_{\delta \in E}(1 +
+\mu(\delta))$, each single deletion being controlled by the outer induction
+hypothesis. Applying this with $S = \Lambda \setminus \{\gamma\}$ and $E$
+the incompatibility neighbourhood of $\gamma$ bounds
+$\lvert Z(\Lambda_\gamma)\rvert$; the recursion of Theorem~\ref{thm:rec}
+and the triangle inequality then give
+$\lvert Z(\Lambda \setminus \{\gamma\})\rvert \le \lvert Z(\Lambda)\rvert +
+c\,\lvert Z(\Lambda \setminus \{\gamma\})\rvert$ with
+$c = \lvert w(\gamma)\rvert \prod_{\delta \in D}(1 + \mu(\delta))$, and the
+hypothesis, rewritten as $c\,(1 + \mu(\gamma)) \le \mu(\gamma)$ after
+splitting off the factor for $\delta = \gamma$, closes the estimate.
+Nonvanishing follows by applying the ratio bound at any single polymer.
+\end{proof}
+
+\section{The formalisation}
+
+The development lives in a single file \texttt{ClusterExpansion.lean} inside
+a Lean~4 project depending on \textsf{mathlib}. We record the design
+decisions that shaped it.
+
+\subsection{Decidability by construction}
+The incompatibility relation is carried as a \texttt{Bool}-valued function
+rather than a \texttt{Prop}-valued one:
+
+\begin{lstlisting}
+structure PolymerSystem (i : Type*) where
+  incomp : i -> i -> Bool
+  symm   : forall g d, incomp g d = incomp d g
+  refl   : forall g, incomp g g = true
+\end{lstlisting}
+
+Independence is then a decidable predicate for free, which is what permits
+the partition function to be written as a sum over a filtered powerset,
+\begin{lstlisting}
+def Z (L : Finset i) : R :=
+  Sum_{S in L.powerset.filter (fun S => Indep P S)}
+    Prod_{g in S} w g
+\end{lstlisting}
+(displayed here in mathematical notation; the source uses the
+\textsf{mathlib} big operator syntax). No classical choice is needed to
+\emph{state} anything; \texttt{classical} is invoked only inside the main
+proof for convenience.
+
+\subsection{Generality of the weight ring}
+Theorem~\ref{thm:rec} is purely combinatorial, and the formal statement
+quantifies over an arbitrary \texttt{CommRing}. This matters for the
+intended applications: cluster expansions are routinely applied with complex
+weights and with weights in rings of formal power series, and the analytic
+hypotheses enter only later, through the convergence criteria.
+
+\subsection{The bijection}
+The formal proof follows the paper proof. The sum is split with
+\texttt{sum\_filter\_add\_sum\_filter\_not}; the first half is identified
+with $Z(\Lambda \setminus \{\gamma\})$ by an extensionality argument on the
+filtered powersets, using
+$S \subseteq \Lambda \setminus \{\gamma\} \leftrightarrow
+S \subseteq \Lambda \wedge \gamma \notin S$. The second half is treated with
+\texttt{Finset.sum\_bij'}, the bijection being
+$S \mapsto S \setminus \{\gamma\}$ with inverse
+$T \mapsto \{\gamma\} \cup T$. The single nontrivial lemma feeding the
+bijection is:
+
+\begin{lstlisting}
+theorem indep_insert_iff (hT : T <= compat P L g) :
+    Indep P (insert g T) <-> Indep P T
+\end{lstlisting}
+
+\noindent
+whose proof is a case analysis using symmetry of the relation. The product
+identity $\prod_{S} w = w(\gamma)\prod_{S \setminus \{\gamma\}} w$ is
+\texttt{Finset.prod\_insert} applied after rewriting $S$ as
+\texttt{insert} $\gamma$ \texttt{(S.erase} $\gamma$\texttt{)}.
+
+\section{Why the sum form is not a corollary}\label{sec:kp}
+
+The classical Kotecký--Preiss criterion \cite{KP86} is stated in sum form:
+$a \ge 0$ and, for every $\gamma \in \Lambda$,
+\[
+  \sum_{\substack{\delta \in \Lambda \\ \delta \nsim \gamma}}
+  \lvert w(\delta)\rvert \, e^{a(\delta)} \;\le\; a(\gamma).
+\]
+It is tempting to expect Theorem~\ref{thm:dob} to yield this by the
+substitution $\mu = e^{a} - 1$; the formalisation forced us to notice that
+it does not. The telescoping argument produces \emph{products} of the
+factors $1 + \mu(\delta)$ over a neighbourhood, and the sum-form hypothesis
+bounds a \emph{sum} over the same neighbourhood; there is no pointwise
+implication in either direction. A two-polymer example makes this concrete:
+for a pair of mutually incompatible polymers with equal weights $w$ and
+equal $a$, the sum condition permits $w = a e^{-a}/2$, while the product
+condition at $\mu = e^{a} - 1$ demands $a/2 \le 1 - e^{-a}$, which fails for
+$a$ beyond roughly $1.59$. The two criteria are genuinely different
+theorems. The sum form is proved in the literature by an induction over
+clusters with tree-graph bounds (see \cite[Chapter~5]{FV17}); formalising
+that induction, and then the convergent expansion for $\log Z$ itself, with
+the Fernández--Procacci refinement \cite{FP07} as a further target, is the
+next stage of this programme. In the development the sum-form condition is
+present as a definition, deliberately without an accompanying unproved
+theorem.
+
+\section{Related work}
+
+We are not aware of prior formalisations of cluster expansion material in
+any proof assistant. On the neighbouring shelves, \textsf{mathlib}
+\cite{mathlib20} supplies the combinatorial and analytic prerequisites; the
+recent formalisation of Brownian motion \cite{BM25} built Gaussian measure
+and Kolmogorov extension infrastructure relevant to constructive field
+theory; and the PhysLean effort \cite{HepLean} is assembling high energy
+physics definitions in Lean. The exposition of Balaban's renormalisation
+group method by Dimock \cite{Dim13a,Dim13b,Dim13c} is the natural blueprint
+document for the larger programme, in the sense of the blueprint-driven
+formalisations pioneered around \cite{LTE}.
+
+\section{Availability}
+
+The development (project \texttt{KPLean}, file
+\texttt{KPLean/ClusterExpansion.lean}, Lean toolchain \texttt{v4.33.1})
+builds with \texttt{lake build} against the \textsf{mathlib} version pinned
+in the accompanying manifest. It is currently distributed as part of a
+larger repository of the author; extraction into a standalone repository is
+planned.
+
+\subsection*{Acknowledgements}
+The formalisation and this note were produced with substantial assistance
+from an AI system (Claude, Anthropic), including proof drafting and
+literature checks; all remaining errors are the author's.
+
+\begin{thebibliography}{9}
+
+\bibitem{KP86} R.~Kotecký and D.~Preiss, \emph{Cluster expansion for
+abstract polymer models}, Comm. Math. Phys. \textbf{103} (1986), 491--498.
+
+\bibitem{FV17} S.~Friedli and Y.~Velenik, \emph{Statistical Mechanics of
+Lattice Systems: A Concrete Mathematical Introduction}, Cambridge University
+Press, 2017.
+
+\bibitem{FP07} R.~Fernández and A.~Procacci, \emph{Cluster expansion for
+abstract polymer models: new bounds from an old approach}, Comm. Math. Phys.
+\textbf{274} (2007), 123--140.
+
+\bibitem{SS05} A.~D.~Scott and A.~D.~Sokal, \emph{The repulsive lattice
+gas, the independent-set polynomial, and the Lovász local lemma}, J. Stat.
+Phys. \textbf{118} (2005), 1151--1261.
+
+\bibitem{Dim13a} J.~Dimock, \emph{The renormalization group according to
+Balaban I: small fields}, Rev. Math. Phys. \textbf{25} (2013), 1330010;
+arXiv:1108.1335.
+
+\bibitem{Dim13b} J.~Dimock, \emph{The renormalization group according to
+Balaban II: large fields}, J. Math. Phys. \textbf{54} (2013), 092301;
+arXiv:1212.5562.
+
+\bibitem{Dim13c} J.~Dimock, \emph{The renormalization group according to
+Balaban III: convergence}, Ann. Henri Poincaré \textbf{15} (2014),
+2133--2175; arXiv:1304.0705.
+
+\bibitem{LTE} J.~Commelin and A.~Topaz, \emph{Abstraction boundaries and
+spec driven development in pure mathematics}, Bull. Amer. Math. Soc.
+\textbf{61} (2024), 241--255; see also the Liquid Tensor Experiment,
+\url{https://leanprover-community.github.io/blog/posts/lte-final/}.
+
+\bibitem{mathlib20} The mathlib Community, \emph{The Lean mathematical
+library}, in: Proc. 9th ACM SIGPLAN Int. Conf. on Certified Programs and
+Proofs (CPP 2020), 367--381.
+
+\bibitem{BM25} R.~Degenne, P.~Ledvinka, E.~Marion and P.~Pfaffelhuber,
+\emph{A formalization of Brownian motion in Lean}, arXiv:2511.20118.
+
+\bibitem{HepLean} J.~Tooby-Smith, \emph{HepLean: digitalising high energy
+physics}, arXiv:2405.08863.
+
+\end{thebibliography}
+
+\end{document}
