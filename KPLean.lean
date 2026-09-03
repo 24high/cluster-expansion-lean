@@ -7,3 +7,4 @@ import KPLean.ClusterExpansion
 import KPLean.Ursell
 import KPLean.Mayer
 import KPLean.ClusterSeries
+import KPLean.Exponential
