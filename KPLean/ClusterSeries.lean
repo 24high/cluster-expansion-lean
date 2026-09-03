@@ -228,4 +228,156 @@ theorem abs_clusterSeries_le (w : ι → ℝ) (Λ : Finset ι)
           / (1 - Real.exp 1 * ∑ x ∈ Λ, |w x|) := by
         rw [div_eq_mul_inv]
 
+/-! ## Die verankerte Reihe
+
+Für die Volumendifferenzen `log Z Λ - log Z (Λ ∖ {γ₀})` zählt nur der
+bei `γ₀` verankerte Teil der Reihe. Hier die grobe Form seiner
+Summierbarkeit: die Betragsreihe der bei `γ₀` verankerten Tupel ist
+im Kleinheitsregime durch `e · |w γ₀| / (1 - e · ∑_Λ |w|)` beschränkt —
+proportional zum Gewicht des Ankers, gleichmäßig im Volumen. -/
+
+/-- Der bei `γ₀` verankerte Betrags-Beitrag der Ordnung `n + 1`: Summe
+über die Tupel aus `Λ` mit erster Koordinate `γ₀`. -/
+noncomputable def pinnedOrderSum (w : ι → ℝ) (Λ : Finset ι) (γ₀ : ι)
+    (n : ℕ) : ℝ :=
+  ∑ γ ∈ (Fintype.piFinset fun _ : Fin (n + 1) => Λ).filter
+      fun γ => γ 0 = γ₀,
+    |(ursellInt P γ : ℝ)| * ∏ i, |w (γ i)|
+
+theorem pinnedOrderSum_nonneg (w : ι → ℝ) (Λ : Finset ι) (γ₀ : ι) (n : ℕ) :
+    0 ≤ pinnedOrderSum P w Λ γ₀ n :=
+  Finset.sum_nonneg fun _γ _ => mul_nonneg (abs_nonneg _)
+    (Finset.prod_nonneg fun _i _ => abs_nonneg _)
+
+/-- Gewichtsschranke für den verankerten Beitrag: Wurzelbaum-Schranke je
+Tupel, ein Faktor `|w γ₀|` für den Anker, die Gewichtssumme für die
+übrigen `n` Koordinaten. -/
+theorem pinnedOrderSum_le (w : ι → ℝ) (Λ : Finset ι) (γ₀ : ι) (n : ℕ) :
+    pinnedOrderSum P w Λ γ₀ n
+      ≤ ((n : ℝ) + 1) ^ n * |w γ₀| * (∑ x ∈ Λ, |w x|) ^ n := by
+  have hterm : ∀ γ ∈ (Fintype.piFinset fun _ : Fin (n + 1) => Λ).filter
+      fun γ => γ 0 = γ₀,
+      |(ursellInt P γ : ℝ)| * ∏ i, |w (γ i)|
+        ≤ ((n : ℝ) + 1) ^ n * |w γ₀| * ∏ i : Fin n, |w (γ i.succ)| := by
+    intro γ hγ
+    have hpin : γ 0 = γ₀ := (Finset.mem_filter.mp hγ).2
+    have hsplit : ∏ i, |w (γ i)| = |w γ₀| * ∏ i : Fin n, |w (γ i.succ)| := by
+      rw [Fin.prod_univ_succ, hpin]
+    rw [hsplit, ← mul_assoc]
+    refine mul_le_mul_of_nonneg_right (mul_le_mul_of_nonneg_right ?_
+      (abs_nonneg _)) (Finset.prod_nonneg fun i _ => abs_nonneg _)
+    calc |(ursellInt P γ : ℝ)| = ((|ursellInt P γ| : ℤ) : ℝ) := by
+          rw [Int.cast_abs]
+      _ ≤ ((((n + 1) ^ n : ℕ) : ℤ) : ℝ) := by
+          exact_mod_cast abs_ursellInt_le_pow P γ
+      _ = ((n : ℝ) + 1) ^ n := by push_cast; ring
+  have hsum : ∑ γ ∈ (Fintype.piFinset fun _ : Fin (n + 1) => Λ).filter
+        fun γ => γ 0 = γ₀, ∏ i : Fin n, |w (γ i.succ)|
+      ≤ (∑ x ∈ Λ, |w x|) ^ n := by
+    by_cases hγ₀ : γ₀ ∈ Λ
+    · have hbij : ∑ γ ∈ (Fintype.piFinset fun _ : Fin (n + 1) => Λ).filter
+            fun γ => γ 0 = γ₀, ∏ i : Fin n, |w (γ i.succ)|
+          = ∑ g ∈ Fintype.piFinset fun _ : Fin n => Λ,
+              ∏ i : Fin n, |w (g i)| := by
+        refine Finset.sum_nbij' (fun γ => Fin.tail γ)
+          (fun g => Fin.cons γ₀ g) ?_ ?_ ?_ ?_ ?_
+        · intro γ hγ
+          have hmem := (Finset.mem_filter.mp hγ).1
+          exact Fintype.mem_piFinset.mpr fun i =>
+            Fintype.mem_piFinset.mp hmem i.succ
+        · intro g hg
+          refine Finset.mem_filter.mpr ⟨Fintype.mem_piFinset.mpr fun i => ?_,
+            Fin.cons_zero _ _⟩
+          induction i using Fin.cases with
+          | zero => rw [Fin.cons_zero]; exact hγ₀
+          | succ j => rw [Fin.cons_succ]; exact Fintype.mem_piFinset.mp hg j
+        · intro γ hγ
+          have hpin : γ 0 = γ₀ := (Finset.mem_filter.mp hγ).2
+          rw [← hpin]
+          exact Fin.cons_self_tail γ
+        · intro g _
+          exact Fin.tail_cons (α := fun _ => ι) γ₀ g
+        · intro γ _
+          rfl
+      rw [hbij]
+      have hpow := Finset.prod_univ_sum
+        (fun _ : Fin n => Λ) (fun _ x => |w x|)
+      rw [← hpow, Finset.prod_const, Finset.card_univ, Fintype.card_fin]
+    · have hempty : (Fintype.piFinset fun _ : Fin (n + 1) => Λ).filter
+          (fun γ => γ 0 = γ₀) = ∅ := by
+        rw [Finset.eq_empty_iff_forall_notMem]
+        intro γ hγ
+        obtain ⟨hmem, hpin⟩ := Finset.mem_filter.mp hγ
+        exact hγ₀ (hpin ▸ Fintype.mem_piFinset.mp hmem 0)
+      rw [hempty, Finset.sum_empty]
+      exact pow_nonneg (Finset.sum_nonneg fun x _ => abs_nonneg _) n
+  calc pinnedOrderSum P w Λ γ₀ n
+      ≤ ∑ γ ∈ (Fintype.piFinset fun _ : Fin (n + 1) => Λ).filter
+          fun γ => γ 0 = γ₀,
+          ((n : ℝ) + 1) ^ n * |w γ₀| * ∏ i : Fin n, |w (γ i.succ)| :=
+        Finset.sum_le_sum hterm
+    _ = ((n : ℝ) + 1) ^ n * |w γ₀|
+          * ∑ γ ∈ (Fintype.piFinset fun _ : Fin (n + 1) => Λ).filter
+              fun γ => γ 0 = γ₀, ∏ i : Fin n, |w (γ i.succ)| := by
+        rw [Finset.mul_sum]
+    _ ≤ ((n : ℝ) + 1) ^ n * |w γ₀| * (∑ x ∈ Λ, |w x|) ^ n :=
+        mul_le_mul_of_nonneg_left hsum
+          (mul_nonneg (by positivity) (abs_nonneg _))
+
+/-- Geometrische Schranke für das verankerte Reihenglied. -/
+theorem pinnedCoeff_le (w : ι → ℝ) (Λ : Finset ι) (γ₀ : ι) (n : ℕ) :
+    pinnedOrderSum P w Λ γ₀ n / (Nat.factorial (n + 1) : ℝ)
+      ≤ Real.exp 1 * |w γ₀| * (Real.exp 1 * ∑ x ∈ Λ, |w x|) ^ n := by
+  have hfac : (0 : ℝ) < (Nat.factorial (n + 1) : ℝ) := by positivity
+  calc pinnedOrderSum P w Λ γ₀ n / (Nat.factorial (n + 1) : ℝ)
+      ≤ (((n : ℝ) + 1) ^ n * |w γ₀| * (∑ x ∈ Λ, |w x|) ^ n)
+          / (Nat.factorial (n + 1) : ℝ) := by
+        gcongr
+        exact pinnedOrderSum_le P w Λ γ₀ n
+    _ = ((n : ℝ) + 1) ^ n / (Nat.factorial (n + 1) : ℝ)
+          * (|w γ₀| * (∑ x ∈ Λ, |w x|) ^ n) := by
+        ring
+    _ ≤ Real.exp ((n : ℝ) + 1) * (|w γ₀| * (∑ x ∈ Λ, |w x|) ^ n) :=
+        mul_le_mul_of_nonneg_right (pow_div_factorial_le n)
+          (mul_nonneg (abs_nonneg _)
+            (pow_nonneg (Finset.sum_nonneg fun x _ => abs_nonneg _) n))
+    _ = Real.exp 1 * |w γ₀| * (Real.exp 1 * ∑ x ∈ Λ, |w x|) ^ n := by
+        have hexp : Real.exp ((n : ℝ) + 1) = Real.exp 1 * Real.exp 1 ^ n := by
+          rw [Real.exp_add, ← Real.exp_one_pow]
+          ring
+        rw [hexp, mul_pow]
+        ring
+
+/-- **Verankerte Summierbarkeit (grobe Form)**: im Kleinheitsregime ist
+die bei `γ₀` verankerte Betragsreihe durch `e · |w γ₀| / (1 - e · W)`
+beschränkt — proportional zum Gewicht des Ankers, gleichmäßig im
+Volumen. Die scharfe Kotecký-Preiss-Form ersetzt die Wurzelbaum-Zählung
+durch Baumzahlen mit vorgeschriebenen Graden. -/
+theorem tsum_pinned_le (w : ι → ℝ) (Λ : Finset ι) (γ₀ : ι)
+    (h : Real.exp 1 * ∑ x ∈ Λ, |w x| < 1) :
+    ∑' n, pinnedOrderSum P w Λ γ₀ n / (Nat.factorial (n + 1) : ℝ)
+      ≤ Real.exp 1 * |w γ₀|
+          / (1 - Real.exp 1 * ∑ x ∈ Λ, |w x|) := by
+  have hr0 : (0 : ℝ) ≤ Real.exp 1 * ∑ x ∈ Λ, |w x| :=
+    mul_nonneg (Real.exp_pos 1).le (Finset.sum_nonneg fun x _ => abs_nonneg _)
+  have hgeom : Summable fun n : ℕ =>
+      Real.exp 1 * |w γ₀| * (Real.exp 1 * ∑ x ∈ Λ, |w x|) ^ n :=
+    (summable_geometric_of_lt_one hr0 h).mul_left _
+  have hpinned : Summable fun n =>
+      pinnedOrderSum P w Λ γ₀ n / (Nat.factorial (n + 1) : ℝ) :=
+    Summable.of_nonneg_of_le
+      (fun n => div_nonneg (pinnedOrderSum_nonneg P w Λ γ₀ n) (by positivity))
+      (fun n => pinnedCoeff_le P w Λ γ₀ n) hgeom
+  calc ∑' n, pinnedOrderSum P w Λ γ₀ n / (Nat.factorial (n + 1) : ℝ)
+      ≤ ∑' n : ℕ, Real.exp 1 * |w γ₀|
+          * (Real.exp 1 * ∑ x ∈ Λ, |w x|) ^ n :=
+        Summable.tsum_le_tsum (fun n => pinnedCoeff_le P w Λ γ₀ n)
+          hpinned hgeom
+    _ = Real.exp 1 * |w γ₀|
+          * (1 - Real.exp 1 * ∑ x ∈ Λ, |w x|)⁻¹ := by
+        rw [tsum_mul_left, tsum_geometric_of_lt_one hr0 h]
+    _ = Real.exp 1 * |w γ₀|
+          / (1 - Real.exp 1 * ∑ x ∈ Λ, |w x|) := by
+        rw [div_eq_mul_inv]
+
 end ClusterExpansion
