@@ -44,7 +44,12 @@ combinatorial layer of the cluster series: Ursell functions as
 alternating sums over connected spanning subgraphs of the
 incompatibility graph, and Penrose's tree--graph bound
 $\lvert \varphi^{T} \rvert \le \#\{\text{spanning trees}\}$, proved via a
-complete formalisation of the Penrose partition scheme.
+complete formalisation of the Penrose partition scheme; and the Mayer
+graph expansion of $Z$ together with the finite cluster recursion
+$Z(\Lambda) = Z(\Lambda \setminus \{\gamma_0\})
++ \sum_{\gamma_0 \in B \subseteq \Lambda} w^{B} \varphi(B)
+Z(\Lambda \setminus B)$ — the exponential structure of the expansion —
+over arbitrary commutative rings.
 An earlier version of this note claimed that the sum form was not
 obtainable from the product form; the formalisation of the comparison
 argument corrected this, and we document both the error and its repair.
@@ -97,9 +102,12 @@ the Fernández--Procacci form. Fourth, the Fernández--Procacci criterion
 itself, via the recent inductive proof of Fialho \cite{Fia20}. Fifth, the
 combinatorial base of the cluster series: Ursell functions and Penrose's
 tree--graph bound \cite{Pen67}, via the Penrose partition scheme
-(Section~\ref{sec:ursell}). The development is about 2000 lines of Lean
-in two files, compiles against current \textsf{mathlib}, and contains no
-\texttt{sorry} placeholders.
+(Section~\ref{sec:ursell}). Sixth, the Mayer graph expansion \cite{MM41}
+and the finite cluster recursion — the exponential structure of the
+expansion — over arbitrary commutative rings
+(Section~\ref{sec:mayer}). The development is about 2700 lines of Lean
+in three files, compiles against current \textsf{mathlib}, and contains
+no \texttt{sorry} placeholders.
 Section~\ref{sec:kp} documents a claim made in an earlier version of this
 note that the formalisation subsequently refuted.
 
@@ -369,11 +377,12 @@ place of positivity. Combining the two stages yields the theorem.
 
 Since the FP condition is the weakest of the three hypotheses,
 Theorem~\ref{thm:fp} subsumes the nonvanishing statements of
-Theorems~\ref{thm:dob} and~\ref{thm:kp}. The combinatorial layer of the
-convergent Ursell-series expansion of $\log Z$ — Ursell functions and the
-tree--graph bound — is formalised in Section~\ref{sec:ursell}; the
-remaining analytic layer is the exponential formula and the summability
-estimate over clusters.
+Theorems~\ref{thm:dob} and~\ref{thm:kp}. The combinatorial layers of the
+convergent Ursell-series expansion of $\log Z$ — Ursell functions, the
+tree--graph bound, and the Mayer/cluster recursion — are formalised in
+Sections~\ref{sec:ursell} and~\ref{sec:mayer}; the remaining analytic
+layer is the identification of the iterated recursion with the
+convergent series and the summability estimate over clusters.
 
 \section{Ursell functions and the tree--graph bound}\label{sec:ursell}
 
@@ -433,6 +442,66 @@ proved as \texttt{ursellInt\_single} and \texttt{ursellInt\_pair}. The
 graph theory used (walks, distances, connectivity, the characterisation
 of trees by edge count) is \textsf{mathlib}'s; the BFS layer structure,
 the Penrose parent map and the interval decomposition are ours.
+
+\section{The Mayer expansion and the cluster recursion}\label{sec:mayer}
+
+The bridge from the criteria of Section~\ref{sec:consequences} to the
+cluster series of $\log Z$ is the exponential structure of $Z$, whose
+finite, purely algebraic layer is now formalised
+(\texttt{KPLean/Mayer.lean}) over an arbitrary commutative ring of
+weights. First, the Mayer graph expansion \cite{MM41}:
+
+\begin{theorem}[\texttt{Z\_eq\_sum\_graphs}]\label{thm:mayer}
+\[
+  Z(\Lambda) = \sum_{S \subseteq \Lambda}
+  \Bigl(\prod_{\gamma \in S} w(\gamma)\Bigr)
+  \sum_{G \subseteq \mathcal{E}(S)} (-1)^{\lvert G \rvert},
+\]
+where $\mathcal{E}(S)$ is the set of incompatibility edges inside $S$.
+\end{theorem}
+
+The inner alternating sum is $1$ or $0$ according to whether
+$\mathcal{E}(S)$ is empty; it replaces the independence indicator.
+Second, splitting each Mayer pair $(S, G)$ along the connected
+component of a fixed polymer:
+
+\begin{theorem}[cluster recursion; \texttt{Z\_cluster\_recursion}]
+\label{thm:cluster}
+For every polymer $\gamma_0$,
+\[
+  Z(\Lambda) = Z(\Lambda \setminus \{\gamma_0\})
+  + \sum_{\gamma_0 \in B \subseteq \Lambda}
+    \Bigl(\prod_{\gamma \in B} w(\gamma)\Bigr)\, \varphi(B)\,
+    Z(\Lambda \setminus B),
+\]
+where $\varphi(B) = \sum_{G} (-1)^{\lvert G \rvert}$ runs over the
+connected spanning subgraphs of the incompatibility graph of $B$
+(\texttt{ursellSetSum}; $\varphi(\{\gamma\}) = 1$ and
+$\varphi(\{\gamma, \delta\}) = -1$ for an incompatible pair).
+\end{theorem}
+
+\begin{proof}[Proof as formalised]
+Expand $Z(\Lambda)$ by Theorem~\ref{thm:mayer} and split the outer sum
+by $\gamma_0 \in S$; the $\gamma_0$-free part re-sums to
+$Z(\Lambda \setminus \{\gamma_0\})$. The remaining Mayer pairs $(S, G)$
+are fibred over the connected component $B$ of $\gamma_0$
+(\texttt{component}), and each fibre is in explicit bijection with the
+pairs of a connected spanning graph on $B$ and a Mayer pair on
+$\Lambda \setminus B$: walk lemmas (\texttt{walk\_stays},
+\texttt{walk\_transfer}) show that no edge of $G$ crosses the component
+boundary (\texttt{fiber\_split}), that the restriction of $G$ to $B$
+connects $B$ (\texttt{component\_conn}), and that the component of the
+recombined pair is again $B$ (\texttt{component\_union}). Weights and
+signs factorise along the split, and the inner double sum re-sums to
+$Z(\Lambda \setminus B)$ by Theorem~\ref{thm:mayer} in pair form
+(\texttt{Z\_eq\_sum\_pairs}).
+\end{proof}
+
+Iterating Theorem~\ref{thm:cluster} generates the cluster series; what
+remains for the full expansion of $\log Z$ is the analytic layer — the
+identification of the iterated recursion with the convergent series and
+the Kotecký--Preiss summability estimate over clusters, for which
+Theorem~\ref{thm:penrose} supplies the tree--graph input.
 
 \section{A corrected claim}\label{sec:kp}
 
@@ -503,6 +572,9 @@ abstract polymer models: new bounds from an old approach}, Comm. Math. Phys.
 \bibitem{Fia20} P.~M.~S.~Fialho, \emph{Abstract polymer gas: a simple
 inductive proof of the Fernández--Procacci criterion}, J. Stat. Phys.
 \textbf{178} (2020), 1354--1361; arXiv:2001.00652.
+
+\bibitem{MM41} J.~E.~Mayer and E.~Montroll, \emph{Molecular
+distribution}, J. Chem. Phys. \textbf{9} (1941), 2--16.
 
 \bibitem{Pen67} O.~Penrose, \emph{Convergence of fugacity expansions for
 classical systems}, in T.~A.~Bak (ed.), \emph{Statistical Mechanics:

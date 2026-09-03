@@ -32,8 +32,9 @@ limits, analyticity of free energies, and the convergence estimates of
 the expansion. This repository machine-checks the three classical
 answers — the criteria of Kotecký–Preiss, Dobrushin, and
 Fernández–Procacci — together with the recursion they all rest on, and
-the first combinatorial layer of the cluster series itself: Ursell
-functions and the Penrose tree–graph bound.
+the combinatorial layers of the cluster series itself: Ursell functions,
+the Penrose tree–graph bound, and the Mayer expansion with its finite
+cluster recursion.
 
 ## Main results
 
@@ -100,7 +101,25 @@ All in `KPLean/ClusterExpansion.lean`, namespace `ClusterExpansion`:
   vertex hanging on its least neighbour in the layer below), the fibres
   of this map are set intervals `[T, penroseExt H T]`, and the
   alternating sum vanishes on every nontrivial interval — so at most one
-  `±1` survives per spanning tree.
+  `±1` survives per spanning tree;
+
+- **the Mayer expansion and the finite cluster recursion**
+  (`KPLean/Mayer.lean`), over any commutative ring: the graph expansion
+
+  `Z Λ = Σ_{S ⊆ Λ} (Π_{γ ∈ S} w γ) · Σ_{G ⊆ E(S)} (−1)^{|G|}`
+
+  (`Z_eq_sum_graphs`, where `E(S)` are the incompatibility edges inside
+  `S` — the inner alternating sum replaces the independence indicator),
+  and, splitting each Mayer pair `(S, G)` along the connected component
+  of a fixed polymer `γ₀`, the **cluster recursion**
+
+  `Z Λ = Z (Λ ∖ {γ₀}) + Σ_{γ₀ ∈ B ⊆ Λ} (Π_{γ ∈ B} w γ) · φ(B) · Z (Λ ∖ B)`
+
+  (`Z_cluster_recursion`), with `φ(B)` the set-level Ursell sign sum
+  over connected spanning subgraphs of `B`'s incompatibility graph
+  (`ursellSetSum`; `φ({γ}) = 1`, `φ({γ, δ}) = −1` for an incompatible
+  pair). This is the finite exponential structure of the cluster
+  expansion: iterating it generates the cluster series of `log Z`.
 
 The hierarchy is strict: a single self-incompatible polymer of weight
 `1/2` satisfies the Dobrushin condition with `μ = 1`, while
@@ -127,6 +146,7 @@ The toolchain (`lean-toolchain`) and the mathlib revision
 | --- | --- |
 | `KPLean/ClusterExpansion.lean` | polymer systems, `Z`, the recursion, the Dobrushin and Kotecký–Preiss criteria, log-bounds, the FP hierarchy |
 | `KPLean/Ursell.lean` | Ursell functions, the Penrose partition scheme, the tree–graph bound |
+| `KPLean/Mayer.lean` | Mayer expansion, connected components, the finite cluster recursion |
 | `paper/kp-formalisation.tex` | LaTeX note describing the formalisation |
 
 ## Background
@@ -180,8 +200,10 @@ intended.
 - [x] Ursell functions as alternating sums over connected spanning
       subgraphs, and the Penrose tree–graph bound
       `|φᵀ| ≤ #spanning trees` via the Penrose partition scheme
-- [ ] convergent cluster (Ursell) series for `log Z`: the exponential
-      formula identifying `log Z` with the cluster series, and the
+- [x] Mayer expansion of `Z` and the finite cluster recursion — the
+      exponential structure of the expansion, over any commutative ring
+- [ ] the analytic layer: identification of the iterated cluster
+      recursion with the convergent cluster series for `log Z`, and the
       Kotecký–Preiss summability estimate over clusters (via counts of
       labelled trees with prescribed degrees) — the remaining milestone
 
