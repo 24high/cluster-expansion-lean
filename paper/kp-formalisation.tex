@@ -49,7 +49,13 @@ graph expansion of $Z$ together with the finite cluster recursion
 $Z(\Lambda) = Z(\Lambda \setminus \{\gamma_0\})
 + \sum_{\gamma_0 \in B \subseteq \Lambda} w^{B} \varphi(B)
 Z(\Lambda \setminus B)$ — the exponential structure of the expansion —
-over arbitrary commutative rings.
+over arbitrary commutative rings. On the analytic side, the cluster
+series of $\log Z$ is defined as a genuine infinite sum over orders and
+proved absolutely convergent in the small-weight regime
+$e \sum_{\Lambda} \lvert w \rvert < 1$, with geometric term bounds via a
+root-tree count extracted from the Penrose scheme, and with an anchored
+bound proportional to the weight of the anchoring polymer, uniformly in
+the volume.
 An earlier version of this note claimed that the sum form was not
 obtainable from the product form; the formalisation of the comparison
 argument corrected this, and we document both the error and its repair.
@@ -105,9 +111,11 @@ tree--graph bound \cite{Pen67}, via the Penrose partition scheme
 (Section~\ref{sec:ursell}). Sixth, the Mayer graph expansion \cite{MM41}
 and the finite cluster recursion — the exponential structure of the
 expansion — over arbitrary commutative rings
-(Section~\ref{sec:mayer}). The development is about 2700 lines of Lean
-in three files, compiles against current \textsf{mathlib}, and contains
-no \texttt{sorry} placeholders.
+(Section~\ref{sec:mayer}). Seventh, the cluster series of $\log Z$ as an
+analytic object, with absolute convergence and anchored bounds in the
+small-weight regime (Section~\ref{sec:series}). The development is about
+3100 lines of Lean in four files, compiles against current
+\textsf{mathlib}, and contains no \texttt{sorry} placeholders.
 Section~\ref{sec:kp} documents a claim made in an earlier version of this
 note that the formalisation subsequently refuted.
 
@@ -501,7 +509,81 @@ Iterating Theorem~\ref{thm:cluster} generates the cluster series; what
 remains for the full expansion of $\log Z$ is the analytic layer — the
 identification of the iterated recursion with the convergent series and
 the Kotecký--Preiss summability estimate over clusters, for which
-Theorem~\ref{thm:penrose} supplies the tree--graph input.
+Theorem~\ref{thm:penrose} supplies the tree--graph input. The first
+analytic step, the series itself and its convergence in the small-weight
+regime, is formalised in Section~\ref{sec:series}.
+
+\section{The cluster series and its convergence in the small-weight
+regime}\label{sec:series}
+
+The cluster series of $\log Z$ is now available as a genuine analytic
+object (\texttt{KPLean/ClusterSeries.lean}): with
+\[
+  c_{n} \;=\; \frac{1}{(n+1)!}
+  \sum_{(\gamma_1, \dots, \gamma_{n+1}) \in \Lambda^{n+1}}
+  \varphi^{T}(\gamma_1, \dots, \gamma_{n+1})
+  \prod_{i} w(\gamma_i)
+\]
+(\texttt{clusterOrderSum}, \texttt{clusterCoeff}), the series is the
+infinite sum $\sum_{n \ge 0} c_n$ over orders, defined as a
+\texttt{tsum} (\texttt{clusterSeries}); order one evaluates to
+$\sum_{\gamma \in \Lambda} w(\gamma)$
+(\texttt{clusterOrderSum\_zero}).
+
+The input to convergence is a counting corollary of the Penrose scheme
+of Section~\ref{sec:ursell}: a spanning tree is its own Penrose tree
+(\texttt{penroseTree\_of\_isTree} — parent edges are tree edges, and
+both sides have $\lvert V\rvert - 1$ of them), so spanning trees are
+determined by their parent maps on $V \setminus \{\mathrm{root}\}$,
+giving the \emph{root-tree bound}
+\[
+  \#\{\text{spanning trees in } H\} \le \lvert V \rvert^{\lvert V \rvert - 1},
+  \qquad
+  \lvert \varphi^{T}(\gamma_1, \dots, \gamma_{n+1}) \rvert \le (n+1)^{n}
+\]
+(\texttt{treeCount\_le\_pow}, \texttt{abs\_ursellInt\_le\_pow}).
+
+\begin{theorem}[convergence in the small-weight regime;
+\texttt{abs\_clusterCoeff\_le}, \texttt{summable\_clusterCoeff},
+\texttt{abs\_clusterSeries\_le}, \texttt{tsum\_pinned\_le}]
+\label{thm:series}
+Let $W = \sum_{\gamma \in \Lambda} \lvert w(\gamma) \rvert$ and suppose
+$eW < 1$. Then $\lvert c_n \rvert \le (eW)^{n+1}$, the cluster series
+converges absolutely with
+$\lvert \sum_{n} c_n \rvert \le eW/(1 - eW)$, and the anchored absolute
+series — the tuples with first coordinate a fixed polymer $\gamma_0$ —
+is bounded by
+\[
+  \sum_{n \ge 0} \frac{1}{(n+1)!}
+  \sum_{\substack{\gamma \in \Lambda^{n+1} \\ \gamma_1 = \gamma_0}}
+  \lvert \varphi^{T}(\gamma) \rvert \prod_i \lvert w(\gamma_i) \rvert
+  \;\le\; \frac{e \, \lvert w(\gamma_0) \rvert}{1 - eW},
+\]
+proportionally to the anchor weight and uniformly in the volume.
+\end{theorem}
+
+\begin{proof}[Proof as formalised]
+Per order, the root-tree bound and the expansion of
+$(\sum_\Lambda \lvert w \rvert)^{n+1}$ over tuples give
+$\lvert \sum_{\gamma} \varphi^{T} \prod w \rvert \le (n+1)^n W^{n+1}$
+(\texttt{abs\_clusterOrderSum\_le}); the factorial is absorbed by the
+single term $i = n$ of the exponential series at $n+1$,
+$(n+1)^n/(n+1)! \le e^{n+1}$ (\texttt{pow\_div\_factorial\_le}). The
+term bound $(eW)^{n+1}$ follows, and with it summability and the
+geometric tail bound by comparison. For the anchored series the same
+argument runs with one coordinate pinned, splitting off the factor
+$\lvert w(\gamma_0) \rvert$ via the \texttt{Fin.cons}/\texttt{Fin.tail}
+reindexing of tuples (\texttt{pinnedOrderSum\_le},
+\texttt{pinnedCoeff\_le}).
+\end{proof}
+
+This is the crude form of the summability estimate over clusters: it
+requires smallness of the total weight rather than the Kotecký--Preiss
+condition. The sharp form — replacing the root-tree count $(n+1)^n$ by
+counts of labelled trees with prescribed degrees, as in
+\cite{KP86,Uel04} — and the exponential formula identifying
+\texttt{clusterSeries} with $\log Z$ remain open and are tracked in the
+repository roadmap.
 
 \section{A corrected claim}\label{sec:kp}
 
@@ -545,7 +627,7 @@ formalisations pioneered around \cite{LTE}.
 
 \section{Availability}
 
-The development (file \texttt{KPLean/ClusterExpansion.lean}, Lean toolchain
+The development (directory \texttt{KPLean/}, Lean toolchain
 \texttt{v4.33.1}) builds with \texttt{lake build} against the
 \textsf{mathlib} version pinned in the accompanying manifest, and is
 available at
@@ -583,6 +665,9 @@ Foundations and Applications}, Benjamin, New York, 1967, 101--109.
 \bibitem{SS05} A.~D.~Scott and A.~D.~Sokal, \emph{The repulsive lattice
 gas, the independent-set polynomial, and the Lovász local lemma}, J. Stat.
 Phys. \textbf{118} (2005), 1151--1261.
+
+\bibitem{Uel04} D.~Ueltschi, \emph{Cluster expansions and correlation
+functions}, Moscow Math. J. \textbf{4} (2004), 511--522.
 
 \bibitem{Dim13a} J.~Dimock, \emph{The renormalization group according to
 Balaban I: small fields}, Rev. Math. Phys. \textbf{25} (2013), 1330010;
