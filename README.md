@@ -174,7 +174,8 @@ The toolchain (`lean-toolchain`) and the mathlib revision
 | --- | --- |
 | `KPLean/ClusterExpansion.lean` | polymer systems, `Z`, the recursion, the Dobrushin and Kotecký–Preiss criteria, log-bounds, the FP hierarchy |
 | `KPLean/Ursell.lean` | Ursell functions, the Penrose partition scheme, the tree–graph bound |
-| `KPLean/Mayer.lean` | Mayer expansion, connected components, the finite cluster recursion |
+| `KPLean/Mayer.lean` | Mayer expansion, the finite cluster recursion, the bridge lemma, the cluster factorisation |
+| `KPLean/ClusterSeries.lean` | the cluster series, the root-tree bound, convergence and anchored bounds in the small-weight regime |
 | `paper/kp-formalisation.tex` | LaTeX note describing the formalisation |
 
 ## Background
@@ -217,10 +218,12 @@ intended.
 
 ## Roadmap
 
-Everything through the Mayer expansion and the finite cluster recursion
-is formalised; the remaining milestone is the analytic layer of the
-cluster series for `log Z`. See [`ROADMAP.md`](ROADMAP.md) for the full
-list with the relevant theorem names.
+Everything through the Mayer expansion, the cluster factorisation and
+the convergence of the cluster series in the small-weight regime is
+formalised; remaining are the exponential formula identifying the
+series with `log Z`, and the sharp Kotecký–Preiss summability estimate
+via prescribed-degree tree counts. See [`ROADMAP.md`](ROADMAP.md) for
+the full list with the relevant theorem names.
 
 Contributions and corrections are welcome; please open an issue.
 

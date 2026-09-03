@@ -30,7 +30,7 @@ Schemas — und davon gibt es höchstens so viele wie aufspannende Bäume.
 Hauptresultate:
 
 * `abs_ursellSum_le_treeCount`: `|∑_{G ⊆ H zusammenhängend} (-1)^{|G|}|
-  ≤ #{aufspannende Bäume in H}`;
+  ≤ #{aufspannende Bäume in H}` (für diagonalfreie Träger `H`);
 * `ursellInt`, `abs_ursellInt_le_treeCount`: dieselbe Schranke für die
   Ursell-Funktion eines Polymer-Tupels im Sinne der Cluster-Entwicklung.
 

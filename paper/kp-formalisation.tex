@@ -206,9 +206,12 @@ Nonvanishing follows by applying the ratio bound at any single polymer.
 
 \section{The formalisation}
 
-The development lives in a single file \texttt{ClusterExpansion.lean} inside
-a Lean~4 project depending on \textsf{mathlib}. We record the design
-decisions that shaped it.
+The development lives in four files inside a Lean~4 project depending on
+\textsf{mathlib}: the criteria core in \texttt{ClusterExpansion.lean}, the
+Penrose scheme in \texttt{Ursell.lean}, the Mayer layer in
+\texttt{Mayer.lean}, and the analytic layer in
+\texttt{ClusterSeries.lean}. We record the design decisions that shaped
+the core.
 
 \subsection{Decidability by construction}
 The incompatibility relation is carried as a \texttt{Bool}-valued function
@@ -531,7 +534,8 @@ identifies the tuple-level Ursell function of an injective tuple with
 the set-level sign sum $\varphi$ of its image, via the sign-preserving
 relabelling bijection $G \mapsto \mathrm{Sym}^2(\gamma)(G)$ of
 summation ranges. What remains for the full expansion of $\log Z$ is
-the symmetrisation over labelled tuples (with repeats) and the log/exp
+the symmetrisation of Theorem~\ref{thm:fact} over labelled tuples
+(with repeats) and the log/exp
 identification, together with the sharp Kotecký--Preiss summability
 estimate over clusters, for which Theorem~\ref{thm:penrose} supplies
 the tree--graph input. The first analytic step, the series itself and
@@ -579,12 +583,15 @@ $\lvert \sum_{n} c_n \rvert \le eW/(1 - eW)$, and the anchored absolute
 series — the tuples with first coordinate a fixed polymer $\gamma_0$ —
 is bounded by
 \[
-  \sum_{n \ge 0} \frac{1}{(n+1)!}
+  \sum_{n \ge 0} \frac{1}{n!}
   \sum_{\substack{\gamma \in \Lambda^{n+1} \\ \gamma_1 = \gamma_0}}
   \lvert \varphi^{T}(\gamma) \rvert \prod_i \lvert w(\gamma_i) \rvert
   \;\le\; \frac{e \, \lvert w(\gamma_0) \rvert}{1 - eW},
 \]
-proportionally to the anchor weight and uniformly in the volume.
+proportionally to the anchor weight and uniformly in the volume. The
+$1/n!$ normalisation is the one relevant for volume differences of
+$\log Z$: a tuple of order $n+1$ using $\gamma_0$ has $n+1$ possible
+anchor positions, and $(n+1) \cdot 1/(n+1)! = 1/n!$.
 \end{theorem}
 
 \begin{proof}[Proof as formalised]
@@ -602,9 +609,9 @@ reindexing of tuples (\texttt{pinnedOrderSum\_le},
 \texttt{pinnedCoeff\_le}).
 \end{proof}
 
-This is the crude form of the summability estimate over clusters: it
-requires smallness of the total weight rather than the Kotecký--Preiss
-condition. The sharp form — replacing the root-tree count $(n+1)^n$ by
+Theorem~\ref{thm:series} is the crude form of the summability estimate
+over clusters: it requires smallness of the total weight rather than
+the Kotecký--Preiss condition. The sharp form — replacing the root-tree count $(n+1)^n$ by
 counts of labelled trees with prescribed degrees, as in
 \cite{KP86,Uel04} — and the exponential formula identifying
 \texttt{clusterSeries} with $\log Z$ remain open and are tracked in the
@@ -663,7 +670,7 @@ The formalisation and this note were produced with substantial assistance
 from an AI system (Claude, Anthropic), including proof drafting and
 literature checks; all remaining errors are the author's.
 
-\begin{thebibliography}{9}
+\begin{thebibliography}{99}
 
 \bibitem{KP86} R.~Kotecký and D.~Preiss, \emph{Cluster expansion for
 abstract polymer models}, Comm. Math. Phys. \textbf{103} (1986), 491--498.

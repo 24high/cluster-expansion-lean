@@ -117,10 +117,10 @@ theorem abs_clusterOrderSum_le (w : ι → ℝ) (Λ : Finset ι) (n : ℕ) :
           (fun _ : Fin (n + 1) => Λ) (fun _ x => |w x|)
         rw [← hpow, Finset.prod_const, Finset.card_univ, Fintype.card_fin]
 
-/-- Stirling-artige Schranke: `(n + 1)ⁿ / (n + 1)! ≤ e^{n+1}` — der
-Term `i = n` der Exponentialreihe an der Stelle `n + 1`. -/
-private theorem pow_div_factorial_le (n : ℕ) :
-    ((n : ℝ) + 1) ^ n / (Nat.factorial (n + 1) : ℝ)
+/-- Stirling-artige Schranke: `(n + 1)ⁿ / n! ≤ e^{n+1}` — der Term
+`i = n` der Exponentialreihe an der Stelle `n + 1`. -/
+private theorem pow_div_factorial_le' (n : ℕ) :
+    ((n : ℝ) + 1) ^ n / (Nat.factorial n : ℝ)
       ≤ Real.exp ((n : ℝ) + 1) := by
   have hx : (0 : ℝ) ≤ (n : ℝ) + 1 := by positivity
   have hsingle : ((n : ℝ) + 1) ^ n / (Nat.factorial n : ℝ)
@@ -128,12 +128,17 @@ private theorem pow_div_factorial_le (n : ℕ) :
     Finset.single_le_sum
       (f := fun i => ((n : ℝ) + 1) ^ i / (Nat.factorial i : ℝ))
       (fun i _ => by positivity) (Finset.mem_range.mpr (by omega))
-  have hexp := Real.sum_le_exp_of_nonneg hx (n + 2)
+  exact hsingle.trans (Real.sum_le_exp_of_nonneg hx (n + 2))
+
+/-- Abgeschwächte Form mit `(n + 1)!` im Nenner. -/
+private theorem pow_div_factorial_le (n : ℕ) :
+    ((n : ℝ) + 1) ^ n / (Nat.factorial (n + 1) : ℝ)
+      ≤ Real.exp ((n : ℝ) + 1) := by
   have hmono : ((n : ℝ) + 1) ^ n / (Nat.factorial (n + 1) : ℝ)
       ≤ ((n : ℝ) + 1) ^ n / (Nat.factorial n : ℝ) := by
     gcongr
     exact Nat.le_succ n
-  exact hmono.trans (hsingle.trans hexp)
+  exact hmono.trans (pow_div_factorial_le' n)
 
 /-- **Geometrische Schranke für die Reihenglieder**:
 `|clusterCoeff n| ≤ (e · ∑_{γ ∈ Λ} |w γ|) ^ (n+1)`. -/
@@ -231,10 +236,14 @@ theorem abs_clusterSeries_le (w : ι → ℝ) (Λ : Finset ι)
 /-! ## Die verankerte Reihe
 
 Für die Volumendifferenzen `log Z Λ - log Z (Λ ∖ {γ₀})` zählt nur der
-bei `γ₀` verankerte Teil der Reihe. Hier die grobe Form seiner
-Summierbarkeit: die Betragsreihe der bei `γ₀` verankerten Tupel ist
-im Kleinheitsregime durch `e · |w γ₀| / (1 - e · ∑_Λ |w|)` beschränkt —
-proportional zum Gewicht des Ankers, gleichmäßig im Volumen. -/
+Teil der Reihe, dessen Tupel `γ₀` verwenden. Hier die grobe Form seiner
+Summierbarkeit, normiert mit `1/n!` für die Tupel mit **erster**
+Koordinate `γ₀`: das ist die für die Differenz maßgebliche Normierung,
+denn ein Tupel der Ordnung `n + 1`, das `γ₀` (mindestens) einmal
+verwendet, hat `n + 1` mögliche Ankerpositionen, und
+`(n + 1) · 1/(n+1)! = 1/n!`. Die Betragsreihe ist im Kleinheitsregime
+durch `e · |w γ₀| / (1 - e · ∑_Λ |w|)` beschränkt — proportional zum
+Gewicht des Ankers, gleichmäßig im Volumen. -/
 
 /-- Der bei `γ₀` verankerte Betrags-Beitrag der Ordnung `n + 1`: Summe
 über die Tupel aus `Λ` mit erster Koordinate `γ₀`. -/
@@ -324,21 +333,22 @@ theorem pinnedOrderSum_le (w : ι → ℝ) (Λ : Finset ι) (γ₀ : ι) (n : �
         mul_le_mul_of_nonneg_left hsum
           (mul_nonneg (by positivity) (abs_nonneg _))
 
-/-- Geometrische Schranke für das verankerte Reihenglied. -/
+/-- Geometrische Schranke für das verankerte Reihenglied, in der
+`1/n!`-Normierung. -/
 theorem pinnedCoeff_le (w : ι → ℝ) (Λ : Finset ι) (γ₀ : ι) (n : ℕ) :
-    pinnedOrderSum P w Λ γ₀ n / (Nat.factorial (n + 1) : ℝ)
+    pinnedOrderSum P w Λ γ₀ n / (Nat.factorial n : ℝ)
       ≤ Real.exp 1 * |w γ₀| * (Real.exp 1 * ∑ x ∈ Λ, |w x|) ^ n := by
-  have hfac : (0 : ℝ) < (Nat.factorial (n + 1) : ℝ) := by positivity
-  calc pinnedOrderSum P w Λ γ₀ n / (Nat.factorial (n + 1) : ℝ)
+  have hfac : (0 : ℝ) < (Nat.factorial n : ℝ) := by positivity
+  calc pinnedOrderSum P w Λ γ₀ n / (Nat.factorial n : ℝ)
       ≤ (((n : ℝ) + 1) ^ n * |w γ₀| * (∑ x ∈ Λ, |w x|) ^ n)
-          / (Nat.factorial (n + 1) : ℝ) := by
+          / (Nat.factorial n : ℝ) := by
         gcongr
         exact pinnedOrderSum_le P w Λ γ₀ n
-    _ = ((n : ℝ) + 1) ^ n / (Nat.factorial (n + 1) : ℝ)
+    _ = ((n : ℝ) + 1) ^ n / (Nat.factorial n : ℝ)
           * (|w γ₀| * (∑ x ∈ Λ, |w x|) ^ n) := by
         ring
     _ ≤ Real.exp ((n : ℝ) + 1) * (|w γ₀| * (∑ x ∈ Λ, |w x|) ^ n) :=
-        mul_le_mul_of_nonneg_right (pow_div_factorial_le n)
+        mul_le_mul_of_nonneg_right (pow_div_factorial_le' n)
           (mul_nonneg (abs_nonneg _)
             (pow_nonneg (Finset.sum_nonneg fun x _ => abs_nonneg _) n))
     _ = Real.exp 1 * |w γ₀| * (Real.exp 1 * ∑ x ∈ Λ, |w x|) ^ n := by
@@ -349,13 +359,13 @@ theorem pinnedCoeff_le (w : ι → ℝ) (Λ : Finset ι) (γ₀ : ι) (n : ℕ) 
         ring
 
 /-- **Verankerte Summierbarkeit (grobe Form)**: im Kleinheitsregime ist
-die bei `γ₀` verankerte Betragsreihe durch `e · |w γ₀| / (1 - e · W)`
-beschränkt — proportional zum Gewicht des Ankers, gleichmäßig im
-Volumen. Die scharfe Kotecký-Preiss-Form ersetzt die Wurzelbaum-Zählung
-durch Baumzahlen mit vorgeschriebenen Graden. -/
+die bei `γ₀` verankerte Betragsreihe in der `1/n!`-Normierung durch
+`e · |w γ₀| / (1 - e · W)` beschränkt — proportional zum Gewicht des
+Ankers, gleichmäßig im Volumen. Die scharfe Kotecký-Preiss-Form ersetzt
+die Wurzelbaum-Zählung durch Baumzahlen mit vorgeschriebenen Graden. -/
 theorem tsum_pinned_le (w : ι → ℝ) (Λ : Finset ι) (γ₀ : ι)
     (h : Real.exp 1 * ∑ x ∈ Λ, |w x| < 1) :
-    ∑' n, pinnedOrderSum P w Λ γ₀ n / (Nat.factorial (n + 1) : ℝ)
+    ∑' n, pinnedOrderSum P w Λ γ₀ n / (Nat.factorial n : ℝ)
       ≤ Real.exp 1 * |w γ₀|
           / (1 - Real.exp 1 * ∑ x ∈ Λ, |w x|) := by
   have hr0 : (0 : ℝ) ≤ Real.exp 1 * ∑ x ∈ Λ, |w x| :=
@@ -364,11 +374,11 @@ theorem tsum_pinned_le (w : ι → ℝ) (Λ : Finset ι) (γ₀ : ι)
       Real.exp 1 * |w γ₀| * (Real.exp 1 * ∑ x ∈ Λ, |w x|) ^ n :=
     (summable_geometric_of_lt_one hr0 h).mul_left _
   have hpinned : Summable fun n =>
-      pinnedOrderSum P w Λ γ₀ n / (Nat.factorial (n + 1) : ℝ) :=
+      pinnedOrderSum P w Λ γ₀ n / (Nat.factorial n : ℝ) :=
     Summable.of_nonneg_of_le
       (fun n => div_nonneg (pinnedOrderSum_nonneg P w Λ γ₀ n) (by positivity))
       (fun n => pinnedCoeff_le P w Λ γ₀ n) hgeom
-  calc ∑' n, pinnedOrderSum P w Λ γ₀ n / (Nat.factorial (n + 1) : ℝ)
+  calc ∑' n, pinnedOrderSum P w Λ γ₀ n / (Nat.factorial n : ℝ)
       ≤ ∑' n : ℕ, Real.exp 1 * |w γ₀|
           * (Real.exp 1 * ∑ x ∈ Λ, |w x|) ^ n :=
         Summable.tsum_le_tsum (fun n => pinnedCoeff_le P w Λ γ₀ n)
