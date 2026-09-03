@@ -218,6 +218,15 @@ theorem ursellSetSum_pull_congr {R : Type*} [CommRing R] {h h' : J → ι}
     (ursellSetSum (P.pull h) B : R) = ursellSetSum (P.pull h') B :=
   ursellSetSum_congr_edges (incompatEdges_pull_congr P hagree)
 
+omit [Fintype J] in
+/-- Ganzzahl-Einbettung der mengenwertigen Ursell-Summe. -/
+theorem intCast_ursellSetSum {R : Type*} [CommRing R] (Q : PolymerSystem J)
+    (B : Finset J) :
+    ((ursellSetSum Q B : ℤ) : R) = ursellSetSum Q B := by
+  unfold ursellSetSum
+  push_cast
+  rfl
+
 omit [DecidableEq ι] [DecidableEq J] [Fintype J] in
 /-- Unabhängigkeit unter dem zurückgezogenen System hängt nur von der
 Belegung auf der Blockmenge ab. -/
@@ -233,5 +242,36 @@ theorem indep_pull_congr {h h' : J → ι} {K : Finset J}
     show P.incomp (h i) (h j) = false
     rw [hagree i hi, hagree j hj]
     exact this
+
+/-! ## Kompositionen -/
+
+/-- Die Kompositionen von `m` in `k` positive Teile, als Tupel. -/
+noncomputable def compositionsF (m k : ℕ) : Finset (Fin k → ℕ) :=
+  (Fintype.piFinset fun _ : Fin k => Finset.range (m + 1)).filter
+    (fun c => (∀ i, c i ≠ 0) ∧ ∑ i, c i = m)
+
+theorem mem_compositionsF {m k : ℕ} {c : Fin k → ℕ} :
+    c ∈ compositionsF m k ↔ (∀ i, c i ≠ 0) ∧ ∑ i, c i = m := by
+  unfold compositionsF
+  rw [Finset.mem_filter, Fintype.mem_piFinset]
+  constructor
+  · rintro ⟨-, hpos, hsum⟩
+    exact ⟨hpos, hsum⟩
+  · rintro ⟨hpos, hsum⟩
+    refine ⟨fun i => Finset.mem_range.mpr ?_, hpos, hsum⟩
+    have hle : c i ≤ ∑ j, c j :=
+      Finset.single_le_sum (fun j _ => Nat.zero_le (c j)) (Finset.mem_univ i)
+    omega
+
+/-- In einer Komposition von `m` in positive Teile gibt es höchstens `m`
+Teile. -/
+theorem card_le_of_mem_compositionsF {m k : ℕ} {c : Fin k → ℕ}
+    (hc : c ∈ compositionsF m k) : k ≤ m := by
+  obtain ⟨hpos, hsum⟩ := mem_compositionsF.mp hc
+  calc k = ∑ _i : Fin k, 1 := by
+        rw [Finset.sum_const, Finset.card_univ, Fintype.card_fin, smul_eq_mul,
+          mul_one]
+    _ ≤ ∑ i, c i := Finset.sum_le_sum fun i _ => Nat.one_le_iff_ne_zero.mpr (hpos i)
+    _ = m := hsum
 
 end ClusterExpansion
