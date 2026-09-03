@@ -32,9 +32,10 @@ die Fundamentalrekursion `Z Λ = Z (Λ ∖ {γ}) + w γ * Z (Λ ohne N(γ))`
   alternierenden Gases `Z(-|w|) > 0` und den Vergleich
   `Z(-|w|) ≤ |Z(w)|`; dazu die Hierarchie `KP ⟹ Dobrushin ⟹ FP`.
 
-Kein `sorry` in dieser Datei. Bewusst offen (nur genannt, nichts
-Unbewiesenes behauptet): die Ursell-Reihe von `log Z` mit
-Baumgraphen-Schranken.
+Kein `sorry` in dieser Datei. Die Ursell-Funktionen und die
+Penrose-Baumgraphen-Schranke sind in `KPLean/Ursell.lean` bewiesen;
+bewusst offen (nur genannt, nichts Unbewiesenes behauptet) bleiben
+Exponentialformel und Konvergenz der Cluster-Reihe von `log Z`.
 
 Kontext: DEGRALBA §17.1, „Balaban als Lean-Blueprint“.
 Referenzen: Kotecký–Preiss (Comm. Math. Phys. 103, 1986);

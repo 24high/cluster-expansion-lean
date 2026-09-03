@@ -31,7 +31,9 @@ well-defined; the ratio and log bounds are the input to thermodynamic
 limits, analyticity of free energies, and the convergence estimates of
 the expansion. This repository machine-checks the three classical
 answers — the criteria of Kotecký–Preiss, Dobrushin, and
-Fernández–Procacci — together with the recursion they all rest on.
+Fernández–Procacci — together with the recursion they all rest on, and
+the first combinatorial layer of the cluster series itself: Ursell
+functions and the Penrose tree–graph bound.
 
 ## Main results
 
@@ -81,7 +83,24 @@ All in `KPLean/ClusterExpansion.lean`, namespace `ClusterExpansion`:
   (`KPCondition.dobrushin`, `DobrushinCondition.fp`, `KPCondition.fp`)
   via `Z_A(μ) ≤ ∏_{δ ∈ A} (1 + μ δ)` (`Z_le_prod_one_add`); since the
   FP condition is the weakest, nonvanishing under FP subsumes the other
-  two criteria.
+  two criteria;
+
+- **Ursell functions and the Penrose tree–graph bound**
+  (`KPLean/Ursell.lean`): the Ursell function of a polymer tuple as the
+  alternating sum over connected spanning subgraphs of its
+  incompatibility graph (`ursellInt`, with the sanity values
+  `φᵀ(γ₁) = 1` and `φᵀ(γ₁, γ₂) = −1`), and the tree–graph inequality
+
+  `|φᵀ(γ₁, …, γₙ)| ≤ #{spanning trees of the incompatibility graph}`
+
+  (`abs_ursellInt_le_treeCount`, from the general
+  `abs_ursellSum_le_treeCount`). The proof formalises **Penrose's
+  partition scheme**: a BFS layer structure from a fixed root assigns to
+  every connected spanning subgraph a spanning tree (`penroseTree`, each
+  vertex hanging on its least neighbour in the layer below), the fibres
+  of this map are set intervals `[T, penroseExt H T]`, and the
+  alternating sum vanishes on every nontrivial interval — so at most one
+  `±1` survives per spanning tree.
 
 The hierarchy is strict: a single self-incompatible polymer of weight
 `1/2` satisfies the Dobrushin condition with `μ = 1`, while
@@ -107,6 +126,7 @@ The toolchain (`lean-toolchain`) and the mathlib revision
 | Path | Contents |
 | --- | --- |
 | `KPLean/ClusterExpansion.lean` | polymer systems, `Z`, the recursion, the Dobrushin and Kotecký–Preiss criteria, log-bounds, the FP hierarchy |
+| `KPLean/Ursell.lean` | Ursell functions, the Penrose partition scheme, the tree–graph bound |
 | `paper/kp-formalisation.tex` | LaTeX note describing the formalisation |
 
 ## Background
@@ -120,7 +140,10 @@ Fernández–Procacci (Comm. Math. Phys. 274, 2007) for the criteria
 treated here; the formalised proof of the Fernández–Procacci criterion
 follows the inductive argument of Fialho
 ([arXiv:2001.00652](https://arxiv.org/abs/2001.00652), J. Stat. Phys.
-178, 2020). The longer-term aim of this project is machine-checked
+178, 2020). The tree–graph bound goes back to Penrose, *Convergence of
+fugacity expansions for classical systems* (in *Statistical Mechanics:
+Foundations and Applications*, Benjamin, 1967); the partition-scheme
+view is as in Scott–Sokal, §2.2. The longer-term aim of this project is machine-checked
 infrastructure for the convergence estimates used in rigorous
 renormalisation group analyses of lattice field theories, in the sense
 of the expositions of Balaban's method by Dimock (arXiv:1108.1335,
@@ -154,10 +177,13 @@ intended.
 - [x] Fernández–Procacci condition and the hierarchy KP ⟹ Dobrushin ⟹ FP
 - [x] Fernández–Procacci criterion: nonvanishing and ratio bound under
       the FP condition (via Fialho's inductive proof)
-- [ ] convergent cluster (Ursell) series for `log Z` with tree–graph
-      bounds — this requires genuinely new infrastructure (Ursell
-      functions as sums over connected graphs, the exponential formula,
-      and the Penrose/tree–graph inequality) and is the next milestone
+- [x] Ursell functions as alternating sums over connected spanning
+      subgraphs, and the Penrose tree–graph bound
+      `|φᵀ| ≤ #spanning trees` via the Penrose partition scheme
+- [ ] convergent cluster (Ursell) series for `log Z`: the exponential
+      formula identifying `log Z` with the cluster series, and the
+      Kotecký–Preiss summability estimate over clusters (via counts of
+      labelled trees with prescribed degrees) — the remaining milestone
 
 Contributions and corrections are welcome; please open an issue.
 

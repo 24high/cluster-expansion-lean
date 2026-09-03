@@ -45,6 +45,10 @@ Phys. 118, 2005), §2.2.
 
 open Finset
 
+-- Zusammenhang (`EdgeConn`) und die Penrose-Zulässigkeit sind Prädikate,
+-- über die wir nur summieren, nie rechnen: bewusst klassisch.
+set_option linter.style.openClassical false
+
 open scoped Classical
 
 namespace ClusterExpansion
@@ -533,6 +537,207 @@ theorem penrose_backward {H G₀ G : Finset (Sym2 V)} (hG₀ : EdgeConn G₀)
   have hv' : v ≠ root V := (Finset.mem_erase.mp (Finset.mem_coe.mp hv)).1
   rw [hpar v hv']
 
+/-! ## Die Baumgraphen-Schranke -/
+
+/-- **Baumgraphen-Schranke (Penrose).** Der Betrag der alternierenden
+Summe über die zusammenhängenden aufspannenden Teilgraphen von `H` ist
+durch die Anzahl der aufspannenden Bäume in `H` beschränkt:
+die zusammenhängenden Teilgraphen zerfallen in Penrose-Intervalle, auf
+nichttrivialen Intervallen hebt sich die Summe weg, und jedes Intervall
+gehört zu einem aufspannenden Baum. -/
+theorem abs_ursellSum_le_treeCount (H : Finset (Sym2 V))
+    (hH : ∀ e ∈ H, ¬ e.IsDiag) :
+    |ursellSum H| ≤ (treeCount H : ℤ) := by
+  set C := H.powerset.filter EdgeConn with hC
+  have hmaps : ∀ G ∈ C, penroseTree G ∈ C.image penroseTree :=
+    fun G hG => Finset.mem_image_of_mem _ hG
+  have hsum : ursellSum H
+      = ∑ T ∈ C.image penroseTree,
+          ∑ G ∈ C.filter (fun G => penroseTree G = T), (-1 : ℤ) ^ G.card := by
+    unfold ursellSum
+    rw [← hC]
+    exact (Finset.sum_fiberwise_of_maps_to hmaps _).symm
+  have hIcc : ∀ T ∈ C.image penroseTree,
+      C.filter (fun G => penroseTree G = T)
+        = Finset.Icc T (penroseExt H T) := by
+    intro T hT
+    obtain ⟨G₀, hG₀C, rfl⟩ := Finset.mem_image.mp hT
+    rw [hC] at hG₀C
+    obtain ⟨hG₀H, hG₀conn⟩ := Finset.mem_filter.mp hG₀C
+    rw [Finset.mem_powerset] at hG₀H
+    ext G
+    simp only [hC, Finset.mem_filter, Finset.mem_powerset, Finset.mem_Icc]
+    constructor
+    · rintro ⟨⟨hGH, hGconn⟩, hpen⟩
+      have hfwd := penrose_forward hH hGH hGconn
+      rw [hpen] at hfwd
+      exact hfwd
+    · rintro ⟨hTG, hGE⟩
+      have hbwd := penrose_backward hG₀conn hTG hGE
+      exact ⟨⟨hGE.trans penroseExt_subset, hbwd.1⟩, hbwd.2⟩
+  have hTsub : ∀ T ∈ C.image penroseTree, T ⊆ penroseExt H T := by
+    intro T hT
+    obtain ⟨G₀, hG₀C, rfl⟩ := Finset.mem_image.mp hT
+    rw [hC] at hG₀C
+    obtain ⟨hG₀H, hG₀conn⟩ := Finset.mem_filter.mp hG₀C
+    rw [Finset.mem_powerset] at hG₀H
+    have hfwd := penrose_forward hH hG₀H hG₀conn
+    exact hfwd.1.trans hfwd.2
+  rw [hsum, Finset.sum_congr rfl (fun T hT => by rw [hIcc T hT])]
+  calc |∑ T ∈ C.image penroseTree,
+          ∑ G ∈ Finset.Icc T (penroseExt H T), (-1 : ℤ) ^ G.card|
+      ≤ ∑ T ∈ C.image penroseTree,
+          |∑ G ∈ Finset.Icc T (penroseExt H T), (-1 : ℤ) ^ G.card| :=
+        Finset.abs_sum_le_sum_abs _ _
+    _ ≤ ∑ _T ∈ C.image penroseTree, (1 : ℤ) := by
+        refine Finset.sum_le_sum fun T hT => ?_
+        by_cases hfix : T = penroseExt H T
+        · rw [← hfix, Finset.Icc_self, Finset.sum_singleton]
+          simp [abs_pow]
+        · rw [sum_Icc_neg_one_pow (hTsub T hT) hfix]
+          simp
+    _ = ((C.image penroseTree).card : ℤ) := by simp
+    _ ≤ (treeCount H : ℤ) := by
+        have hsub : C.image penroseTree
+            ⊆ H.powerset.filter (fun T => (graphOf T).IsTree) := by
+          intro T hT
+          obtain ⟨G₀, hG₀C, rfl⟩ := Finset.mem_image.mp hT
+          rw [hC] at hG₀C
+          obtain ⟨hG₀H, hG₀conn⟩ := Finset.mem_filter.mp hG₀C
+          rw [Finset.mem_powerset] at hG₀H
+          exact Finset.mem_filter.mpr
+            ⟨Finset.mem_powerset.mpr ((penroseTree_subset hG₀conn).trans hG₀H),
+              penroseTree_isTree hG₀conn⟩
+        unfold treeCount
+        exact_mod_cast Finset.card_le_card hsub
+
 end Penrose
+
+/-! ## Beispiele: die kleinsten Träger -/
+
+section Examples
+
+/-- Leerer Träger auf einpunktiger Knotenmenge: Ursell-Summe `1`
+(nur der leere Graph, und er ist zusammenhängend). -/
+theorem ursellSum_empty {V : Type*} [Fintype V] [Subsingleton V] [Nonempty V] :
+    ursellSum (∅ : Finset (Sym2 V)) = 1 := by
+  have hconn : EdgeConn (∅ : Finset (Sym2 V)) :=
+    SimpleGraph.Connected.mk fun u v => by
+      rw [Subsingleton.elim u v]
+  unfold ursellSum
+  rw [Finset.powerset_empty, Finset.filter_singleton, if_pos hconn,
+    Finset.sum_singleton, Finset.card_empty, pow_zero]
+
+/-- Genau eine Kante auf zwei Knoten: Ursell-Summe `-1`. -/
+theorem ursellSum_pair_edge :
+    ursellSum ({s((0 : Fin 2), (1 : Fin 2))} : Finset (Sym2 (Fin 2))) = -1 := by
+  have hne : (0 : Fin 2) ≠ 1 := by decide
+  have hadj : (graphOf ({s((0 : Fin 2), (1 : Fin 2))} : Finset (Sym2 (Fin 2)))).Adj 0 1 :=
+    graphOf_adj.mpr ⟨Finset.mem_singleton_self _, hne⟩
+  have hconn : EdgeConn ({s((0 : Fin 2), (1 : Fin 2))} : Finset (Sym2 (Fin 2))) := by
+    refine SimpleGraph.Connected.mk fun u v => ?_
+    fin_cases u <;> fin_cases v
+    · exact SimpleGraph.Reachable.refl _
+    · exact hadj.reachable
+    · exact hadj.symm.reachable
+    · exact SimpleGraph.Reachable.refl _
+  have hnotconn : ¬ EdgeConn (∅ : Finset (Sym2 (Fin 2))) := by
+    intro hcon
+    have hbot : graphOf (∅ : Finset (Sym2 (Fin 2))) = ⊥ := by
+      rw [graphOf, Finset.coe_empty, SimpleGraph.fromEdgeSet_empty]
+    have hpos := hcon.pos_dist_of_ne hne
+    rw [hbot, SimpleGraph.dist_bot] at hpos
+    exact absurd hpos (lt_irrefl 0)
+  have hpow : ({s((0 : Fin 2), (1 : Fin 2))} : Finset (Sym2 (Fin 2))).powerset
+      = {∅, {s((0 : Fin 2), (1 : Fin 2))}} := by
+    ext S
+    simp [Finset.subset_singleton_iff]
+  unfold ursellSum
+  rw [hpow, Finset.filter_insert, if_neg hnotconn, Finset.filter_singleton,
+    if_pos hconn, Finset.sum_singleton, Finset.card_singleton, pow_one]
+
+end Examples
+
+/-! ## Die Ursell-Funktion eines Polymer-Tupels -/
+
+section UrsellPolymer
+
+variable {ι : Type*} (P : PolymerSystem ι)
+
+/-- Trägerkanten eines Polymer-Tupels: die Indexpaare unverträglicher
+Polymere. -/
+def clusterEdges {n : ℕ} (γ : Fin n → ι) : Finset (Sym2 (Fin n)) :=
+  ((Finset.univ : Finset (Fin n × Fin n)).filter
+    (fun p => p.1 ≠ p.2 ∧ P.incomp (γ p.1) (γ p.2) = true)).image
+    (fun p => s(p.1, p.2))
+
+theorem mem_clusterEdges {n : ℕ} {γ : Fin n → ι} {i j : Fin n} :
+    s(i, j) ∈ clusterEdges P γ ↔ i ≠ j ∧ P.incomp (γ i) (γ j) = true := by
+  constructor
+  · intro h
+    unfold clusterEdges at h
+    rw [Finset.mem_image] at h
+    obtain ⟨⟨a, b⟩, hab, heq⟩ := h
+    obtain ⟨-, hne, hinc⟩ := Finset.mem_filter.mp hab
+    rcases Sym2.eq_iff.mp heq with ⟨h1, h2⟩ | ⟨h1, h2⟩
+    · rw [← h1, ← h2]
+      exact ⟨hne, hinc⟩
+    · rw [← h2, ← h1]
+      exact ⟨hne.symm, (P.symm _ _).trans hinc⟩
+  · rintro ⟨hne, hinc⟩
+    unfold clusterEdges
+    exact Finset.mem_image_of_mem _
+      (Finset.mem_filter.mpr ⟨Finset.mem_univ (i, j), hne, hinc⟩)
+
+theorem clusterEdges_not_isDiag {n : ℕ} (γ : Fin n → ι) :
+    ∀ e ∈ clusterEdges P γ, ¬ e.IsDiag := by
+  intro e
+  induction e using Sym2.ind with
+  | _ i j =>
+    intro he
+    rw [Sym2.mk_isDiag_iff]
+    exact ((mem_clusterEdges P).mp he).1
+
+/-- Die (ganzzahlige) Ursell-Funktion eines Polymer-Tupels: die
+alternierende Summe über die zusammenhängenden aufspannenden Teilgraphen
+des Unverträglichkeitsgraphen der Indizes. In der Cluster-Reihe von
+`log Z` trägt das Tupel `γ` mit `ursellInt P γ / (n+1)! · ∏ w (γ i)` bei. -/
+noncomputable def ursellInt {n : ℕ} (γ : Fin (n + 1) → ι) : ℤ :=
+  ursellSum (clusterEdges P γ)
+
+/-- **Baumgraphen-Schranke für Ursell-Funktionen**: der Betrag ist durch
+die Anzahl der aufspannenden Bäume im Unverträglichkeitsgraphen
+beschränkt. -/
+theorem abs_ursellInt_le_treeCount {n : ℕ} (γ : Fin (n + 1) → ι) :
+    |ursellInt P γ| ≤ (treeCount (clusterEdges P γ) : ℤ) :=
+  abs_ursellSum_le_treeCount _ (clusterEdges_not_isDiag P γ)
+
+/-- Ein einzelnes Polymer: `φᵀ(γ₁) = 1`. -/
+theorem ursellInt_single (γ : Fin 1 → ι) : ursellInt P γ = 1 := by
+  have h : clusterEdges P γ = ∅ := by
+    ext e
+    induction e using Sym2.ind with
+    | _ i j =>
+      simp [mem_clusterEdges, Subsingleton.elim i j]
+  have : Subsingleton (Fin (0 + 1)) := ⟨fun a b => by omega⟩
+  unfold ursellInt
+  rw [h]
+  exact ursellSum_empty
+
+/-- Zwei unverträgliche Polymere: `φᵀ(γ₁, γ₂) = -1`. -/
+theorem ursellInt_pair (γ : Fin 2 → ι) (h : P.incomp (γ 0) (γ 1) = true) :
+    ursellInt P γ = -1 := by
+  have hsymm : P.incomp (γ 1) (γ 0) = true := (P.symm _ _).trans h
+  have hedges : clusterEdges P γ = {s((0 : Fin 2), (1 : Fin 2))} := by
+    ext e
+    induction e using Sym2.ind with
+    | _ i j =>
+      fin_cases i <;> fin_cases j <;>
+        simp [mem_clusterEdges, h, hsymm]
+  unfold ursellInt
+  rw [hedges]
+  exact ursellSum_pair_edge
+
+end UrsellPolymer
 
 end ClusterExpansion

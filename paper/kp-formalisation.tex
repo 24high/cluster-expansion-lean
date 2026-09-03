@@ -39,7 +39,12 @@ $\lvert \log \lvert Z(\Lambda)\rvert \rvert \le \sum_{\gamma \in \Lambda}
 Kotecký--Preiss $\Rightarrow$ Dobrushin $\Rightarrow$ Fernández--Procacci;
 and the Fernández--Procacci criterion itself — nonvanishing and the ratio
 bound under the weakest of the three hypotheses — following the inductive
-proof of Fialho.
+proof of Fialho. Beyond the criteria, we formalise the first
+combinatorial layer of the cluster series: Ursell functions as
+alternating sums over connected spanning subgraphs of the
+incompatibility graph, and Penrose's tree--graph bound
+$\lvert \varphi^{T} \rvert \le \#\{\text{spanning trees}\}$, proved via a
+complete formalisation of the Penrose partition scheme.
 An earlier version of this note claimed that the sum form was not
 obtainable from the product form; the formalisation of the comparison
 argument corrected this, and we document both the error and its repair.
@@ -89,9 +94,12 @@ telescoped deletion bounds, two-sided volume-linear bounds on
 $\log \lvert Z \rvert$, the classical Kotecký--Preiss sum-form criterion
 via a comparison of hypotheses, and the hierarchy of conditions ending in
 the Fernández--Procacci form. Fourth, the Fernández--Procacci criterion
-itself, via the recent inductive proof of Fialho \cite{Fia20}. The
-development is about 1250 lines of Lean, compiles against current
-\textsf{mathlib}, and contains no \texttt{sorry} placeholders.
+itself, via the recent inductive proof of Fialho \cite{Fia20}. Fifth, the
+combinatorial base of the cluster series: Ursell functions and Penrose's
+tree--graph bound \cite{Pen67}, via the Penrose partition scheme
+(Section~\ref{sec:ursell}). The development is about 2000 lines of Lean
+in two files, compiles against current \textsf{mathlib}, and contains no
+\texttt{sorry} placeholders.
 Section~\ref{sec:kp} documents a claim made in an earlier version of this
 note that the formalisation subsequently refuted.
 
@@ -361,10 +369,70 @@ place of positivity. Combining the two stages yields the theorem.
 
 Since the FP condition is the weakest of the three hypotheses,
 Theorem~\ref{thm:fp} subsumes the nonvanishing statements of
-Theorems~\ref{thm:dob} and~\ref{thm:kp}. What remains open is the
-convergent Ursell-series expansion of $\log Z$ itself, which requires
-tree-graph bounds beyond the volume-linear control of
-Theorem~\ref{thm:log}.
+Theorems~\ref{thm:dob} and~\ref{thm:kp}. The combinatorial layer of the
+convergent Ursell-series expansion of $\log Z$ — Ursell functions and the
+tree--graph bound — is formalised in Section~\ref{sec:ursell}; the
+remaining analytic layer is the exponential formula and the summability
+estimate over clusters.
+
+\section{Ursell functions and the tree--graph bound}\label{sec:ursell}
+
+The convergent expansion of $\log Z$ is a series over \emph{clusters}:
+tuples $(\gamma_1, \dots, \gamma_n)$ of polymers weighted by the Ursell
+function
+\[
+  \varphi^{T}(\gamma_1, \dots, \gamma_n)
+  = \sum_{\substack{G \subseteq \mathcal{E}(\gamma) \\ G \text{ connected
+  spanning}}} (-1)^{\lvert G \rvert},
+\]
+the alternating sum over connected spanning subgraphs of the
+incompatibility graph $\mathcal{E}(\gamma)$ on the index set
+$\{1, \dots, n\}$ (edges between indices of incompatible polymers, up to
+the conventional $1/n!$). The combinatorial heart of every convergence
+proof for this series is Penrose's tree--graph inequality \cite{Pen67},
+which is now formalised (\texttt{KPLean/Ursell.lean}):
+
+\begin{theorem}[tree--graph bound;
+\texttt{abs\_ursellSum\_le\_treeCount},
+\texttt{abs\_ursellInt\_le\_treeCount}]\label{thm:penrose}
+For every finite set $H$ of non-diagonal edges on a finite nonempty
+linearly ordered vertex set,
+\[
+  \Bigl\lvert \sum_{\substack{G \subseteq H \\ G \text{ connected
+  spanning}}} (-1)^{\lvert G \rvert} \Bigr\rvert
+  \;\le\; \#\{\text{spanning trees } T \subseteq H\}.
+\]
+In particular, $\lvert \varphi^{T}(\gamma_1, \dots, \gamma_n) \rvert$ is
+bounded by the number of spanning trees of the incompatibility graph.
+\end{theorem}
+
+\begin{proof}[Proof as formalised]
+By a partition scheme in the sense of \cite[\S2.2]{SS05}. Fix the least
+vertex as root. For a connected spanning $G \subseteq H$, the
+breadth-first layers $\ell(v) = d_G(\mathrm{root}, v)$ assign to each
+non-root vertex its \emph{Penrose parent}: the least neighbour in the
+layer below. The edges $\{v, \mathrm{par}(v)\}$ form a spanning tree
+$\tau(G)$ (\texttt{penroseTree}), and two layer-rigidity facts —
+$\tau(G)$ has the same layers as $G$ (\texttt{lvl\_penroseTree}), and in
+$\tau(G)$ each non-root vertex has its Penrose parent as unique lower
+neighbour (\texttt{parentSet\_penroseTree}) — show that the fibre
+$\tau^{-1}(T)$ is exactly the set interval $[T, R(T)]$, where $R(T)$
+consists of those edges of $H$ joining equal layers, or joining a vertex
+$v$ to a vertex $u$ of the layer below with $u \ge \mathrm{par}(v)$
+(\texttt{penroseExt}; lemmas \texttt{penrose\_forward} and
+\texttt{penrose\_backward}). On a nontrivial set interval $[A, B]$ the
+alternating sum $\sum_{A \subseteq S \subseteq B} (-1)^{\lvert S \rvert}$
+vanishes (\texttt{sum\_Icc\_neg\_one\_pow}), so at most one $\pm 1$
+survives per fibre — and the fibres are indexed by spanning trees
+(\texttt{penroseTree\_isTree}).
+\end{proof}
+
+The sanity values $\varphi^{T}(\gamma_1) = 1$ and
+$\varphi^{T}(\gamma_1, \gamma_2) = -1$ for an incompatible pair are
+proved as \texttt{ursellInt\_single} and \texttt{ursellInt\_pair}. The
+graph theory used (walks, distances, connectivity, the characterisation
+of trees by edge count) is \textsf{mathlib}'s; the BFS layer structure,
+the Penrose parent map and the interval decomposition are ours.
 
 \section{A corrected claim}\label{sec:kp}
 
@@ -435,6 +503,10 @@ abstract polymer models: new bounds from an old approach}, Comm. Math. Phys.
 \bibitem{Fia20} P.~M.~S.~Fialho, \emph{Abstract polymer gas: a simple
 inductive proof of the Fernández--Procacci criterion}, J. Stat. Phys.
 \textbf{178} (2020), 1354--1361; arXiv:2001.00652.
+
+\bibitem{Pen67} O.~Penrose, \emph{Convergence of fugacity expansions for
+classical systems}, in T.~A.~Bak (ed.), \emph{Statistical Mechanics:
+Foundations and Applications}, Benjamin, New York, 1967, 101--109.
 
 \bibitem{SS05} A.~D.~Scott and A.~D.~Sokal, \emph{The repulsive lattice
 gas, the independent-set polynomial, and the Lovász local lemma}, J. Stat.
