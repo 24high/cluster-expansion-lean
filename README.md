@@ -119,7 +119,25 @@ All in `KPLean/ClusterExpansion.lean`, namespace `ClusterExpansion`:
   over connected spanning subgraphs of `B`'s incompatibility graph
   (`ursellSetSum`; `φ({γ}) = 1`, `φ({γ, δ}) = −1` for an incompatible
   pair). This is the finite exponential structure of the cluster
-  expansion: iterating it generates the cluster series of `log Z`.
+  expansion: iterating it generates the cluster series of `log Z`;
+
+- **the cluster series as a convergent analytic object**
+  (`KPLean/ClusterSeries.lean`): the series
+
+  `clusterSeries = Σ'_{n} (1/(n+1)!) Σ_{(γ₁, …, γ_{n+1}) ∈ Λ^{n+1}} φᵀ(γ) Π w(γᵢ)`
+
+  as a genuine `tsum` (`clusterOrderSum`, `clusterCoeff`,
+  `clusterSeries`), with the **root-tree bound**
+  `|φᵀ(γ₁, …, γ_{n+1})| ≤ (n+1)ⁿ` (`abs_ursellInt_le_pow`, from
+  `treeCount_le_pow`: a spanning tree is its own Penrose tree, so trees
+  are determined by their parent maps), the geometric term bound
+  `|clusterCoeff n| ≤ (e Σ_Λ |w|)^{n+1}` (`abs_clusterCoeff_le`), and
+  absolute convergence with tail bound `r/(1−r)` in the small-weight
+  regime `e · Σ_{γ ∈ Λ} |w γ| < 1` (`summable_clusterCoeff`,
+  `abs_clusterSeries_le`). The series anchored at a fixed polymer `γ₀`
+  is bounded by `e |w γ₀| / (1 − e Σ_Λ |w|)`, proportionally to the
+  anchor weight and uniformly in the volume (`tsum_pinned_le`) — the
+  crude form of the Kotecký–Preiss summability over clusters.
 
 The hierarchy is strict: a single self-incompatible polymer of weight
 `1/2` satisfies the Dobrushin condition with `μ = 1`, while

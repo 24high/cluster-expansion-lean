@@ -42,18 +42,39 @@ formalised, with no `sorry`s at any completed step.
       `Z Λ = Z (Λ ∖ {γ₀}) + Σ_{γ₀ ∈ B ⊆ Λ} (∏_B w) · φ(B) · Z (Λ ∖ B)`
       (`Z_cluster_recursion`) — the finite exponential structure of the
       expansion.
+- [x] **Root-tree bound**: a spanning tree is its own Penrose tree, so
+      the parent map is injective on spanning trees and
+      `treeCount H ≤ |V| ^ (|V| − 1)`; per cluster,
+      `|φᵀ(γ₁, …, γ_{n+1})| ≤ (n+1)ⁿ` (`penroseTree_of_isTree`,
+      `treeCount_le_pow`, `abs_ursellInt_le_pow`).
+- [x] **The cluster series as an analytic object, convergent in the
+      small-weight regime**: the series `Σ' n, (1/(n+1)!) ·
+      Σ_{(n+1)-tuples} φᵀ · ∏ w` (`clusterOrderSum`, `clusterCoeff`,
+      `clusterSeries`), the geometric term bound
+      `|clusterCoeff n| ≤ (e · Σ_Λ |w|)^{n+1}` (`abs_clusterCoeff_le`),
+      and absolute convergence with the tail bound `r/(1−r)` whenever
+      `e · Σ_{γ ∈ Λ} |w γ| < 1` (`summable_clusterCoeff`,
+      `abs_clusterSeries_le`).
+- [x] **Anchored (pinned) summability, crude form**: the absolute series
+      of the tuples anchored at a fixed polymer `γ₀` is bounded by
+      `e · |w γ₀| / (1 − e · Σ_Λ |w|)` — proportional to the anchor
+      weight, uniformly in the volume (`pinnedOrderSum`,
+      `pinnedOrderSum_le`, `tsum_pinned_le`).
 
 ## Next
 
-- [ ] **The analytic layer of the cluster series for `log Z`.** Two
-      steps remain, both requiring new infrastructure:
-  - the **exponential formula**: identify the iterated cluster recursion
-    (`Z_cluster_recursion`) with the convergent cluster series, so that
-    `log Z Λ = Σ_{clusters} (1/n!) · φᵀ · ∏ w`;
-  - the **Kotecký–Preiss summability estimate** over clusters, bounding
-    the series via counts of labelled trees with prescribed degrees —
-    where the tree–graph bound (`abs_ursellInt_le_treeCount`) supplies
-    the per-cluster input.
+- [ ] **The exponential formula**: identify the cluster series with
+      `log Z`, i.e. `log Z Λ = clusterSeries P w Λ` in the convergence
+      regime. Structural sub-steps: the set-level cluster factorisation
+      of `Z` (collections of disjoint clusters), the bridge between
+      tuple-level and set-level Ursell values, and the log/exp
+      identification itself.
+- [ ] **The sharp Kotecký–Preiss summability estimate** over clusters:
+      replace the root-tree count `(n+1)ⁿ` by counts of labelled trees
+      with prescribed degrees, so that the anchored series is controlled
+      under the KP condition `Σ_{δ ≁ γ} |w δ| · exp (a δ) ≤ a γ` rather
+      than only in the small-weight regime — the tree–graph bound
+      (`abs_ursellInt_le_treeCount`) supplies the per-cluster input.
 
 ## Beyond
 
