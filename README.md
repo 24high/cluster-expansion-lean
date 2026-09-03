@@ -1,34 +1,84 @@
 # Cluster expansions in Lean 4
 
-A formalisation of the combinatorial and analytic core of the cluster
-expansion method for abstract polymer systems, built on
+A formalisation of the convergence core of the cluster expansion method
+for abstract polymer systems, built on
 [mathlib](https://github.com/leanprover-community/mathlib4).
+There are no `sorry`s in this repository.
 
-The repository contains complete, machine-checked proofs of:
+## The problem
 
-- the **fundamental deletion recursion** for the polymer partition function,
+An abstract polymer system consists of a finite set Λ of *polymers*, a
+symmetric and reflexive *incompatibility* relation, and *weights*
+`w γ`. The partition function
+
+```
+Z Λ = Σ_{S ⊆ Λ pairwise compatible} Π_{γ ∈ S} w γ
+```
+
+is the basic object of rigorous statistical mechanics in its polymer
+formulation: lattice gases, contour models of phase transitions, and the
+effective activities produced at each step of a renormalisation group
+analysis all take this shape. Every use of the method rests on the same
+analytic question:
+
+> Under which explicit, checkable conditions on the weights is
+> `Z Λ ≠ 0`, with quantitative control of how `Z` changes when a polymer
+> is removed, and with bounds on `log |Z Λ|` that grow at most linearly
+> in the volume — uniformly in Λ?
+
+Nonvanishing is what makes `log Z` and ratios of partition functions
+well-defined; the ratio and log bounds are the input to thermodynamic
+limits, analyticity of free energies, and the convergence estimates of
+the expansion. This repository machine-checks the three classical answers
+— the criteria of Kotecký–Preiss, Dobrushin, and (as a hypothesis, see
+the roadmap) Fernández–Procacci — together with the recursion they all
+rest on.
+
+## Main results
+
+All in `KPLean/ClusterExpansion.lean`, namespace `ClusterExpansion`:
+
+- the **fundamental deletion recursion**
 
   `Z Λ = Z (Λ \ {γ}) + w γ * Z (Λ \ N*(γ))`
 
-  (`ClusterExpansion.Z_recursion`), proved for weights in an arbitrary
-  commutative ring;
+  (`Z_recursion`), proved for weights in an arbitrary commutative ring;
 
-- the **Dobrushin convergence criterion** in product form: if `μ ≥ 0` and
+- the **Dobrushin criterion** (product form): if `μ ≥ 0` and
   `|w γ| * ∏_{δ ≁ γ} (1 + μ δ) ≤ μ γ` for every polymer `γ` in `Λ`, then
-  `Z Λ ≠ 0` (`ClusterExpansion.Z_ne_zero_of_dobrushin`) and deleting a
-  polymer changes `|Z|` by at most the factor `1 + μ γ`
-  (`ClusterExpansion.Z_ratio_bound_of_dobrushin`).
+  `Z Λ ≠ 0` (`Z_ne_zero_of_dobrushin`) and deleting a polymer changes
+  `|Z|` by at most the factor `1 + μ γ`
+  (`Z_ratio_bound_of_dobrushin`);
 
-There are no `sorry`s in this repository.
+- the **Kotecký–Preiss criterion** (sum form): if `a ≥ 0` and
+  `Σ_{δ ≁ γ} |w δ| * exp (a δ) ≤ a γ` for every `γ` in `Λ`, then
+  `Z Λ ≠ 0` (`Z_ne_zero_of_kp`) with the classical ratio bound
+  `|Z (Λ \ {γ})| ≤ exp (a γ) * |Z Λ|` (`Z_ratio_bound_of_kp`) —
+  obtained from the product form via the comparison
+  `μ γ = |w γ| * exp (a γ)` and `1 + x ≤ exp x`
+  (`KPCondition.dobrushin`);
 
-The classical Kotecký–Preiss criterion in *sum* form
-(`ClusterExpansion.KPCondition`) is stated as a definition only. It is not
-a corollary of the product form — the ratio-telescoping induction used here
-produces products over incompatibility neighbourhoods, which a sum
-hypothesis does not control — and its formalisation via the cluster-tree
-induction is the next milestone. See the accompanying note in
-[`paper/`](paper/) for a discussion, including a two-polymer example
-separating the two criteria.
+- **volume-linear control of the logarithm**: two-sided bounds
+  `(∏ (1 + μ γ))⁻¹ ≤ |Z Λ| ≤ ∏ (1 + μ γ)`
+  (`prod_inv_le_abs_Z_of_dobrushin`, `abs_Z_le_prod_of_dobrushin`),
+  hence `|log |Z Λ|| ≤ Σ log (1 + μ γ) ≤ Σ μ γ`
+  (`abs_log_abs_Z_le_of_dobrushin`, `abs_log_abs_Z_le_sum_of_dobrushin`),
+  and in Kotecký–Preiss form
+  `|log |Z Λ|| ≤ Σ |w γ| * exp (a γ)` (`abs_log_abs_Z_le_of_kp`);
+
+- the **hierarchy of hypotheses** KP ⟹ Dobrushin ⟹ Fernández–Procacci
+  (`KPCondition.dobrushin`, `DobrushinCondition.fp`, `KPCondition.fp`),
+  where the Fernández–Procacci condition (`FPCondition`) replaces the
+  Dobrushin product by the independence polynomial of the
+  neighbourhood — which is `Z` itself at the weights `μ` — via
+  `Z_A(μ) ≤ ∏_{δ ∈ A} (1 + μ δ)` (`Z_le_prod_one_add`).
+
+The hierarchy is strict: a single self-incompatible polymer of weight
+`1/2` satisfies the Dobrushin condition with `μ = 1`, while
+`e^a / 2 ≤ a` has no solution. An earlier version of this repository
+claimed that the sum form was not obtainable from the product form; the
+formalisation of the comparison argument refuted that claim, and the
+episode is documented in the accompanying note in [`paper/`](paper/).
 
 ## Building
 
@@ -46,28 +96,52 @@ The toolchain (`lean-toolchain`) and the mathlib revision
 
 | Path | Contents |
 | --- | --- |
-| `KPLean/ClusterExpansion.lean` | polymer systems, `Z`, the recursion, the Dobrushin criterion |
+| `KPLean/ClusterExpansion.lean` | polymer systems, `Z`, the recursion, the Dobrushin and Kotecký–Preiss criteria, log-bounds, the FP hierarchy |
 | `paper/kp-formalisation.tex` | LaTeX note describing the formalisation |
 
 ## Background
 
-Cluster expansions control the logarithm of polymer partition functions and
-are a basic tool of rigorous statistical mechanics and constructive field
-theory; see Kotecký–Preiss (Comm. Math. Phys. 103, 1986), Friedli–Velenik,
-*Statistical Mechanics of Lattice Systems* (CUP, 2017), Chapter 5, and
-Scott–Sokal (J. Stat. Phys. 118, 2005) for the criterion proved here. The
-longer-term aim of this project is machine-checked infrastructure for the
-convergence estimates used in rigorous renormalisation group analyses of
-lattice field theories, in the sense of the expositions of Balaban's method
-by Dimock (arXiv:1108.1335, 1212.5562, 1304.0705).
+Cluster expansions control the logarithm of polymer partition functions
+and are a basic tool of rigorous statistical mechanics and constructive
+field theory; see Kotecký–Preiss (Comm. Math. Phys. 103, 1986),
+Friedli–Velenik, *Statistical Mechanics of Lattice Systems* (CUP, 2017),
+Chapter 5, Scott–Sokal (J. Stat. Phys. 118, 2005), and
+Fernández–Procacci (Comm. Math. Phys. 274, 2007) for the criteria
+treated here. The longer-term aim of this project is machine-checked
+infrastructure for the convergence estimates used in rigorous
+renormalisation group analyses of lattice field theories, in the sense
+of the expositions of Balaban's method by Dimock (arXiv:1108.1335,
+1212.5562, 1304.0705).
+
+## Origin
+
+This repository is the residue of a boundary-drawing exercise. It grew
+out of DEGRALBA (*Dimensionserweiterte graduierte Algebra*), a private
+research notebook on a graded arithmetic in which division by zero is
+total and deficits book as surplus one level up; an interactive
+companion is published as
+[Stufenrechnung](https://claude.ai/code/artifact/d5fd412a-d671-4fa7-aace-935635f8669a).
+The notebook's final section asks which open problems such a system
+could and could not attack, and answers honestly: none of the famous
+ones. What survived that exercise was the question of the smallest step
+toward constructive field theory that can be machine-checked today with
+no overclaiming — and the answer was: the convergence criteria of the
+cluster expansion, the workhorse estimate behind every rigorous
+renormalisation group argument. Formalising them promptly falsified one
+of our own claims (see above), which we take as the method working as
+intended.
 
 ## Roadmap
 
 - [x] deletion recursion over commutative rings
 - [x] Dobrushin criterion (product form): nonvanishing and ratio bound
-- [ ] Kotecký–Preiss criterion (sum form) via the cluster-tree induction
-- [ ] convergent expansion of `log Z`
-- [ ] Fernández–Procacci refinement
+- [x] Kotecký–Preiss criterion (sum form): nonvanishing and the
+      classical `exp (a γ)` ratio bound, via comparison of hypotheses
+- [x] two-sided volume-linear bounds on `|Z|` and `log |Z|`
+- [x] Fernández–Procacci condition and the hierarchy KP ⟹ Dobrushin ⟹ FP
+- [ ] Fernández–Procacci criterion: nonvanishing under the FP condition
+- [ ] convergent cluster (Ursell) series for `log Z` with tree–graph
+      bounds
 
 Contributions and corrections are welcome; please open an issue.
 
@@ -93,5 +167,5 @@ individual lemmas would be required before any upstreaming.
 ## Acknowledgements
 
 The formalisation was produced with substantial assistance from an AI
-system (Claude, Anthropic), including proof drafting and literature checks.
-All errors are the author's.
+system (Claude, Anthropic), including proof drafting and literature
+checks. All errors are the author's.

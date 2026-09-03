@@ -14,31 +14,35 @@
 \newtheorem{definition}[theorem]{Definition}
 \newtheorem{remark}[theorem]{Remark}
 
-\title[A machine-checked Dobrushin criterion]{A machine-checked Dobrushin
-criterion for abstract polymer systems}
+\title[Machine-checked convergence criteria]{Machine-checked convergence
+criteria for abstract polymer systems}
 \author{Dennis Michael Heine}
 \date{September 3, 2026. \emph{Preliminary draft.}}
 
 \begin{document}
 
 \begin{abstract}
-We describe a formalisation, in Lean~4 over \textsf{mathlib}, of the core of
-the cluster expansion method for abstract polymer systems. Two results are
-proved in full, with no unproved placeholders: the deletion recursion
+We describe a formalisation, in Lean~4 over \textsf{mathlib}, of the
+convergence core of the cluster expansion method for abstract polymer
+systems, with no unproved placeholders. The results proved in full are: the
+deletion recursion
 $Z(\Lambda) = Z(\Lambda \setminus \{\gamma\}) + w(\gamma)\,
-Z(\Lambda \setminus N^*(\gamma))$ for the polymer partition function, for
-weights in an arbitrary commutative ring; and, for real weights, the
-Dobrushin convergence criterion in product form: if
-$\lvert w(\gamma)\rvert \prod_{\delta \nsim \gamma} (1 + \mu(\delta)) \le
-\mu(\gamma)$ for some $\mu \ge 0$, then $Z(\Lambda) \neq 0$ and
-$\lvert Z(\Lambda \setminus \{\gamma\})\rvert \le (1 + \mu(\gamma))
-\lvert Z(\Lambda)\rvert$. We record a point that the formalisation forced
-into the open: the ratio-telescoping induction that proves the product-form
-criterion does not prove the classical Kotecký--Preiss criterion in sum
-form, whose formalisation via the cluster-tree induction remains future
-work. The development is a first step of a machine-checked treatment of the
-convergence machinery underlying rigorous renormalisation group analyses of
-lattice field theories.
+Z(\Lambda \setminus N^*(\gamma))$ for weights in an arbitrary commutative
+ring; the Dobrushin convergence criterion in product form, with the ratio
+bound $\lvert Z(\Lambda \setminus \{\gamma\})\rvert \le (1 + \mu(\gamma))
+\lvert Z(\Lambda)\rvert$; the classical Kotecký--Preiss criterion in sum
+form, including its ratio bound $e^{a(\gamma)}$, obtained from the product
+form by the comparison $\mu = \lvert w\rvert e^{a}$ and $1 + x \le e^{x}$;
+two-sided volume-linear bounds
+$\lvert \log \lvert Z(\Lambda)\rvert \rvert \le \sum_{\gamma \in \Lambda}
+\log(1 + \mu(\gamma))$; and the hierarchy of hypotheses
+Kotecký--Preiss $\Rightarrow$ Dobrushin $\Rightarrow$ Fernández--Procacci.
+An earlier version of this note claimed that the sum form was not
+obtainable from the product form; the formalisation of the comparison
+argument corrected this, and we document both the error and its repair.
+The development is a step of a machine-checked treatment of the convergence
+machinery underlying rigorous renormalisation group analyses of lattice
+field theories.
 \end{abstract}
 
 \maketitle
@@ -71,17 +75,20 @@ physics tooling \cite{HepLean} indicate growing infrastructure on the
 mathematical physics side. To our knowledge no cluster expansion material is
 currently available in \textsf{mathlib}.
 
-The present note documents the first two steps. First, a machine-checked
+The present note documents the current state. First, a machine-checked
 proof of the fundamental recursion for the polymer partition function, in a
 generality (commutative ring valued weights) that covers the real, complex
 and formal power series cases occurring in applications. Second, a complete
-proof of a convergence criterion: the Dobrushin product-form condition
-implies nonvanishing of $Z$ together with the ratio bound that controls the
-effect of deleting a polymer. The development is about 400 lines of Lean,
+proof of the Dobrushin product-form criterion: nonvanishing of $Z$ together
+with the ratio bound that controls the effect of deleting a polymer. Third,
+consequences extracted from the product form without further induction:
+telescoped deletion bounds, two-sided volume-linear bounds on
+$\log \lvert Z \rvert$, the classical Kotecký--Preiss sum-form criterion
+via a comparison of hypotheses, and the hierarchy of conditions ending in
+the Fernández--Procacci form. The development is about 730 lines of Lean,
 compiles against current \textsf{mathlib}, and contains no \texttt{sorry}
-placeholders. The classical Kotecký--Preiss criterion in sum form is stated
-as a definition; the formalisation made unusually explicit why its proof
-requires a different induction, as discussed in Section~\ref{sec:kp}.
+placeholders. Section~\ref{sec:kp} documents a claim made in an earlier
+version of this note that the formalisation subsequently refuted.
 
 \section{The abstract setting}
 
@@ -224,31 +231,125 @@ identity $\prod_{S} w = w(\gamma)\prod_{S \setminus \{\gamma\}} w$ is
 \texttt{Finset.prod\_insert} applied after rewriting $S$ as
 \texttt{insert} $\gamma$ \texttt{(S.erase} $\gamma$\texttt{)}.
 
-\section{Why the sum form is not a corollary}\label{sec:kp}
+\section{Consequences of the product form}\label{sec:consequences}
 
-The classical Kotecký--Preiss criterion \cite{KP86} is stated in sum form:
-$a \ge 0$ and, for every $\gamma \in \Lambda$,
+The following statements are all formalised, with no further induction on
+the partition function beyond Theorem~\ref{thm:dob}.
+
+\begin{theorem}[volume-linear control of $\log \lvert Z\rvert$;
+formalised]\label{thm:log}
+Under the hypothesis of Theorem~\ref{thm:dob}, for every $E \subseteq
+\Lambda$,
+\[
+  \lvert Z(\Lambda \setminus E)\rvert \;\le\;
+  \Bigl(\prod_{\delta \in E} (1 + \mu(\delta))\Bigr)
+  \lvert Z(\Lambda)\rvert,
+\]
+and consequently
+\[
+  \Bigl(\prod_{\gamma \in \Lambda} (1 + \mu(\gamma))\Bigr)^{-1}
+  \;\le\; \lvert Z(\Lambda)\rvert \;\le\;
+  \prod_{\gamma \in \Lambda} (1 + \mu(\gamma)),
+  \qquad
+  \bigl\lvert \log \lvert Z(\Lambda)\rvert \bigr\rvert \;\le\;
+  \sum_{\gamma \in \Lambda} \log (1 + \mu(\gamma))
+  \;\le\; \sum_{\gamma \in \Lambda} \mu(\gamma).
+\]
+\end{theorem}
+
+\begin{proof}[Proof (as formalised)]
+The deletion bound telescopes the single-polymer ratio bound of
+Theorem~\ref{thm:dob} over $E$, monotonicity of the hypothesis under
+subsets supplying the induction. Taking $E = \Lambda$ and $Z(\emptyset)=1$
+gives the lower bound. The upper bound is a separate induction on
+$\lvert \Lambda \rvert$: the recursion, the triangle inequality and the
+deletion bound give $\lvert Z(\Lambda)\rvert \le (1 + \mu(\gamma))\,
+\lvert Z(\Lambda \setminus \{\gamma\})\rvert$. The logarithmic bounds
+follow with $\log(1+x) \le x$.
+\end{proof}
+
+\begin{theorem}[Kotecký--Preiss criterion; formalised]\label{thm:kp}
+Let $a \colon \iota \to \mathbb{R}$ with $a \ge 0$ on $\Lambda$ and suppose
+that for every $\gamma \in \Lambda$
 \[
   \sum_{\substack{\delta \in \Lambda \\ \delta \nsim \gamma}}
   \lvert w(\delta)\rvert \, e^{a(\delta)} \;\le\; a(\gamma).
 \]
-It is tempting to expect Theorem~\ref{thm:dob} to yield this by the
-substitution $\mu = e^{a} - 1$; the formalisation forced us to notice that
-it does not. The telescoping argument produces \emph{products} of the
-factors $1 + \mu(\delta)$ over a neighbourhood, and the sum-form hypothesis
-bounds a \emph{sum} over the same neighbourhood; there is no pointwise
-implication in either direction. A two-polymer example makes this concrete:
-for a pair of mutually incompatible polymers with equal weights $w$ and
+Then $Z(\Lambda) \neq 0$, and for every $\gamma \in \Lambda$,
+\[
+  \lvert Z(\Lambda \setminus \{\gamma\})\rvert \;\le\;
+  e^{a(\gamma)}\, \lvert Z(\Lambda)\rvert,
+  \qquad
+  \bigl\lvert \log \lvert Z(\Lambda)\rvert \bigr\rvert \;\le\;
+  \sum_{\gamma \in \Lambda} \lvert w(\gamma)\rvert\, e^{a(\gamma)} .
+\]
+\end{theorem}
+
+\begin{proof}[Proof (as formalised)]
+Set $\mu(\gamma) = \lvert w(\gamma)\rvert e^{a(\gamma)}$. Then, by
+$1 + x \le e^{x}$ applied factorwise and the sum-form hypothesis,
+\[
+  \prod_{\delta \nsim \gamma} \bigl(1 + \mu(\delta)\bigr)
+  \;\le\; \exp \Bigl( \sum_{\delta \nsim \gamma} \mu(\delta) \Bigr)
+  \;\le\; e^{a(\gamma)},
+\]
+so $\lvert w(\gamma)\rvert \prod_{\delta \nsim \gamma}(1 + \mu(\delta)) \le
+\mu(\gamma)$: the Dobrushin hypothesis holds, and Theorem~\ref{thm:dob}
+applies. For the classical ratio constant, the sum at $\gamma$ contains the
+term $\delta = \gamma$ (the relation is reflexive), whence
+$\mu(\gamma) \le a(\gamma)$ and
+$1 + \mu(\gamma) \le 1 + a(\gamma) \le e^{a(\gamma)}$.
+\end{proof}
+
+\begin{definition}[Fernández--Procacci condition]
+With $\mu \ge 0$ on $\Lambda$: for every $\gamma \in \Lambda$,
+$\lvert w(\gamma) \rvert \, \Xi_{N^*(\gamma)}(\mu) \le \mu(\gamma)$, where
+$\Xi_A(\mu) = \sum_{I \subseteq A \text{ independent}} \prod_{\delta \in I}
+\mu(\delta)$ is the independence polynomial of $A$ — in the development
+literally $Z$ evaluated at the weights $\mu$, so no new definition is
+needed.
+\end{definition}
+
+\begin{theorem}[hierarchy of hypotheses; formalised]\label{thm:hier}
+Kotecký--Preiss $\Rightarrow$ Dobrushin (with
+$\mu = \lvert w \rvert e^{a}$) $\Rightarrow$ Fernández--Procacci. The
+second implication rests on $\Xi_A(\mu) \le \prod_{\delta \in A}(1 +
+\mu(\delta))$, the sum over independent subsets against the sum over all
+subsets.
+\end{theorem}
+
+The Fernández--Procacci \emph{theorem} — nonvanishing of $Z$ under the
+weakest of the three hypotheses \cite{FP07} — is deliberately not claimed;
+its refined induction is future work, as is the convergent Ursell-series
+expansion of $\log Z$ itself, which requires tree-graph bounds beyond the
+volume-linear control of Theorem~\ref{thm:log}.
+
+\section{A corrected claim}\label{sec:kp}
+
+An earlier version of this note asserted that Theorem~\ref{thm:kp} was
+\emph{not} obtainable from the product form, on the grounds that the
+telescoping argument produces products of factors $1 + \mu(\delta)$ which a
+sum hypothesis does not control, and supported this with a two-polymer
+computation: for mutually incompatible polymers with equal weights and
 equal $a$, the sum condition permits $w = a e^{-a}/2$, while the product
-condition at $\mu = e^{a} - 1$ demands $a/2 \le 1 - e^{-a}$, which fails for
-$a$ beyond roughly $1.59$. The two criteria are genuinely different
-theorems. The sum form is proved in the literature by an induction over
-clusters with tree-graph bounds (see \cite[Chapter~5]{FV17}); formalising
-that induction, and then the convergent expansion for $\log Z$ itself, with
-the Fernández--Procacci refinement \cite{FP07} as a further target, is the
-next stage of this programme. In the development the sum-form condition is
-present as a definition, deliberately without an accompanying unproved
-theorem.
+condition at $\mu = e^{a}-1$ demands $a/2 \le 1 - e^{-a}$, failing beyond
+$a \approx 1.59$.
+
+The computation is correct but refutes only the substitution
+$\mu = e^{a}-1$. The substitution $\mu = \lvert w \rvert e^{a}$ used in the
+proof of Theorem~\ref{thm:kp} is the standard comparison (it appears in
+\cite{FP07} and in \cite{SS05}), and it succeeds — on the same example,
+the Dobrushin condition at the extremal Kotecký--Preiss weight reads
+$(1 + a/2)^2 \le e^{a}$, which holds for all $a \ge 0$. The error was one
+of quantifier order: from the failure of one substitution we inferred the
+failure of all. What \emph{is} true, and what the example continues to
+show, is the strictness of the hierarchy in Theorem~\ref{thm:hier}: a
+single self-incompatible polymer of weight $\tfrac12$ satisfies the
+Dobrushin condition with $\mu = 1$, while $\tfrac12 e^{a} \le a$ has no
+solution, so the product form is genuinely more general than the sum form.
+We record the episode because it is a specimen of what formalisation is
+for: the incorrect general claim could not be formalised, and the attempt
+to do so produced the correct proof instead.
 
 \section{Related work}
 
@@ -265,12 +366,11 @@ formalisations pioneered around \cite{LTE}.
 
 \section{Availability}
 
-The development (project \texttt{KPLean}, file
-\texttt{KPLean/ClusterExpansion.lean}, Lean toolchain \texttt{v4.33.1})
-builds with \texttt{lake build} against the \textsf{mathlib} version pinned
-in the accompanying manifest. It is currently distributed as part of a
-larger repository of the author; extraction into a standalone repository is
-planned.
+The development (file \texttt{KPLean/ClusterExpansion.lean}, Lean toolchain
+\texttt{v4.33.1}) builds with \texttt{lake build} against the
+\textsf{mathlib} version pinned in the accompanying manifest, and is
+available at
+\url{https://github.com/24high/cluster-expansion-lean}.
 
 \subsection*{Acknowledgements}
 The formalisation and this note were produced with substantial assistance

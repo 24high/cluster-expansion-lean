@@ -6,25 +6,37 @@ Authors: Dennis Michael Heine
 import Mathlib.Algebra.BigOperators.Ring.Finset
 import Mathlib.Data.Finset.Powerset
 import Mathlib.Analysis.SpecialFunctions.Exp
+import Mathlib.Analysis.SpecialFunctions.Log.Basic
 
 /-!
-# Cluster-Entwicklung: Fundamentalrekursion und Dobrushin-Kriterium
+# Cluster-Entwicklung: Rekursion, Dobrushin- und Kotecký-Preiss-Kriterium
 
 Abstraktes Polymersystem, Zustandssumme über unabhängige Polymermengen,
-die Fundamentalrekursion `Z Λ = Z (Λ ∖ {γ}) + w γ * Z (Λ ohne N*(γ))`
-über beliebigen kommutativen Ringen, und das vollständig bewiesene
-Dobrushin-Konvergenzkriterium in Produktform: unter
-`|w γ| · ∏_{δ ≁ γ} (1 + μ δ) ≤ μ γ` gilt `Z ≠ 0` und
-`|Z (Λ ∖ {γ})| ≤ (1 + μ γ) · |Z Λ|`. Kein `sorry` in dieser Datei.
+die Fundamentalrekursion `Z Λ = Z (Λ ∖ {γ}) + w γ * Z (Λ ohne N(γ))`
+über beliebigen kommutativen Ringen, und vollständig bewiesen:
 
-Die klassische Kotecký-Preiss-Summenform ist als Bedingung definiert;
-ihr Satz braucht die Cluster- bzw. Baumgraphen-Induktion und ist der
-nächste Baustein.
+* das **Dobrushin-Kriterium** in Produktform: unter
+  `|w γ| · ∏_{δ ≁ γ} (1 + μ δ) ≤ μ γ` gilt `Z ≠ 0` samt
+  Quotientenschranke `|Z (Λ ∖ {γ})| ≤ (1 + μ γ) · |Z Λ|`;
+* das klassische **Kotecký-Preiss-Kriterium** in Summenform: unter
+  `∑_{δ ≁ γ} |w δ| · exp (a δ) ≤ a γ` gilt `Z ≠ 0` und
+  `|Z (Λ ∖ {γ})| ≤ exp (a γ) · |Z Λ|` — per Bedingungsvergleich
+  `μ γ = |w γ| · exp (a γ)` mit `1 + x ≤ exp x`;
+* **volumenlineare Kontrolle des Logarithmus**:
+  `|log |Z Λ|| ≤ ∑_{γ ∈ Λ} log (1 + μ γ) ≤ ∑_{γ ∈ Λ} μ γ`,
+  aus zweiseitigen Schranken `(∏ (1 + μ))⁻¹ ≤ |Z Λ| ≤ ∏ (1 + μ)`;
+* die **Fernández-Procacci-Bedingung** samt Hierarchie
+  `KP ⟹ Dobrushin ⟹ FP`.
+
+Kein `sorry` in dieser Datei. Bewusst offen (nur definiert bzw. genannt,
+nichts Unbewiesenes behauptet): die Ursell-Reihe von `log Z` mit
+Baumgraphen-Schranken und der FP-Konvergenzsatz.
 
 Kontext: DEGRALBA §17.1, „Balaban als Lean-Blueprint“.
 Referenzen: Kotecký–Preiss (Comm. Math. Phys. 103, 1986);
 Friedli–Velenik, *Statistical Mechanics of Lattice Systems*, Kap. 5;
-Scott–Sokal (J. Stat. Phys. 118, 2005) zur Produktform.
+Scott–Sokal (J. Stat. Phys. 118, 2005); Fernández–Procacci
+(Comm. Math. Phys. 274, 2007).
 -/
 
 open Finset
@@ -167,10 +179,9 @@ und Entfernen eines Polymers ändert `|Z|` höchstens um den Faktor
 `1 + μ γ`. Der Beweis ist die Ratio-Teleskop-Induktion über `Λ.card`
 mittels `Z_recursion`.
 
-Bewusst offen (kein `sorry`, nur nicht behauptet): die klassische
-Summenform von Kotecký–Preiss (`KPCondition` unten). Sie folgt NICHT aus
-der Teleskop-Induktion, denn Summen kontrollieren die dort auftretenden
-Produkte nicht; sie braucht die Cluster- bzw. Baumgraphen-Induktion.
+Aus der Produktform folgen anschließend die zweiseitigen Schranken an
+`|Z|` und die Logarithmus-Kontrolle; im nächsten Abschnitt liefert der
+Bedingungsvergleich daraus auch die klassische Summenform.
 -/
 
 variable (wr : ι → ℝ) (μ : ι → ℝ)
@@ -386,17 +397,207 @@ theorem Z_ratio_bound_of_dobrushin (Λ : Finset ι)
     |Z P wr (Λ.erase γ)| ≤ (1 + μ γ) * |Z P wr Λ| :=
   (dobrushin_aux P wr μ Λ.card Λ le_rfl h).2 γ hγ
 
+/-- Teleskopierte Quotientenschranke: Entfernen einer ganzen Teilmenge
+`E ⊆ Λ` ändert `|Z|` höchstens um den Faktor `∏_{δ ∈ E} (1 + μ δ)`. -/
+theorem Z_sdiff_bound_of_dobrushin (Λ : Finset ι)
+    (h : DobrushinCondition P wr μ Λ) :
+    ∀ E : Finset ι, E ⊆ Λ →
+      |Z P wr (Λ \ E)| ≤ (∏ δ ∈ E, (1 + μ δ)) * |Z P wr Λ| := by
+  intro E
+  induction E using Finset.induction_on with
+  | empty => intro _; simp
+  | @insert δ E' hδE' IH =>
+    intro hE
+    have hδΛ : δ ∈ Λ := hE (mem_insert_self δ E')
+    have hE'Λ : E' ⊆ Λ := fun x hx => hE (mem_insert_of_mem hx)
+    have hset : Λ \ insert δ E' = (Λ \ E').erase δ := by
+      ext x
+      simp only [mem_sdiff, mem_erase, mem_insert]
+      tauto
+    have hδmem : δ ∈ Λ \ E' := mem_sdiff.mpr ⟨hδΛ, hδE'⟩
+    have hDC' : DobrushinCondition P wr μ (Λ \ E') :=
+      h.mono P wr μ sdiff_subset
+    have hratio := Z_ratio_bound_of_dobrushin P wr μ (Λ \ E') hDC' δ hδmem
+    have hμδ : 0 ≤ μ δ := h.1 δ hδΛ
+    calc |Z P wr (Λ \ insert δ E')|
+        = |Z P wr ((Λ \ E').erase δ)| := by rw [hset]
+      _ ≤ (1 + μ δ) * |Z P wr (Λ \ E')| := hratio
+      _ ≤ (1 + μ δ) * ((∏ δ' ∈ E', (1 + μ δ')) * |Z P wr Λ|) := by
+          apply mul_le_mul_of_nonneg_left (IH hE'Λ)
+          linarith
+      _ = (∏ δ' ∈ insert δ E', (1 + μ δ')) * |Z P wr Λ| := by
+          rw [prod_insert hδE']; ring
+
+/-- Untere Schranke: `(∏_{γ ∈ Λ} (1 + μ γ))⁻¹ ≤ |Z Λ|`.
+Teleskop mit `E = Λ` und `Z ∅ = 1`. -/
+theorem prod_inv_le_abs_Z_of_dobrushin (Λ : Finset ι)
+    (h : DobrushinCondition P wr μ Λ) :
+    (∏ γ ∈ Λ, (1 + μ γ))⁻¹ ≤ |Z P wr Λ| := by
+  have htel := Z_sdiff_bound_of_dobrushin P wr μ Λ h Λ (Finset.Subset.refl Λ)
+  rw [sdiff_self, bot_eq_empty, Z_empty] at htel
+  have hP : (0:ℝ) < ∏ γ ∈ Λ, (1 + μ γ) :=
+    lt_of_lt_of_le one_pos (one_le_prod_one_add μ Λ h.1)
+  have h1 : (1:ℝ) ≤ (∏ γ ∈ Λ, (1 + μ γ)) * |Z P wr Λ| := by
+    simpa using htel
+  have h2 := mul_le_mul_of_nonneg_left h1 (inv_nonneg.mpr hP.le)
+  rwa [mul_one, ← mul_assoc, inv_mul_cancel₀ hP.ne', one_mul] at h2
+
+private theorem abs_Z_le_prod_aux :
+    ∀ n : ℕ, ∀ Λ : Finset ι, Λ.card ≤ n → DobrushinCondition P wr μ Λ →
+      |Z P wr Λ| ≤ ∏ γ ∈ Λ, (1 + μ γ) := by
+  intro n
+  induction n with
+  | zero =>
+    intro Λ hcard _
+    have hΛ : Λ = ∅ := card_eq_zero.mp (Nat.le_zero.mp hcard)
+    subst hΛ
+    simp
+  | succ n IHn =>
+    intro Λ hcard h
+    rcases Λ.eq_empty_or_nonempty with rfl | hne
+    · simp
+    obtain ⟨γ, hγ⟩ := hne
+    have herasecard : (Λ.erase γ).card ≤ n := by
+      have h1 := card_erase_of_mem hγ
+      omega
+    have hDCe : DobrushinCondition P wr μ (Λ.erase γ) :=
+      h.mono P wr μ (erase_subset γ Λ)
+    have hcompat : (Λ.erase γ)
+        \ ((Λ.erase γ).filter (fun δ => P.incomp γ δ = true))
+        = compat P Λ γ := by
+      rw [← filter_not]
+      simp only [compat, Bool.not_eq_true]
+    have htel := Z_sdiff_bound_of_dobrushin P wr μ (Λ.erase γ) hDCe
+      ((Λ.erase γ).filter (fun δ => P.incomp γ δ = true)) (filter_subset _ _)
+    rw [hcompat] at htel
+    have hsplit : Λ.filter (fun δ => P.incomp γ δ = true)
+        = insert γ ((Λ.erase γ).filter (fun δ => P.incomp γ δ = true)) := by
+      ext δ
+      simp only [mem_filter, mem_insert, mem_erase]
+      constructor
+      · rintro ⟨hδΛ, hinc⟩
+        by_cases hδγ : δ = γ
+        · exact Or.inl hδγ
+        · exact Or.inr ⟨⟨hδγ, hδΛ⟩, hinc⟩
+      · rintro (hδγ | ⟨⟨_, hδΛ⟩, hinc⟩)
+        · rw [hδγ]; exact ⟨hγ, P.refl γ⟩
+        · exact ⟨hδΛ, hinc⟩
+    have hγD : γ ∉ (Λ.erase γ).filter (fun δ => P.incomp γ δ = true) :=
+      fun hm => (mem_erase.mp ((filter_subset _ _) hm)).1 rfl
+    have hDC := h.2 γ hγ
+    rw [hsplit, prod_insert hγD] at hDC
+    have hμγ : 0 ≤ μ γ := h.1 γ hγ
+    have hPDone : (1:ℝ) ≤ ∏ δ ∈ (Λ.erase γ).filter
+        (fun δ => P.incomp γ δ = true), (1 + μ δ) :=
+      one_le_prod_one_add μ _
+        (fun δ hδ => h.1 δ (mem_of_mem_erase ((filter_subset _ _) hδ)))
+    have hkey : |wr γ| * ∏ δ ∈ (Λ.erase γ).filter
+        (fun δ => P.incomp γ δ = true), (1 + μ δ) ≤ μ γ := by
+      nlinarith [mul_nonneg (mul_nonneg (abs_nonneg (wr γ)) hμγ)
+        (le_trans zero_le_one hPDone), abs_nonneg (wr γ)]
+    have hrec := Z_recursion P wr Λ γ hγ
+    have habs : |Z P wr Λ|
+        ≤ |Z P wr (Λ.erase γ)| + |wr γ| * |Z P wr (compat P Λ γ)| := by
+      rw [hrec]
+      calc |Z P wr (Λ.erase γ) + wr γ * Z P wr (compat P Λ γ)|
+          ≤ |Z P wr (Λ.erase γ)| + |wr γ * Z P wr (compat P Λ γ)| :=
+            abs_add_le _ _
+        _ = |Z P wr (Λ.erase γ)| + |wr γ| * |Z P wr (compat P Λ γ)| := by
+            rw [abs_mul]
+    have hcompat_le : |wr γ| * |Z P wr (compat P Λ γ)|
+        ≤ μ γ * |Z P wr (Λ.erase γ)| := by
+      calc |wr γ| * |Z P wr (compat P Λ γ)|
+          ≤ |wr γ| * ((∏ δ ∈ (Λ.erase γ).filter
+              (fun δ => P.incomp γ δ = true), (1 + μ δ)) * |Z P wr (Λ.erase γ)|) :=
+            mul_le_mul_of_nonneg_left htel (abs_nonneg _)
+        _ = (|wr γ| * ∏ δ ∈ (Λ.erase γ).filter
+              (fun δ => P.incomp γ δ = true), (1 + μ δ)) * |Z P wr (Λ.erase γ)| := by
+            ring
+        _ ≤ μ γ * |Z P wr (Λ.erase γ)| :=
+            mul_le_mul_of_nonneg_right hkey (abs_nonneg _)
+    have hIH := IHn (Λ.erase γ) herasecard hDCe
+    have hexpand : (1 + μ γ) * |Z P wr (Λ.erase γ)|
+        = |Z P wr (Λ.erase γ)| + μ γ * |Z P wr (Λ.erase γ)| := by ring
+    have hfinal : |Z P wr Λ| ≤ (1 + μ γ) * |Z P wr (Λ.erase γ)| := by
+      rw [hexpand]
+      linarith
+    calc |Z P wr Λ|
+        ≤ (1 + μ γ) * |Z P wr (Λ.erase γ)| := hfinal
+      _ ≤ (1 + μ γ) * ∏ δ ∈ Λ.erase γ, (1 + μ δ) := by
+          apply mul_le_mul_of_nonneg_left hIH
+          linarith
+      _ = ∏ δ ∈ Λ, (1 + μ δ) := mul_prod_erase Λ (fun δ => 1 + μ δ) hγ
+
+/-- Obere Schranke: `|Z Λ| ≤ ∏_{γ ∈ Λ} (1 + μ γ)` unter der
+Dobrushin-Bedingung. -/
+theorem abs_Z_le_prod_of_dobrushin (Λ : Finset ι)
+    (h : DobrushinCondition P wr μ Λ) :
+    |Z P wr Λ| ≤ ∏ γ ∈ Λ, (1 + μ γ) :=
+  abs_Z_le_prod_aux P wr μ Λ.card Λ le_rfl h
+
+private theorem log_mono {x y : ℝ} (hx : 0 < x) (hxy : x ≤ y) :
+    Real.log x ≤ Real.log y := by
+  rw [← Real.exp_le_exp, Real.exp_log hx, Real.exp_log (lt_of_lt_of_le hx hxy)]
+  exact hxy
+
+/-- **Volumenlineare Kontrolle des Logarithmus der Zustandssumme:**
+unter der Dobrushin-Bedingung gilt
+`|log |Z Λ|| ≤ ∑_{γ ∈ Λ} log (1 + μ γ)` — obere und untere Schranke an
+`|Z|` in einem. Das ist der Konvergenzgehalt der Cluster-Entwicklung auf
+Schrankenniveau: `log |Z|` wächst höchstens linear im Volumen,
+gleichmäßig unter der Bedingung. -/
+theorem abs_log_abs_Z_le_of_dobrushin (Λ : Finset ι)
+    (h : DobrushinCondition P wr μ Λ) :
+    |Real.log (|Z P wr Λ|)| ≤ ∑ γ ∈ Λ, Real.log (1 + μ γ) := by
+  have hZpos : 0 < |Z P wr Λ| :=
+    abs_pos.mpr (Z_ne_zero_of_dobrushin P wr μ Λ h)
+  have hPpos : (0:ℝ) < ∏ γ ∈ Λ, (1 + μ γ) :=
+    lt_of_lt_of_le one_pos (one_le_prod_one_add μ Λ h.1)
+  have hlogprod : Real.log (∏ γ ∈ Λ, (1 + μ γ))
+      = ∑ γ ∈ Λ, Real.log (1 + μ γ) :=
+    Real.log_prod (fun γ hγ => by
+      have hμ := h.1 γ hγ
+      have hpos : (0:ℝ) < 1 + μ γ := by linarith
+      exact hpos.ne')
+  rw [abs_le]
+  refine ⟨?_, ?_⟩
+  · have hlow := prod_inv_le_abs_Z_of_dobrushin P wr μ Λ h
+    have hlog := log_mono (inv_pos.mpr hPpos) hlow
+    rw [Real.log_inv, hlogprod] at hlog
+    exact hlog
+  · have hup := abs_Z_le_prod_of_dobrushin P wr μ Λ h
+    have hlog := log_mono hZpos hup
+    rw [hlogprod] at hlog
+    exact hlog
+
+/-- Additive Fassung: `|log |Z Λ|| ≤ ∑_{γ ∈ Λ} μ γ`
+(mittels `log (1 + x) ≤ x`). -/
+theorem abs_log_abs_Z_le_sum_of_dobrushin (Λ : Finset ι)
+    (h : DobrushinCondition P wr μ Λ) :
+    |Real.log (|Z P wr Λ|)| ≤ ∑ γ ∈ Λ, μ γ := by
+  refine le_trans (abs_log_abs_Z_le_of_dobrushin P wr μ Λ h)
+    (Finset.sum_le_sum fun γ hγ => ?_)
+  have hμ := h.1 γ hγ
+  have hpos : (0:ℝ) < 1 + μ γ := by linarith
+  have := Real.log_le_sub_one_of_pos hpos
+  linarith
+
 end Dobrushin
 
 section KoteckyPreiss
 /-!
-## Die klassische Summenform (Definition; Satz noch offen)
+## Die klassische Summenform, bewiesen per Bedingungsvergleich
 
-Die Kotecký-Preiss-Bedingung in Summenform. Ihr Konvergenzsatz folgt
-nicht aus der obigen Teleskop-Induktion (Summen kontrollieren keine
-Produkte); der vorgesehene Weg ist die Cluster- bzw.
-Baumgraphen-Induktion. Hier wird deshalb nur die Bedingung definiert,
-ohne unbewiesene Behauptung im Code.
+Eine frühere Fassung dieser Datei behauptete, die Summenform sei aus der
+Produktform nicht zu gewinnen. Das war zu kurz gedacht: mit
+`μ γ = |w γ| · exp (a γ)` und `1 + x ≤ exp x` impliziert die
+KP-Bedingung die Dobrushin-Bedingung (`KPCondition.dobrushin`), und
+Nichtverschwinden samt klassischer Quotientenschranke `exp (a γ)` folgen
+als Korollare. Der umgekehrte Weg scheitert wirklich: die Produktform
+ist echt allgemeiner (Beispiel: ein selbst-unverträgliches Polymer mit
+`|w| = 1/2` erfüllt Dobrushin mit `μ = 1`, aber `e^a/2 ≤ a` hat keine
+Lösung). Offen bleibt die Ursell-Reihe von `log Z`; sie braucht die
+Baumgraphen-Induktion und mehr als Schranken.
 -/
 
 variable (wr : ι → ℝ) (a : ι → ℝ)
@@ -408,6 +609,125 @@ def KPCondition (Λ : Finset ι) : Prop :=
   ∀ γ ∈ Λ,
     ∑ δ ∈ Λ.filter (fun δ => P.incomp γ δ = true), |wr δ| * Real.exp (a δ) ≤ a γ
 
+omit [DecidableEq ι] in
+/-- **Vergleich der Bedingungen:** die Kotecký-Preiss-Summenbedingung
+impliziert die Dobrushin-Produktbedingung mit `μ γ := |w γ| · exp (a γ)`.
+Kernungleichung ist `1 + x ≤ exp x`; vgl. Fernández–Procacci
+(Comm. Math. Phys. 274, 2007) und Scott–Sokal. -/
+theorem KPCondition.dobrushin {Λ : Finset ι} (h : KPCondition P wr a Λ) :
+    DobrushinCondition P wr (fun γ => |wr γ| * Real.exp (a γ)) Λ := by
+  obtain ⟨hpos, hsum⟩ := h
+  refine ⟨fun γ _ => mul_nonneg (abs_nonneg _) (Real.exp_pos _).le,
+    fun γ hγ => ?_⟩
+  change |wr γ| * ∏ δ ∈ Λ.filter (fun δ => P.incomp γ δ = true),
+      (1 + |wr δ| * Real.exp (a δ)) ≤ |wr γ| * Real.exp (a γ)
+  have hprod_le : ∏ δ ∈ Λ.filter (fun δ => P.incomp γ δ = true),
+      (1 + |wr δ| * Real.exp (a δ))
+      ≤ Real.exp (∑ δ ∈ Λ.filter (fun δ => P.incomp γ δ = true),
+          |wr δ| * Real.exp (a δ)) := by
+    rw [Real.exp_sum]
+    refine Finset.prod_le_prod (fun δ _ => by positivity) (fun δ _ => ?_)
+    have := Real.add_one_le_exp (|wr δ| * Real.exp (a δ))
+    linarith
+  have hexp_le : Real.exp (∑ δ ∈ Λ.filter (fun δ => P.incomp γ δ = true),
+      |wr δ| * Real.exp (a δ)) ≤ Real.exp (a γ) :=
+    Real.exp_le_exp.mpr (hsum γ hγ)
+  exact mul_le_mul_of_nonneg_left (le_trans hprod_le hexp_le) (abs_nonneg _)
+
+/-- **Kotecký-Preiss-Kriterium, Teil 1:** unter der Summenbedingung
+verschwindet die Zustandssumme nicht. -/
+theorem Z_ne_zero_of_kp (Λ : Finset ι) (h : KPCondition P wr a Λ) :
+    Z P wr Λ ≠ 0 :=
+  Z_ne_zero_of_dobrushin P wr _ Λ h.dobrushin
+
+/-- **Kotecký-Preiss-Kriterium, Teil 2:** die klassische
+Quotientenschranke — Entfernen von `γ` ändert `|Z|` höchstens um den
+Faktor `exp (a γ)`. Benutzt, dass die Summenbedingung wegen `γ ≁ γ` den
+Term `|w γ| · exp (a γ) ≤ a γ` enthält. -/
+theorem Z_ratio_bound_of_kp (Λ : Finset ι) (h : KPCondition P wr a Λ)
+    (γ : ι) (hγ : γ ∈ Λ) :
+    |Z P wr (Λ.erase γ)| ≤ Real.exp (a γ) * |Z P wr Λ| := by
+  have hbase := Z_ratio_bound_of_dobrushin P wr
+    (fun γ => |wr γ| * Real.exp (a γ)) Λ h.dobrushin γ hγ
+  have hγN : γ ∈ Λ.filter (fun δ => P.incomp γ δ = true) :=
+    mem_filter.mpr ⟨hγ, P.refl γ⟩
+  have hterm : |wr γ| * Real.exp (a γ) ≤ a γ :=
+    le_trans (Finset.single_le_sum
+      (f := fun δ => |wr δ| * Real.exp (a δ))
+      (fun δ _ => by positivity) hγN) (h.2 γ hγ)
+  have hfac : 1 + |wr γ| * Real.exp (a γ) ≤ Real.exp (a γ) := by
+    have h1 := Real.add_one_le_exp (a γ)
+    linarith
+  calc |Z P wr (Λ.erase γ)|
+      ≤ (1 + |wr γ| * Real.exp (a γ)) * |Z P wr Λ| := hbase
+    _ ≤ Real.exp (a γ) * |Z P wr Λ| :=
+        mul_le_mul_of_nonneg_right hfac (abs_nonneg _)
+
+/-- Logarithmus-Schranke in KP-Form:
+`|log |Z Λ|| ≤ ∑_{γ ∈ Λ} |w γ| · exp (a γ)`. -/
+theorem abs_log_abs_Z_le_of_kp (Λ : Finset ι) (h : KPCondition P wr a Λ) :
+    |Real.log (|Z P wr Λ|)| ≤ ∑ γ ∈ Λ, |wr γ| * Real.exp (a γ) :=
+  abs_log_abs_Z_le_sum_of_dobrushin P wr _ Λ h.dobrushin
+
 end KoteckyPreiss
+
+section FernandezProcacci
+/-!
+## Die Fernández-Procacci-Verfeinerung: Bedingung und Hierarchie
+
+Die FP-Bedingung ersetzt im Dobrushin-Produkt `∏ (1 + μ δ)` durch das
+Unabhängigkeitspolynom der Nachbarschaft — die Summe läuft nur noch über
+unabhängige Teilmengen statt über alle. Das ist genau `Z` mit den
+Gewichten `μ`, es braucht also keine neue Definition. Bewiesen wird hier
+die Hierarchie der Bedingungen `KP ⟹ Dobrushin ⟹ FP` über
+`Z_A(μ) ≤ ∏_{δ ∈ A} (1 + μ δ)`. Der FP-Konvergenzsatz selbst
+(Nichtverschwinden von `Z` unter der FP-Bedingung, Fernández–Procacci,
+Comm. Math. Phys. 274, 2007) ist der nächste offene Baustein; er braucht
+eine verfeinerte Induktion und wird hier bewusst nicht behauptet.
+-/
+
+variable (wr : ι → ℝ) (μ : ι → ℝ)
+
+/-- Fernández-Procacci-Bedingung auf `Λ`: für jedes `γ ∈ Λ` gilt
+`|w γ| · Ξ ≤ μ γ`, wobei `Ξ = Z_N(μ)` das Unabhängigkeitspolynom der
+geschlossenen Nachbarschaft `N` von `γ` in `Λ` ist. -/
+def FPCondition (Λ : Finset ι) : Prop :=
+  (∀ γ ∈ Λ, 0 ≤ μ γ) ∧
+  ∀ γ ∈ Λ,
+    |wr γ| * Z P μ (Λ.filter (fun δ => P.incomp γ δ = true)) ≤ μ γ
+
+/-- Das Unabhängigkeitspolynom liegt unter dem vollen Produkt:
+`Z_A(μ) ≤ ∏_{δ ∈ A} (1 + μ δ)` für `μ ≥ 0` auf `A` — Summe über
+unabhängige Teilmengen gegen Summe über alle Teilmengen. -/
+theorem Z_le_prod_one_add (A : Finset ι) (hpos : ∀ δ ∈ A, 0 ≤ μ δ) :
+    Z P μ A ≤ ∏ δ ∈ A, (1 + μ δ) := by
+  have hexp : ∏ δ ∈ A, (1 + μ δ) = ∑ S ∈ A.powerset, ∏ δ ∈ S, μ δ := by
+    calc ∏ δ ∈ A, (1 + μ δ)
+        = ∏ δ ∈ A, (μ δ + 1) := prod_congr rfl fun δ _ => by ring
+      _ = ∑ S ∈ A.powerset, (∏ δ ∈ S, μ δ) * ∏ δ ∈ A \ S, 1 :=
+          prod_add _ _ _
+      _ = ∑ S ∈ A.powerset, ∏ δ ∈ S, μ δ :=
+          sum_congr rfl fun S _ => by rw [prod_const_one, mul_one]
+  rw [hexp]
+  unfold Z
+  refine sum_le_sum_of_subset_of_nonneg (filter_subset _ _) fun S hS _ => ?_
+  exact prod_nonneg fun δ hδ => hpos δ (mem_powerset.mp hS hδ)
+
+/-- Dobrushin ⟹ FP: die FP-Bedingung ist die schwächere Voraussetzung. -/
+theorem DobrushinCondition.fp {Λ : Finset ι}
+    (h : DobrushinCondition P wr μ Λ) : FPCondition P wr μ Λ := by
+  obtain ⟨hpos, hbd⟩ := h
+  refine ⟨hpos, fun γ hγ => le_trans ?_ (hbd γ hγ)⟩
+  refine mul_le_mul_of_nonneg_left ?_ (abs_nonneg _)
+  exact Z_le_prod_one_add P μ _ fun δ hδ => hpos δ (mem_filter.mp hδ).1
+
+/-- Die volle Hierarchie: KP ⟹ Dobrushin ⟹ FP, mit
+`μ γ = |w γ| · exp (a γ)`. -/
+theorem KPCondition.fp {Λ : Finset ι} {a : ι → ℝ}
+    (h : KPCondition P wr a Λ) :
+    FPCondition P wr (fun γ => |wr γ| * Real.exp (a γ)) Λ :=
+  h.dobrushin.fp
+
+end FernandezProcacci
 
 end ClusterExpansion
