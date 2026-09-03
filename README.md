@@ -189,23 +189,10 @@ intended.
 
 ## Roadmap
 
-- [x] deletion recursion over commutative rings
-- [x] Dobrushin criterion (product form): nonvanishing and ratio bound
-- [x] Kotecký–Preiss criterion (sum form): nonvanishing and the
-      classical `exp (a γ)` ratio bound, via comparison of hypotheses
-- [x] two-sided volume-linear bounds on `|Z|` and `log |Z|`
-- [x] Fernández–Procacci condition and the hierarchy KP ⟹ Dobrushin ⟹ FP
-- [x] Fernández–Procacci criterion: nonvanishing and ratio bound under
-      the FP condition (via Fialho's inductive proof)
-- [x] Ursell functions as alternating sums over connected spanning
-      subgraphs, and the Penrose tree–graph bound
-      `|φᵀ| ≤ #spanning trees` via the Penrose partition scheme
-- [x] Mayer expansion of `Z` and the finite cluster recursion — the
-      exponential structure of the expansion, over any commutative ring
-- [ ] the analytic layer: identification of the iterated cluster
-      recursion with the convergent cluster series for `log Z`, and the
-      Kotecký–Preiss summability estimate over clusters (via counts of
-      labelled trees with prescribed degrees) — the remaining milestone
+Everything through the Mayer expansion and the finite cluster recursion
+is formalised; the remaining milestone is the analytic layer of the
+cluster series for `log Z`. See [`ROADMAP.md`](ROADMAP.md) for the full
+list with the relevant theorem names.
 
 Contributions and corrections are welcome; please open an issue.
 
