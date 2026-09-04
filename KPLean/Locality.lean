@@ -4,6 +4,7 @@ Released under the CC BY-NC-SA 4.0 license as described in the file LICENSE.
 Authors: Dennis Michael Heine
 -/
 import KPLean.KPExponential
+import KPLean.UrsellSymmetry
 
 /-!
 # Lokalität: das Entfernen eines Polymers
@@ -43,17 +44,19 @@ theorem KPCondition.mono {w : ι → ℝ} {a : ι → ℝ} {Λ' Λ : Finset ι}
     (Finset.filter_subset_filter _ hsub) ?_) (hsum γ (hsub hγ))
   exact fun δ _ _ => mul_nonneg (abs_nonneg _) (Real.exp_pos _).le
 
-/-- **Lokalitätsschranke** (modulo der Ordnungs-Differenzschranke):
+/-- **Lokalitätsschranke**:
 Entfernt man ein Polymer aus dem Volumen, so ändert sich die
 Cluster-Reihe um höchstens `|w γ₀| · exp (a γ₀)` — unabhängig vom
 Volumen. -/
 theorem abs_clusterSeries_sub_erase_le_of_kp (w : ι → ℝ) (a : ι → ℝ)
     (Λ : Finset ι) (γ₀ : ι) (hγ₀ : γ₀ ∈ Λ) (hKP : KPCondition P w a Λ)
-    (hdiff : ∀ n : ℕ,
-      |clusterOrderSum P w Λ n - clusterOrderSum P w (Λ.erase γ₀) n|
-        ≤ ((n : ℝ) + 1) * pinnedOrderSum P w Λ γ₀ n) :
+ :
     |clusterSeries P w Λ - clusterSeries P w (Λ.erase γ₀)|
       ≤ |w γ₀| * Real.exp (a γ₀) := by
+  have hdiff : ∀ n : ℕ,
+      |clusterOrderSum P w Λ n - clusterOrderSum P w (Λ.erase γ₀) n|
+        ≤ ((n : ℝ) + 1) * pinnedOrderSum P w Λ γ₀ n :=
+    fun n => abs_clusterOrderSum_sub_le P w Λ γ₀ n
   -- Termweise Schranke: der Faktor `n + 1` kürzt die Fakultät zu `n!`.
   have hd : ∀ n : ℕ,
       |clusterCoeff P w Λ n - clusterCoeff P w (Λ.erase γ₀) n|
@@ -102,20 +105,17 @@ theorem abs_clusterSeries_sub_erase_le_of_kp (w : ι → ℝ) (a : ι → ℝ)
         Summable.tsum_le_tsum hd hsumd hpin
     _ ≤ |w γ₀| * Real.exp (a γ₀) := tsum_pinned_le_of_kp P w a Λ γ₀ hγ₀ hKP
 
-/-- **Lokalität von `log Z`** (modulo der Ordnungs-Differenzschranke):
-das Entfernen eines Polymers ändert `log Z` um höchstens
+/-- **Lokalität von `log Z`**: das Entfernen eines Polymers ändert `log Z` um höchstens
 `|w γ₀| · exp (a γ₀)`, unabhängig vom Volumen. Das ist die zweiseitige
 Verschärfung der Quotientenschranke `Z_ratio_bound_of_kp`. -/
 theorem abs_log_Z_sub_erase_le_of_kp (w : ι → ℝ) (a : ι → ℝ) (Λ : Finset ι)
     (γ₀ : ι) (hγ₀ : γ₀ ∈ Λ) (hKP : KPCondition P w a Λ)
-    (hdiff : ∀ n : ℕ,
-      |clusterOrderSum P w Λ n - clusterOrderSum P w (Λ.erase γ₀) n|
-        ≤ ((n : ℝ) + 1) * pinnedOrderSum P w Λ γ₀ n) :
+ :
     |Real.log (Z P w Λ) - Real.log (Z P w (Λ.erase γ₀))|
       ≤ |w γ₀| * Real.exp (a γ₀) := by
   rw [log_Z_eq_clusterSeries_of_kp P w a Λ hKP,
     log_Z_eq_clusterSeries_of_kp P w a (Λ.erase γ₀)
       (KPCondition.mono P (Finset.erase_subset γ₀ Λ) hKP)]
-  exact abs_clusterSeries_sub_erase_le_of_kp P w a Λ γ₀ hγ₀ hKP hdiff
+  exact abs_clusterSeries_sub_erase_le_of_kp P w a Λ γ₀ hγ₀ hKP
 
 end ClusterExpansion

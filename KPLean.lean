@@ -7,6 +7,7 @@ import KPLean.ClusterExpansion
 import KPLean.Ursell
 import KPLean.Mayer
 import KPLean.ClusterSeries
+import KPLean.UrsellSymmetry
 import KPLean.Exponential
 import KPLean.Trees
 import KPLean.TreeDecomp
