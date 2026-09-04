@@ -5,6 +5,7 @@ Authors: Dennis Michael Heine
 -/
 import Mathlib.Algebra.BigOperators.Ring.Finset
 import Mathlib.Data.Finset.Powerset
+import Mathlib.Analysis.Normed.Field.Basic
 import Mathlib.Analysis.SpecialFunctions.Exp
 import Mathlib.Analysis.SpecialFunctions.Log.Basic
 
@@ -15,22 +16,29 @@ Abstraktes Polymersystem, Zustandssumme über unabhängige Polymermengen,
 die Fundamentalrekursion `Z Λ = Z (Λ ∖ {γ}) + w γ * Z (Λ ohne N(γ))`
 über beliebigen kommutativen Ringen, und vollständig bewiesen:
 
+Die Konvergenzkriterien gelten für Gewichte `w : ι → K` in einem
+beliebigen **normierten Körper** `K`; insbesondere sind die komplexen
+Gewichte abgedeckt, in denen Kotecký-Preiss klassisch gebraucht wird
+(Nullstellenfreiheit der Zustandssumme in der Aktivitätsebene). Die
+Schranken `μ`, `a` und alle Vergleichsgrößen bleiben reell, ebenso das
+alternierende Gas `Z(-‖w‖)` und das Unabhängigkeitspolynom `Ξ = Z(μ)`.
+
 * das **Dobrushin-Kriterium** in Produktform: unter
-  `|w γ| · ∏_{δ ≁ γ} (1 + μ δ) ≤ μ γ` gilt `Z ≠ 0` samt
-  Quotientenschranke `|Z (Λ ∖ {γ})| ≤ (1 + μ γ) · |Z Λ|`;
+  `‖w γ‖ · ∏_{δ ≁ γ} (1 + μ δ) ≤ μ γ` gilt `Z ≠ 0` samt
+  Quotientenschranke `‖Z (Λ ∖ {γ})‖ ≤ (1 + μ γ) · ‖Z Λ‖`;
 * das klassische **Kotecký-Preiss-Kriterium** in Summenform: unter
-  `∑_{δ ≁ γ} |w δ| · exp (a δ) ≤ a γ` gilt `Z ≠ 0` und
-  `|Z (Λ ∖ {γ})| ≤ exp (a γ) · |Z Λ|` — per Bedingungsvergleich
-  `μ γ = |w γ| · exp (a γ)` mit `1 + x ≤ exp x`;
+  `∑_{δ ≁ γ} ‖w δ‖ · exp (a δ) ≤ a γ` gilt `Z ≠ 0` und
+  `‖Z (Λ ∖ {γ})‖ ≤ exp (a γ) · ‖Z Λ‖` — per Bedingungsvergleich
+  `μ γ = ‖w γ‖ · exp (a γ)` mit `1 + x ≤ exp x`;
 * **volumenlineare Kontrolle des Logarithmus**:
-  `|log |Z Λ|| ≤ ∑_{γ ∈ Λ} log (1 + μ γ) ≤ ∑_{γ ∈ Λ} μ γ`,
-  aus zweiseitigen Schranken `(∏ (1 + μ))⁻¹ ≤ |Z Λ| ≤ ∏ (1 + μ)`;
+  `|log ‖Z Λ‖| ≤ ∑_{γ ∈ Λ} log (1 + μ γ) ≤ ∑_{γ ∈ Λ} μ γ`,
+  aus zweiseitigen Schranken `(∏ (1 + μ))⁻¹ ≤ ‖Z Λ‖ ≤ ∏ (1 + μ)`;
 * das **Fernández-Procacci-Kriterium**, die schärfste der drei
-  klassischen Bedingungen: unter `|w γ| · Ξ_{N(γ)}(μ) ≤ μ γ` (mit dem
+  klassischen Bedingungen: unter `‖w γ‖ · Ξ_{N(γ)}(μ) ≤ μ γ` (mit dem
   Unabhängigkeitspolynom `Ξ` der Nachbarschaft) gilt `Z ≠ 0` und
-  `|Z (Λ ∖ {x})| ≤ (1 + μ x) · |Z Λ|` — über die Positivität des
-  alternierenden Gases `Z(-|w|) > 0` und den Vergleich
-  `Z(-|w|) ≤ |Z(w)|`; dazu die Hierarchie `KP ⟹ Dobrushin ⟹ FP`.
+  `‖Z (Λ ∖ {x})‖ ≤ (1 + μ x) · ‖Z Λ‖` — über die Positivität des
+  alternierenden Gases `Z(-‖w‖) > 0` und den Vergleich
+  `Z(-‖w‖) ≤ ‖Z(w)‖`; dazu die Hierarchie `KP ⟹ Dobrushin ⟹ FP`.
 
 Kein `sorry` in dieser Datei. Die Ursell-Funktionen und die
 Penrose-Baumgraphen-Schranke sind in `KPLean/Ursell.lean` bewiesen;
@@ -75,6 +83,12 @@ theorem Indep.mono {S T : Finset ι} (hT : T ⊆ S) (hS : Indep P S) : Indep P T
   fun γ hγ δ hδ hne => hS γ (hT hγ) δ (hT hδ) hne
 
 variable {R : Type*} [CommRing R] (w : ι → R)
+
+-- Der Gewichtsbereich der Konvergenzkriterien: ein normierter Körper.
+-- `K := ℝ` und `K := ℂ` sind die klassischen Fälle; über `ℝ` stimmen
+-- `‖·‖` und `|·|` definitorisch überein, die reellen Instanzen aller
+-- Sätze bleiben also unverändert gültig.
+variable {K : Type*} [NormedField K]
 
 /-- Zustandssumme des Polymersystems auf `Λ`: Summe über alle unabhängigen
 `S ⊆ Λ` der Produkte der Gewichte (die leere Menge trägt `1` bei). -/
@@ -178,27 +192,28 @@ section Dobrushin
 /-!
 ## Das Dobrushin-Kriterium, vollständig bewiesen
 
-Ab hier reelle Gewichte. Bewiesen wird das Konvergenzkriterium in
-Produktform (Dobrushin; vgl. Scott–Sokal): Existiert `μ ≥ 0` mit
-`|w γ| · ∏_{δ ≁ γ} (1 + μ δ) ≤ μ γ` für alle `γ ∈ Λ`, so ist `Z Λ ≠ 0`,
-und Entfernen eines Polymers ändert `|Z|` höchstens um den Faktor
-`1 + μ γ`. Der Beweis ist die Ratio-Teleskop-Induktion über `Λ.card`
-mittels `Z_recursion`.
+Ab hier Gewichte `wr : ι → K` in einem normierten Körper (`ℝ` und `ℂ`
+eingeschlossen); die Vergleichsgröße `μ` bleibt reell. Bewiesen wird das
+Konvergenzkriterium in Produktform (Dobrushin; vgl. Scott–Sokal):
+Existiert `μ ≥ 0` mit `‖w γ‖ · ∏_{δ ≁ γ} (1 + μ δ) ≤ μ γ` für alle
+`γ ∈ Λ`, so ist `Z Λ ≠ 0`, und Entfernen eines Polymers ändert `‖Z‖`
+höchstens um den Faktor `1 + μ γ`. Der Beweis ist die
+Ratio-Teleskop-Induktion über `Λ.card` mittels `Z_recursion`.
 
 Aus der Produktform folgen anschließend die zweiseitigen Schranken an
-`|Z|` und die Logarithmus-Kontrolle; im nächsten Abschnitt liefert der
+`‖Z‖` und die Logarithmus-Kontrolle; im nächsten Abschnitt liefert der
 Bedingungsvergleich daraus auch die klassische Summenform.
 -/
 
-variable (wr : ι → ℝ) (μ : ι → ℝ)
+variable (wr : ι → K) (μ : ι → ℝ)
 
 /-- Dobrushin-Bedingung (Produktform) auf `Λ`: `μ ≥ 0` und für jedes
-`γ ∈ Λ` gilt `|w γ| · ∏_{δ ∈ Λ, δ ≁ γ} (1 + μ δ) ≤ μ γ`; das Produkt
+`γ ∈ Λ` gilt `‖w γ‖ · ∏_{δ ∈ Λ, δ ≁ γ} (1 + μ δ) ≤ μ γ`; das Produkt
 läuft über die geschlossene Unverträglichkeits-Nachbarschaft von `γ`. -/
 def DobrushinCondition (Λ : Finset ι) : Prop :=
   (∀ γ ∈ Λ, 0 ≤ μ γ) ∧
   ∀ γ ∈ Λ,
-    |wr γ| * ∏ δ ∈ Λ.filter (fun δ => P.incomp γ δ = true), (1 + μ δ) ≤ μ γ
+    ‖wr γ‖ * ∏ δ ∈ Λ.filter (fun δ => P.incomp γ δ = true), (1 + μ δ) ≤ μ γ
 
 private theorem one_le_prod_one_add :
     ∀ s : Finset ι, (∀ δ ∈ s, 0 ≤ μ δ) → (1:ℝ) ≤ ∏ δ ∈ s, (1 + μ δ) := by
@@ -234,24 +249,26 @@ theorem DobrushinCondition.mono {Λ' Λ : Finset ι} (hsub : Λ' ⊆ Λ)
       one_le_prod_one_add μ _
         (fun δ hδ => hpos δ (hsub (mem_filter.mp hδ).1))
     nlinarith
-  calc |wr γ| * ∏ δ ∈ Λ'.filter (fun δ => P.incomp γ δ = true), (1 + μ δ)
-      ≤ |wr γ| * ∏ δ ∈ Λ.filter (fun δ => P.incomp γ δ = true), (1 + μ δ) :=
-        mul_le_mul_of_nonneg_left hprodle (abs_nonneg _)
+  calc ‖wr γ‖ * ∏ δ ∈ Λ'.filter (fun δ => P.incomp γ δ = true), (1 + μ δ)
+      ≤ ‖wr γ‖ * ∏ δ ∈ Λ.filter (fun δ => P.incomp γ δ = true), (1 + μ δ) :=
+        mul_le_mul_of_nonneg_left hprodle (norm_nonneg _)
     _ ≤ μ γ := hbd γ (hsub hγ)
 
-@[simp] theorem Z_empty : Z P wr (∅ : Finset ι) = 1 := by
+/-- Die leere Menge trägt genau den Summanden `1` bei — gilt über jedem
+kommutativen Ring, also für reelle, komplexe und normierte Gewichte. -/
+@[simp] theorem Z_empty : Z P w (∅ : Finset ι) = 1 := by
   have hind : Indep P (∅ : Finset ι) := fun γ hγ => absurd hγ (notMem_empty γ)
   simp [Z, filter_singleton, hind]
 
 /-- Kern der Induktion: unter der Dobrushin-Bedingung ist die
 Zustandssumme nichtnull, und für jedes `γ ∈ Λ` gilt
-`|Z (Λ ∖ {γ})| ≤ (1 + μ γ) · |Z Λ|`. Beweis: starke Induktion über die
+`‖Z (Λ ∖ {γ})‖ ≤ (1 + μ γ) · ‖Z Λ‖`. Beweis: starke Induktion über die
 Kardinalität; die Quotienten werden entlang der Nachbarschaft von `γ`
 teleskopiert und mit `Z_recursion` geschlossen. -/
 theorem dobrushin_aux :
     ∀ n : ℕ, ∀ Λ : Finset ι, Λ.card ≤ n → DobrushinCondition P wr μ Λ →
       Z P wr Λ ≠ 0 ∧
-      ∀ γ ∈ Λ, |Z P wr (Λ.erase γ)| ≤ (1 + μ γ) * |Z P wr Λ| := by
+      ∀ γ ∈ Λ, ‖Z P wr (Λ.erase γ)‖ ≤ (1 + μ γ) * ‖Z P wr Λ‖ := by
   intro n
   induction n with
   | zero =>
@@ -268,7 +285,7 @@ theorem dobrushin_aux :
     -- Teleskop: Entfernen einer Menge E kostet höchstens den Faktor
     -- ∏_{δ ∈ E} (1 + μ δ).
     have telescope : ∀ E S : Finset ι, E ⊆ S → S ⊆ Λ → S.card ≤ n →
-        |Z P wr (S \ E)| ≤ (∏ δ ∈ E, (1 + μ δ)) * |Z P wr S| := by
+        ‖Z P wr (S \ E)‖ ≤ (∏ δ ∈ E, (1 + μ δ)) * ‖Z P wr S‖ := by
       intro E
       induction E using Finset.induction_on with
       | empty => intro S _ _ _; simp
@@ -287,16 +304,16 @@ theorem dobrushin_aux :
           h.mono P wr μ (hsub'.trans hSΛ)
         have hratio := (IHn (S \ E') hcard' hDC').2 δ hδSE'
         have hμδ : 0 ≤ μ δ := h.1 δ (hSΛ hδS)
-        calc |Z P wr (S \ insert δ E')|
-            = |Z P wr ((S \ E').erase δ)| := by rw [hset]
-          _ ≤ (1 + μ δ) * |Z P wr (S \ E')| := hratio
-          _ ≤ (1 + μ δ) * ((∏ δ' ∈ E', (1 + μ δ')) * |Z P wr S|) := by
+        calc ‖Z P wr (S \ insert δ E')‖
+            = ‖Z P wr ((S \ E').erase δ)‖ := by rw [hset]
+          _ ≤ (1 + μ δ) * ‖Z P wr (S \ E')‖ := hratio
+          _ ≤ (1 + μ δ) * ((∏ δ' ∈ E', (1 + μ δ')) * ‖Z P wr S‖) := by
               apply mul_le_mul_of_nonneg_left (IHe S hE'S hSΛ hScard)
               linarith
-          _ = (∏ δ' ∈ insert δ E', (1 + μ δ')) * |Z P wr S| := by
+          _ = (∏ δ' ∈ insert δ E', (1 + μ δ')) * ‖Z P wr S‖ := by
               rw [prod_insert hδE']; ring
     -- Quotientenschranke für jedes γ ∈ Λ, ganz ohne Division.
-    have hratio : ∀ γ ∈ Λ, |Z P wr (Λ.erase γ)| ≤ (1 + μ γ) * |Z P wr Λ| := by
+    have hratio : ∀ γ ∈ Λ, ‖Z P wr (Λ.erase γ)‖ ≤ (1 + μ γ) * ‖Z P wr Λ‖ := by
       intro γ hγ
       have herasecard : (Λ.erase γ).card ≤ n := by
         have h1 := card_erase_of_mem hγ
@@ -328,52 +345,50 @@ theorem dobrushin_aux :
       rw [hsplit, prod_insert hγD] at hDC
       -- Rekursion und Dreiecksungleichung.
       have hrec := Z_recursion P wr Λ γ hγ
-      have habs : |Z P wr (Λ.erase γ)|
-          ≤ |Z P wr Λ| + |wr γ| * |Z P wr (compat P Λ γ)| := by
+      have habs : ‖Z P wr (Λ.erase γ)‖
+          ≤ ‖Z P wr Λ‖ + ‖wr γ‖ * ‖Z P wr (compat P Λ γ)‖ := by
         have hz : Z P wr (Λ.erase γ)
             = Z P wr Λ - wr γ * Z P wr (compat P Λ γ) := by
           rw [hrec]; ring
-        calc |Z P wr (Λ.erase γ)|
-            = |Z P wr Λ - wr γ * Z P wr (compat P Λ γ)| := by rw [hz]
-          _ ≤ |Z P wr Λ| + |wr γ * Z P wr (compat P Λ γ)| := by
-              have := abs_add_le (Z P wr Λ)
-                (-(wr γ * Z P wr (compat P Λ γ)))
-              simpa [sub_eq_add_neg, abs_neg] using this
-          _ = |Z P wr Λ| + |wr γ| * |Z P wr (compat P Λ γ)| := by
-              rw [abs_mul]
+        calc ‖Z P wr (Λ.erase γ)‖
+            = ‖Z P wr Λ - wr γ * Z P wr (compat P Λ γ)‖ := by rw [hz]
+          _ ≤ ‖Z P wr Λ‖ + ‖wr γ * Z P wr (compat P Λ γ)‖ :=
+              norm_sub_le _ _
+          _ = ‖Z P wr Λ‖ + ‖wr γ‖ * ‖Z P wr (compat P Λ γ)‖ := by
+              rw [norm_mul]
       -- Arithmetischer Abschluss.
       have hprodpos : (0:ℝ) ≤ ∏ δ ∈ (Λ.erase γ).filter
           (fun δ => P.incomp γ δ = true), (1 + μ δ) :=
         le_trans zero_le_one (one_le_prod_one_add μ _
           (fun δ hδ => h.1 δ (mem_of_mem_erase ((filter_subset _ _) hδ))))
-      have hkey1 : |Z P wr (Λ.erase γ)| ≤ |Z P wr Λ| +
-          (|wr γ| * ∏ δ ∈ (Λ.erase γ).filter
-            (fun δ => P.incomp γ δ = true), (1 + μ δ)) * |Z P wr (Λ.erase γ)| := by
-        have hstep : |wr γ| * |Z P wr (compat P Λ γ)| ≤
-            (|wr γ| * ∏ δ ∈ (Λ.erase γ).filter
-              (fun δ => P.incomp γ δ = true), (1 + μ δ)) * |Z P wr (Λ.erase γ)| := by
-          calc |wr γ| * |Z P wr (compat P Λ γ)|
-              ≤ |wr γ| * ((∏ δ ∈ (Λ.erase γ).filter
-                  (fun δ => P.incomp γ δ = true), (1 + μ δ)) * |Z P wr (Λ.erase γ)|) :=
-                mul_le_mul_of_nonneg_left htel (abs_nonneg _)
-            _ = (|wr γ| * ∏ δ ∈ (Λ.erase γ).filter
-                  (fun δ => P.incomp γ δ = true), (1 + μ δ)) * |Z P wr (Λ.erase γ)| := by
+      have hkey1 : ‖Z P wr (Λ.erase γ)‖ ≤ ‖Z P wr Λ‖ +
+          (‖wr γ‖ * ∏ δ ∈ (Λ.erase γ).filter
+            (fun δ => P.incomp γ δ = true), (1 + μ δ)) * ‖Z P wr (Λ.erase γ)‖ := by
+        have hstep : ‖wr γ‖ * ‖Z P wr (compat P Λ γ)‖ ≤
+            (‖wr γ‖ * ∏ δ ∈ (Λ.erase γ).filter
+              (fun δ => P.incomp γ δ = true), (1 + μ δ)) * ‖Z P wr (Λ.erase γ)‖ := by
+          calc ‖wr γ‖ * ‖Z P wr (compat P Λ γ)‖
+              ≤ ‖wr γ‖ * ((∏ δ ∈ (Λ.erase γ).filter
+                  (fun δ => P.incomp γ δ = true), (1 + μ δ)) * ‖Z P wr (Λ.erase γ)‖) :=
+                mul_le_mul_of_nonneg_left htel (norm_nonneg _)
+            _ = (‖wr γ‖ * ∏ δ ∈ (Λ.erase γ).filter
+                  (fun δ => P.incomp γ δ = true), (1 + μ δ)) * ‖Z P wr (Λ.erase γ)‖ := by
                 ring
         linarith [habs, hstep]
-      have hkey2 : (|wr γ| * ∏ δ ∈ (Λ.erase γ).filter
+      have hkey2 : (‖wr γ‖ * ∏ δ ∈ (Λ.erase γ).filter
           (fun δ => P.incomp γ δ = true), (1 + μ δ)) * (1 + μ γ) ≤ μ γ := by
-        calc (|wr γ| * ∏ δ ∈ (Λ.erase γ).filter
+        calc (‖wr γ‖ * ∏ δ ∈ (Λ.erase γ).filter
               (fun δ => P.incomp γ δ = true), (1 + μ δ)) * (1 + μ γ)
-            = |wr γ| * ((1 + μ γ) * ∏ δ ∈ (Λ.erase γ).filter
+            = ‖wr γ‖ * ((1 + μ γ) * ∏ δ ∈ (Λ.erase γ).filter
               (fun δ => P.incomp γ δ = true), (1 + μ δ)) := by ring
           _ ≤ μ γ := hDC
       have hμγ : 0 ≤ μ γ := h.1 γ hγ
       have h1m : (0:ℝ) ≤ 1 + μ γ := by linarith
       nlinarith [mul_le_mul_of_nonneg_left hkey1 h1m,
-        mul_le_mul_of_nonneg_right hkey2 (abs_nonneg (Z P wr (Λ.erase γ))),
-        abs_nonneg (Z P wr Λ), abs_nonneg (Z P wr (Λ.erase γ)),
-        mul_nonneg (mul_nonneg (abs_nonneg (wr γ)) hprodpos)
-          (abs_nonneg (Z P wr (Λ.erase γ)))]
+        mul_le_mul_of_nonneg_right hkey2 (norm_nonneg (Z P wr (Λ.erase γ))),
+        norm_nonneg (Z P wr Λ), norm_nonneg (Z P wr (Λ.erase γ)),
+        mul_nonneg (mul_nonneg (norm_nonneg (wr γ)) hprodpos)
+          (norm_nonneg (Z P wr (Λ.erase γ)))]
     -- Nichtnull über ein beliebiges γ₀ ∈ Λ.
     obtain ⟨γ0, hγ0⟩ := hne
     have herasecard0 : (Λ.erase γ0).card ≤ n := by
@@ -381,12 +396,12 @@ theorem dobrushin_aux :
       omega
     have h0 : Z P wr (Λ.erase γ0) ≠ 0 :=
       (IHn (Λ.erase γ0) herasecard0 (h.mono P wr μ (erase_subset γ0 Λ))).1
-    have hb : 0 < |Z P wr (Λ.erase γ0)| := abs_pos.mpr h0
+    have hb : 0 < ‖Z P wr (Λ.erase γ0)‖ := norm_pos_iff.mpr h0
     have hAne : Z P wr Λ ≠ 0 := by
       intro hz
       have hr0 := hratio γ0 hγ0
       rw [hz] at hr0
-      simp only [abs_zero, mul_zero] at hr0
+      simp only [norm_zero, mul_zero] at hr0
       linarith
     exact ⟨hAne, hratio⟩
 
@@ -400,15 +415,15 @@ theorem Z_ne_zero_of_dobrushin (Λ : Finset ι)
 Zustandssumme höchstens um den Faktor `1 + μ γ`. -/
 theorem Z_ratio_bound_of_dobrushin (Λ : Finset ι)
     (h : DobrushinCondition P wr μ Λ) (γ : ι) (hγ : γ ∈ Λ) :
-    |Z P wr (Λ.erase γ)| ≤ (1 + μ γ) * |Z P wr Λ| :=
+    ‖Z P wr (Λ.erase γ)‖ ≤ (1 + μ γ) * ‖Z P wr Λ‖ :=
   (dobrushin_aux P wr μ Λ.card Λ le_rfl h).2 γ hγ
 
 /-- Teleskopierte Quotientenschranke: Entfernen einer ganzen Teilmenge
-`E ⊆ Λ` ändert `|Z|` höchstens um den Faktor `∏_{δ ∈ E} (1 + μ δ)`. -/
+`E ⊆ Λ` ändert `‖Z‖` höchstens um den Faktor `∏_{δ ∈ E} (1 + μ δ)`. -/
 theorem Z_sdiff_bound_of_dobrushin (Λ : Finset ι)
     (h : DobrushinCondition P wr μ Λ) :
     ∀ E : Finset ι, E ⊆ Λ →
-      |Z P wr (Λ \ E)| ≤ (∏ δ ∈ E, (1 + μ δ)) * |Z P wr Λ| := by
+      ‖Z P wr (Λ \ E)‖ ≤ (∏ δ ∈ E, (1 + μ δ)) * ‖Z P wr Λ‖ := by
   intro E
   induction E using Finset.induction_on with
   | empty => intro _; simp
@@ -425,32 +440,32 @@ theorem Z_sdiff_bound_of_dobrushin (Λ : Finset ι)
       h.mono P wr μ sdiff_subset
     have hratio := Z_ratio_bound_of_dobrushin P wr μ (Λ \ E') hDC' δ hδmem
     have hμδ : 0 ≤ μ δ := h.1 δ hδΛ
-    calc |Z P wr (Λ \ insert δ E')|
-        = |Z P wr ((Λ \ E').erase δ)| := by rw [hset]
-      _ ≤ (1 + μ δ) * |Z P wr (Λ \ E')| := hratio
-      _ ≤ (1 + μ δ) * ((∏ δ' ∈ E', (1 + μ δ')) * |Z P wr Λ|) := by
+    calc ‖Z P wr (Λ \ insert δ E')‖
+        = ‖Z P wr ((Λ \ E').erase δ)‖ := by rw [hset]
+      _ ≤ (1 + μ δ) * ‖Z P wr (Λ \ E')‖ := hratio
+      _ ≤ (1 + μ δ) * ((∏ δ' ∈ E', (1 + μ δ')) * ‖Z P wr Λ‖) := by
           apply mul_le_mul_of_nonneg_left (IH hE'Λ)
           linarith
-      _ = (∏ δ' ∈ insert δ E', (1 + μ δ')) * |Z P wr Λ| := by
+      _ = (∏ δ' ∈ insert δ E', (1 + μ δ')) * ‖Z P wr Λ‖ := by
           rw [prod_insert hδE']; ring
 
-/-- Untere Schranke: `(∏_{γ ∈ Λ} (1 + μ γ))⁻¹ ≤ |Z Λ|`.
+/-- Untere Schranke: `(∏_{γ ∈ Λ} (1 + μ γ))⁻¹ ≤ ‖Z Λ‖`.
 Teleskop mit `E = Λ` und `Z ∅ = 1`. -/
 theorem prod_inv_le_abs_Z_of_dobrushin (Λ : Finset ι)
     (h : DobrushinCondition P wr μ Λ) :
-    (∏ γ ∈ Λ, (1 + μ γ))⁻¹ ≤ |Z P wr Λ| := by
+    (∏ γ ∈ Λ, (1 + μ γ))⁻¹ ≤ ‖Z P wr Λ‖ := by
   have htel := Z_sdiff_bound_of_dobrushin P wr μ Λ h Λ (Finset.Subset.refl Λ)
   rw [sdiff_self, bot_eq_empty, Z_empty] at htel
   have hP : (0:ℝ) < ∏ γ ∈ Λ, (1 + μ γ) :=
     lt_of_lt_of_le one_pos (one_le_prod_one_add μ Λ h.1)
-  have h1 : (1:ℝ) ≤ (∏ γ ∈ Λ, (1 + μ γ)) * |Z P wr Λ| := by
+  have h1 : (1:ℝ) ≤ (∏ γ ∈ Λ, (1 + μ γ)) * ‖Z P wr Λ‖ := by
     simpa using htel
   have h2 := mul_le_mul_of_nonneg_left h1 (inv_nonneg.mpr hP.le)
   rwa [mul_one, ← mul_assoc, inv_mul_cancel₀ hP.ne', one_mul] at h2
 
 private theorem abs_Z_le_prod_aux :
     ∀ n : ℕ, ∀ Λ : Finset ι, Λ.card ≤ n → DobrushinCondition P wr μ Λ →
-      |Z P wr Λ| ≤ ∏ γ ∈ Λ, (1 + μ γ) := by
+      ‖Z P wr Λ‖ ≤ ∏ γ ∈ Λ, (1 + μ γ) := by
   intro n
   induction n with
   | zero =>
@@ -497,48 +512,48 @@ private theorem abs_Z_le_prod_aux :
         (fun δ => P.incomp γ δ = true), (1 + μ δ) :=
       one_le_prod_one_add μ _
         (fun δ hδ => h.1 δ (mem_of_mem_erase ((filter_subset _ _) hδ)))
-    have hkey : |wr γ| * ∏ δ ∈ (Λ.erase γ).filter
+    have hkey : ‖wr γ‖ * ∏ δ ∈ (Λ.erase γ).filter
         (fun δ => P.incomp γ δ = true), (1 + μ δ) ≤ μ γ := by
-      nlinarith [mul_nonneg (mul_nonneg (abs_nonneg (wr γ)) hμγ)
-        (le_trans zero_le_one hPDone), abs_nonneg (wr γ)]
+      nlinarith [mul_nonneg (mul_nonneg (norm_nonneg (wr γ)) hμγ)
+        (le_trans zero_le_one hPDone), norm_nonneg (wr γ)]
     have hrec := Z_recursion P wr Λ γ hγ
-    have habs : |Z P wr Λ|
-        ≤ |Z P wr (Λ.erase γ)| + |wr γ| * |Z P wr (compat P Λ γ)| := by
+    have habs : ‖Z P wr Λ‖
+        ≤ ‖Z P wr (Λ.erase γ)‖ + ‖wr γ‖ * ‖Z P wr (compat P Λ γ)‖ := by
       rw [hrec]
-      calc |Z P wr (Λ.erase γ) + wr γ * Z P wr (compat P Λ γ)|
-          ≤ |Z P wr (Λ.erase γ)| + |wr γ * Z P wr (compat P Λ γ)| :=
-            abs_add_le _ _
-        _ = |Z P wr (Λ.erase γ)| + |wr γ| * |Z P wr (compat P Λ γ)| := by
-            rw [abs_mul]
-    have hcompat_le : |wr γ| * |Z P wr (compat P Λ γ)|
-        ≤ μ γ * |Z P wr (Λ.erase γ)| := by
-      calc |wr γ| * |Z P wr (compat P Λ γ)|
-          ≤ |wr γ| * ((∏ δ ∈ (Λ.erase γ).filter
-              (fun δ => P.incomp γ δ = true), (1 + μ δ)) * |Z P wr (Λ.erase γ)|) :=
-            mul_le_mul_of_nonneg_left htel (abs_nonneg _)
-        _ = (|wr γ| * ∏ δ ∈ (Λ.erase γ).filter
-              (fun δ => P.incomp γ δ = true), (1 + μ δ)) * |Z P wr (Λ.erase γ)| := by
+      calc ‖Z P wr (Λ.erase γ) + wr γ * Z P wr (compat P Λ γ)‖
+          ≤ ‖Z P wr (Λ.erase γ)‖ + ‖wr γ * Z P wr (compat P Λ γ)‖ :=
+            norm_add_le _ _
+        _ = ‖Z P wr (Λ.erase γ)‖ + ‖wr γ‖ * ‖Z P wr (compat P Λ γ)‖ := by
+            rw [norm_mul]
+    have hcompat_le : ‖wr γ‖ * ‖Z P wr (compat P Λ γ)‖
+        ≤ μ γ * ‖Z P wr (Λ.erase γ)‖ := by
+      calc ‖wr γ‖ * ‖Z P wr (compat P Λ γ)‖
+          ≤ ‖wr γ‖ * ((∏ δ ∈ (Λ.erase γ).filter
+              (fun δ => P.incomp γ δ = true), (1 + μ δ)) * ‖Z P wr (Λ.erase γ)‖) :=
+            mul_le_mul_of_nonneg_left htel (norm_nonneg _)
+        _ = (‖wr γ‖ * ∏ δ ∈ (Λ.erase γ).filter
+              (fun δ => P.incomp γ δ = true), (1 + μ δ)) * ‖Z P wr (Λ.erase γ)‖ := by
             ring
-        _ ≤ μ γ * |Z P wr (Λ.erase γ)| :=
-            mul_le_mul_of_nonneg_right hkey (abs_nonneg _)
+        _ ≤ μ γ * ‖Z P wr (Λ.erase γ)‖ :=
+            mul_le_mul_of_nonneg_right hkey (norm_nonneg _)
     have hIH := IHn (Λ.erase γ) herasecard hDCe
-    have hexpand : (1 + μ γ) * |Z P wr (Λ.erase γ)|
-        = |Z P wr (Λ.erase γ)| + μ γ * |Z P wr (Λ.erase γ)| := by ring
-    have hfinal : |Z P wr Λ| ≤ (1 + μ γ) * |Z P wr (Λ.erase γ)| := by
+    have hexpand : (1 + μ γ) * ‖Z P wr (Λ.erase γ)‖
+        = ‖Z P wr (Λ.erase γ)‖ + μ γ * ‖Z P wr (Λ.erase γ)‖ := by ring
+    have hfinal : ‖Z P wr Λ‖ ≤ (1 + μ γ) * ‖Z P wr (Λ.erase γ)‖ := by
       rw [hexpand]
       linarith
-    calc |Z P wr Λ|
-        ≤ (1 + μ γ) * |Z P wr (Λ.erase γ)| := hfinal
+    calc ‖Z P wr Λ‖
+        ≤ (1 + μ γ) * ‖Z P wr (Λ.erase γ)‖ := hfinal
       _ ≤ (1 + μ γ) * ∏ δ ∈ Λ.erase γ, (1 + μ δ) := by
           apply mul_le_mul_of_nonneg_left hIH
           linarith
       _ = ∏ δ ∈ Λ, (1 + μ δ) := mul_prod_erase Λ (fun δ => 1 + μ δ) hγ
 
-/-- Obere Schranke: `|Z Λ| ≤ ∏_{γ ∈ Λ} (1 + μ γ)` unter der
+/-- Obere Schranke: `‖Z Λ‖ ≤ ∏_{γ ∈ Λ} (1 + μ γ)` unter der
 Dobrushin-Bedingung. -/
 theorem abs_Z_le_prod_of_dobrushin (Λ : Finset ι)
     (h : DobrushinCondition P wr μ Λ) :
-    |Z P wr Λ| ≤ ∏ γ ∈ Λ, (1 + μ γ) :=
+    ‖Z P wr Λ‖ ≤ ∏ γ ∈ Λ, (1 + μ γ) :=
   abs_Z_le_prod_aux P wr μ Λ.card Λ le_rfl h
 
 private theorem log_mono {x y : ℝ} (hx : 0 < x) (hxy : x ≤ y) :
@@ -548,15 +563,15 @@ private theorem log_mono {x y : ℝ} (hx : 0 < x) (hxy : x ≤ y) :
 
 /-- **Volumenlineare Kontrolle des Logarithmus der Zustandssumme:**
 unter der Dobrushin-Bedingung gilt
-`|log |Z Λ|| ≤ ∑_{γ ∈ Λ} log (1 + μ γ)` — obere und untere Schranke an
-`|Z|` in einem. Das ist der Konvergenzgehalt der Cluster-Entwicklung auf
-Schrankenniveau: `log |Z|` wächst höchstens linear im Volumen,
+`|log ‖Z Λ‖| ≤ ∑_{γ ∈ Λ} log (1 + μ γ)` — obere und untere Schranke an
+`‖Z‖` in einem. Das ist der Konvergenzgehalt der Cluster-Entwicklung auf
+Schrankenniveau: `log ‖Z‖` wächst höchstens linear im Volumen,
 gleichmäßig unter der Bedingung. -/
 theorem abs_log_abs_Z_le_of_dobrushin (Λ : Finset ι)
     (h : DobrushinCondition P wr μ Λ) :
-    |Real.log (|Z P wr Λ|)| ≤ ∑ γ ∈ Λ, Real.log (1 + μ γ) := by
-  have hZpos : 0 < |Z P wr Λ| :=
-    abs_pos.mpr (Z_ne_zero_of_dobrushin P wr μ Λ h)
+    |Real.log (‖Z P wr Λ‖)| ≤ ∑ γ ∈ Λ, Real.log (1 + μ γ) := by
+  have hZpos : 0 < ‖Z P wr Λ‖ :=
+    norm_pos_iff.mpr (Z_ne_zero_of_dobrushin P wr μ Λ h)
   have hPpos : (0:ℝ) < ∏ γ ∈ Λ, (1 + μ γ) :=
     lt_of_lt_of_le one_pos (one_le_prod_one_add μ Λ h.1)
   have hlogprod : Real.log (∏ γ ∈ Λ, (1 + μ γ))
@@ -576,11 +591,11 @@ theorem abs_log_abs_Z_le_of_dobrushin (Λ : Finset ι)
     rw [hlogprod] at hlog
     exact hlog
 
-/-- Additive Fassung: `|log |Z Λ|| ≤ ∑_{γ ∈ Λ} μ γ`
+/-- Additive Fassung: `|log ‖Z Λ‖| ≤ ∑_{γ ∈ Λ} μ γ`
 (mittels `log (1 + x) ≤ x`). -/
 theorem abs_log_abs_Z_le_sum_of_dobrushin (Λ : Finset ι)
     (h : DobrushinCondition P wr μ Λ) :
-    |Real.log (|Z P wr Λ|)| ≤ ∑ γ ∈ Λ, μ γ := by
+    |Real.log (‖Z P wr Λ‖)| ≤ ∑ γ ∈ Λ, μ γ := by
   refine le_trans (abs_log_abs_Z_le_of_dobrushin P wr μ Λ h)
     (Finset.sum_le_sum fun γ hγ => ?_)
   have hμ := h.1 γ hγ
@@ -596,49 +611,52 @@ section KoteckyPreiss
 
 Eine frühere Fassung dieser Datei behauptete, die Summenform sei aus der
 Produktform nicht zu gewinnen. Das war zu kurz gedacht: mit
-`μ γ = |w γ| · exp (a γ)` und `1 + x ≤ exp x` impliziert die
+`μ γ = ‖w γ‖ · exp (a γ)` und `1 + x ≤ exp x` impliziert die
 KP-Bedingung die Dobrushin-Bedingung (`KPCondition.dobrushin`), und
 Nichtverschwinden samt klassischer Quotientenschranke `exp (a γ)` folgen
 als Korollare. Der umgekehrte Weg scheitert wirklich: die Produktform
 ist echt allgemeiner (Beispiel: ein selbst-unverträgliches Polymer mit
-`|w| = 1/2` erfüllt Dobrushin mit `μ = 1`, aber `e^a/2 ≤ a` hat keine
+`‖w‖ = 1/2` erfüllt Dobrushin mit `μ = 1`, aber `e^a/2 ≤ a` hat keine
 Lösung). Offen bleibt die Ursell-Reihe von `log Z`; sie braucht die
 Baumgraphen-Induktion und mehr als Schranken.
+
+Auch hier liegen die Gewichte in einem normierten Körper `K`; die
+Parameter `a` sind reell.
 -/
 
-variable (wr : ι → ℝ) (a : ι → ℝ)
+variable (wr : ι → K) (a : ι → ℝ)
 
 /-- Kotecký-Preiss-Bedingung (Summenform) auf `Λ`:
-`∑_{δ ≁ γ} |w δ| · exp (a δ) ≤ a γ` für alle `γ ∈ Λ`, mit `a ≥ 0`. -/
+`∑_{δ ≁ γ} ‖w δ‖ · exp (a δ) ≤ a γ` für alle `γ ∈ Λ`, mit `a ≥ 0`. -/
 def KPCondition (Λ : Finset ι) : Prop :=
   (∀ γ ∈ Λ, 0 ≤ a γ) ∧
   ∀ γ ∈ Λ,
-    ∑ δ ∈ Λ.filter (fun δ => P.incomp γ δ = true), |wr δ| * Real.exp (a δ) ≤ a γ
+    ∑ δ ∈ Λ.filter (fun δ => P.incomp γ δ = true), ‖wr δ‖ * Real.exp (a δ) ≤ a γ
 
 omit [DecidableEq ι] in
 /-- **Vergleich der Bedingungen:** die Kotecký-Preiss-Summenbedingung
-impliziert die Dobrushin-Produktbedingung mit `μ γ := |w γ| · exp (a γ)`.
+impliziert die Dobrushin-Produktbedingung mit `μ γ := ‖w γ‖ · exp (a γ)`.
 Kernungleichung ist `1 + x ≤ exp x`; vgl. Fernández–Procacci
 (Comm. Math. Phys. 274, 2007) und Scott–Sokal. -/
 theorem KPCondition.dobrushin {Λ : Finset ι} (h : KPCondition P wr a Λ) :
-    DobrushinCondition P wr (fun γ => |wr γ| * Real.exp (a γ)) Λ := by
+    DobrushinCondition P wr (fun γ => ‖wr γ‖ * Real.exp (a γ)) Λ := by
   obtain ⟨hpos, hsum⟩ := h
-  refine ⟨fun γ _ => mul_nonneg (abs_nonneg _) (Real.exp_pos _).le,
+  refine ⟨fun γ _ => mul_nonneg (norm_nonneg _) (Real.exp_pos _).le,
     fun γ hγ => ?_⟩
-  change |wr γ| * ∏ δ ∈ Λ.filter (fun δ => P.incomp γ δ = true),
-      (1 + |wr δ| * Real.exp (a δ)) ≤ |wr γ| * Real.exp (a γ)
+  change ‖wr γ‖ * ∏ δ ∈ Λ.filter (fun δ => P.incomp γ δ = true),
+      (1 + ‖wr δ‖ * Real.exp (a δ)) ≤ ‖wr γ‖ * Real.exp (a γ)
   have hprod_le : ∏ δ ∈ Λ.filter (fun δ => P.incomp γ δ = true),
-      (1 + |wr δ| * Real.exp (a δ))
+      (1 + ‖wr δ‖ * Real.exp (a δ))
       ≤ Real.exp (∑ δ ∈ Λ.filter (fun δ => P.incomp γ δ = true),
-          |wr δ| * Real.exp (a δ)) := by
+          ‖wr δ‖ * Real.exp (a δ)) := by
     rw [Real.exp_sum]
     refine Finset.prod_le_prod (fun δ _ => by positivity) (fun δ _ => ?_)
-    have := Real.add_one_le_exp (|wr δ| * Real.exp (a δ))
+    have := Real.add_one_le_exp (‖wr δ‖ * Real.exp (a δ))
     linarith
   have hexp_le : Real.exp (∑ δ ∈ Λ.filter (fun δ => P.incomp γ δ = true),
-      |wr δ| * Real.exp (a δ)) ≤ Real.exp (a γ) :=
+      ‖wr δ‖ * Real.exp (a δ)) ≤ Real.exp (a γ) :=
     Real.exp_le_exp.mpr (hsum γ hγ)
-  exact mul_le_mul_of_nonneg_left (le_trans hprod_le hexp_le) (abs_nonneg _)
+  exact mul_le_mul_of_nonneg_left (le_trans hprod_le hexp_le) (norm_nonneg _)
 
 /-- **Kotecký-Preiss-Kriterium, Teil 1:** unter der Summenbedingung
 verschwindet die Zustandssumme nicht. -/
@@ -647,32 +665,32 @@ theorem Z_ne_zero_of_kp (Λ : Finset ι) (h : KPCondition P wr a Λ) :
   Z_ne_zero_of_dobrushin P wr _ Λ h.dobrushin
 
 /-- **Kotecký-Preiss-Kriterium, Teil 2:** die klassische
-Quotientenschranke — Entfernen von `γ` ändert `|Z|` höchstens um den
+Quotientenschranke — Entfernen von `γ` ändert `‖Z‖` höchstens um den
 Faktor `exp (a γ)`. Benutzt, dass die Summenbedingung wegen `γ ≁ γ` den
-Term `|w γ| · exp (a γ) ≤ a γ` enthält. -/
+Term `‖w γ‖ · exp (a γ) ≤ a γ` enthält. -/
 theorem Z_ratio_bound_of_kp (Λ : Finset ι) (h : KPCondition P wr a Λ)
     (γ : ι) (hγ : γ ∈ Λ) :
-    |Z P wr (Λ.erase γ)| ≤ Real.exp (a γ) * |Z P wr Λ| := by
+    ‖Z P wr (Λ.erase γ)‖ ≤ Real.exp (a γ) * ‖Z P wr Λ‖ := by
   have hbase := Z_ratio_bound_of_dobrushin P wr
-    (fun γ => |wr γ| * Real.exp (a γ)) Λ h.dobrushin γ hγ
+    (fun γ => ‖wr γ‖ * Real.exp (a γ)) Λ h.dobrushin γ hγ
   have hγN : γ ∈ Λ.filter (fun δ => P.incomp γ δ = true) :=
     mem_filter.mpr ⟨hγ, P.refl γ⟩
-  have hterm : |wr γ| * Real.exp (a γ) ≤ a γ :=
+  have hterm : ‖wr γ‖ * Real.exp (a γ) ≤ a γ :=
     le_trans (Finset.single_le_sum
-      (f := fun δ => |wr δ| * Real.exp (a δ))
+      (f := fun δ => ‖wr δ‖ * Real.exp (a δ))
       (fun δ _ => by positivity) hγN) (h.2 γ hγ)
-  have hfac : 1 + |wr γ| * Real.exp (a γ) ≤ Real.exp (a γ) := by
+  have hfac : 1 + ‖wr γ‖ * Real.exp (a γ) ≤ Real.exp (a γ) := by
     have h1 := Real.add_one_le_exp (a γ)
     linarith
-  calc |Z P wr (Λ.erase γ)|
-      ≤ (1 + |wr γ| * Real.exp (a γ)) * |Z P wr Λ| := hbase
-    _ ≤ Real.exp (a γ) * |Z P wr Λ| :=
-        mul_le_mul_of_nonneg_right hfac (abs_nonneg _)
+  calc ‖Z P wr (Λ.erase γ)‖
+      ≤ (1 + ‖wr γ‖ * Real.exp (a γ)) * ‖Z P wr Λ‖ := hbase
+    _ ≤ Real.exp (a γ) * ‖Z P wr Λ‖ :=
+        mul_le_mul_of_nonneg_right hfac (norm_nonneg _)
 
 /-- Logarithmus-Schranke in KP-Form:
-`|log |Z Λ|| ≤ ∑_{γ ∈ Λ} |w γ| · exp (a γ)`. -/
+`|log ‖Z Λ‖| ≤ ∑_{γ ∈ Λ} ‖w γ‖ · exp (a γ)`. -/
 theorem abs_log_abs_Z_le_of_kp (Λ : Finset ι) (h : KPCondition P wr a Λ) :
-    |Real.log (|Z P wr Λ|)| ≤ ∑ γ ∈ Λ, |wr γ| * Real.exp (a γ) :=
+    |Real.log (‖Z P wr Λ‖)| ≤ ∑ γ ∈ Λ, ‖wr γ‖ * Real.exp (a γ) :=
   abs_log_abs_Z_le_sum_of_dobrushin P wr _ Λ h.dobrushin
 
 end KoteckyPreiss
@@ -695,24 +713,33 @@ Beweis von Fialho (J. Stat. Phys. 178, 2020; arXiv:2001.00652) folgend:
    μ-Komplemente `Q_{S∖x} · Z_{Λ∖S}(μ) ≤ Q_S · Z_{Λ∖(S∖x)}(μ)`.
    Werkzeuge: Submultiplikativität `Z_{A∪B}(μ) ≤ Z_A(μ)·Z_B(μ)`,
    Monotonie und die Fundamentalrekursion, angewandt auf beide Gase.
-2. `fp_transfer_aux`: der Vergleichssatz `Z_S(-|w|) ≤ |Z_S(w)|`
+2. `fp_transfer_aux`: der Vergleichssatz `Z_S(-‖w‖) ≤ ‖Z_S(w)‖`
    (Scott-Sokal Thm. 2.10), wieder per Teleskop-Induktion.
 
 Daraus `Z_ne_zero_of_fp` und `Z_ratio_bound_of_fp`. Da die
 FP-Bedingung die schwächste der Hierarchie ist, subsumiert das
 Nichtverschwinden unter FP die Kriterien von Dobrushin und
 Kotecký-Preiss.
+
+Nur die Aussagen über `Z P wr` sind hier normiert-körperwertig. Das
+alternierende Gas `Z P (fun γ => -(p γ))` und das
+Unabhängigkeitspolynom `Z P μ` sind ihrer Natur nach **reell** — sie
+tragen die Ordnungsargumente (Positivität, Monotonie,
+Submultiplikativität), die es in `K` gar nicht gibt. Die Sätze
+`Z_nonneg_of_nonneg`, `one_le_Z_of_nonneg`, `Z_pos_of_nonneg`,
+`Z_mono_of_nonneg`, `Z_singleton`, `Z_union_le_mul`,
+`Z_le_prod_one_add` und `Z_neg_pos_of_fp` bleiben daher reell.
 -/
 
-variable (wr : ι → ℝ) (μ : ι → ℝ)
+variable (wr : ι → K) (μ : ι → ℝ)
 
 /-- Fernández-Procacci-Bedingung auf `Λ`: für jedes `γ ∈ Λ` gilt
-`|w γ| · Ξ ≤ μ γ`, wobei `Ξ = Z_N(μ)` das Unabhängigkeitspolynom der
+`‖w γ‖ · Ξ ≤ μ γ`, wobei `Ξ = Z_N(μ)` das Unabhängigkeitspolynom der
 geschlossenen Nachbarschaft `N` von `γ` in `Λ` ist. -/
 def FPCondition (Λ : Finset ι) : Prop :=
   (∀ γ ∈ Λ, 0 ≤ μ γ) ∧
   ∀ γ ∈ Λ,
-    |wr γ| * Z P μ (Λ.filter (fun δ => P.incomp γ δ = true)) ≤ μ γ
+    ‖wr γ‖ * Z P μ (Λ.filter (fun δ => P.incomp γ δ = true)) ≤ μ γ
 
 /-- Nichtnegativität: `0 ≤ Z_A(μ)` für `μ ≥ 0` auf `A`. -/
 theorem Z_nonneg_of_nonneg (A : Finset ι) (hpos : ∀ δ ∈ A, 0 ≤ μ δ) :
@@ -840,14 +867,14 @@ theorem DobrushinCondition.fp {Λ : Finset ι}
     (h : DobrushinCondition P wr μ Λ) : FPCondition P wr μ Λ := by
   obtain ⟨hpos, hbd⟩ := h
   refine ⟨hpos, fun γ hγ => le_trans ?_ (hbd γ hγ)⟩
-  refine mul_le_mul_of_nonneg_left ?_ (abs_nonneg _)
+  refine mul_le_mul_of_nonneg_left ?_ (norm_nonneg _)
   exact Z_le_prod_one_add P μ _ fun δ hδ => hpos δ (mem_filter.mp hδ).1
 
 /-- Die volle Hierarchie: KP ⟹ Dobrushin ⟹ FP, mit
-`μ γ = |w γ| · exp (a γ)`. -/
+`μ γ = ‖w γ‖ · exp (a γ)`. -/
 theorem KPCondition.fp {Λ : Finset ι} {a : ι → ℝ}
     (h : KPCondition P wr a Λ) :
-    FPCondition P wr (fun γ => |wr γ| * Real.exp (a γ)) Λ :=
+    FPCondition P wr (fun γ => ‖wr γ‖ * Real.exp (a γ)) Λ :=
   h.dobrushin.fp
 
 /-- Kern der FP-Induktion (nach Fialho, arXiv:2001.00652, Prop. 2.1):
@@ -1075,19 +1102,20 @@ private theorem fp_aux (Λ : Finset ι) (p : ι → ℝ)
         linarith
     exact ⟨part1, part2⟩
 
-/-- Transfer auf reelle Gewichte (Vergleichssatz im Stil von Scott-Sokal,
-Thm. 2.10): unter der FP-Bedingung minorisiert die alternierende
-Zustandssumme mit `p = |w|` den Betrag, `Z_S(-|w|) ≤ |Z_S(w)|`, samt
+/-- Transfer auf normierte Gewichte (Vergleichssatz im Stil von
+Scott-Sokal, Thm. 2.10): unter der FP-Bedingung minorisiert die reelle
+alternierende Zustandssumme mit `p = ‖w‖` die Norm,
+`Z_S(-‖w‖) ≤ ‖Z_S(w)‖`, samt
 Quotienten-Vergleich. Wieder starke Induktion über `|S|`. -/
 private theorem fp_transfer_aux (Λ : Finset ι) (h : FPCondition P wr μ Λ) :
     ∀ n : ℕ, ∀ S : Finset ι, S ⊆ Λ → S.card ≤ n →
-      Z P (fun γ => -|wr γ|) S ≤ |Z P wr S| ∧
-      ∀ x ∈ S, |Z P wr (S.erase x)| * Z P (fun γ => -|wr γ|) S
-        ≤ Z P (fun γ => -|wr γ|) (S.erase x) * |Z P wr S| := by
+      Z P (fun γ => -‖wr γ‖) S ≤ ‖Z P wr S‖ ∧
+      ∀ x ∈ S, ‖Z P wr (S.erase x)‖ * Z P (fun γ => -‖wr γ‖) S
+        ≤ Z P (fun γ => -‖wr γ‖) (S.erase x) * ‖Z P wr S‖ := by
   obtain ⟨hμ, hfp⟩ := h
-  have hQ : ∀ S : Finset ι, S ⊆ Λ → 0 < Z P (fun γ => -|wr γ|) S := by
+  have hQ : ∀ S : Finset ι, S ⊆ Λ → 0 < Z P (fun γ => -‖wr γ‖) S := by
     intro S hSΛ
-    exact (fp_aux P μ Λ (fun γ => |wr γ|) hμ (fun γ _ => abs_nonneg _) hfp
+    exact (fp_aux P μ Λ (fun γ => ‖wr γ‖) hμ (fun γ _ => norm_nonneg _) hfp
       S.card S hSΛ le_rfl).1
   intro n
   induction n with
@@ -1101,8 +1129,8 @@ private theorem fp_transfer_aux (Λ : Finset ι) (h : FPCondition P wr μ Λ) :
   | succ n IHn =>
     intro S hSΛ hcard
     have part2 : ∀ x ∈ S,
-        |Z P wr (S.erase x)| * Z P (fun γ => -|wr γ|) S
-        ≤ Z P (fun γ => -|wr γ|) (S.erase x) * |Z P wr S| := by
+        ‖Z P wr (S.erase x)‖ * Z P (fun γ => -‖wr γ‖) S
+        ≤ Z P (fun γ => -‖wr γ‖) (S.erase x) * ‖Z P wr S‖ := by
       intro x hxS
       have hxΛ : x ∈ Λ := hSΛ hxS
       set T := S.erase x with hT
@@ -1119,8 +1147,8 @@ private theorem fp_transfer_aux (Λ : Finset ι) (h : FPCondition P wr μ Λ) :
         simp only [compat, Bool.not_eq_true]
       -- Kettenlemma für den Betrag gegen Q.
       have chain : ∀ E : Finset ι, E ⊆ D →
-          |Z P wr (T \ E)| * Z P (fun γ => -|wr γ|) T
-          ≤ |Z P wr T| * Z P (fun γ => -|wr γ|) (T \ E) := by
+          ‖Z P wr (T \ E)‖ * Z P (fun γ => -‖wr γ‖) T
+          ≤ ‖Z P wr T‖ * Z P (fun γ => -‖wr γ‖) (T \ E) := by
         intro E
         induction E using Finset.induction_on with
         | empty =>
@@ -1143,29 +1171,29 @@ private theorem fp_transfer_aux (Λ : Finset ι) (h : FPCondition P wr μ Λ) :
             tauto
           have hstep := (IHn U hUΛ hUcard).2 δ hδU
           have hprev := IHe hE'D
-          have hQU : 0 < Z P (fun γ => -|wr γ|) U := hQ U hUΛ
-          have hQUδ : 0 ≤ Z P (fun γ => -|wr γ|) (U.erase δ) :=
+          have hQU : 0 < Z P (fun γ => -‖wr γ‖) U := hQ U hUΛ
+          have hQUδ : 0 ≤ Z P (fun γ => -‖wr γ‖) (U.erase δ) :=
             (hQ (U.erase δ) ((erase_subset δ U).trans hUΛ)).le
-          have hQT' : 0 ≤ Z P (fun γ => -|wr γ|) T := (hQ T hTΛ).le
+          have hQT' : 0 ≤ Z P (fun γ => -‖wr γ‖) T := (hQ T hTΛ).le
           rw [hset]
-          have hkey : (|Z P wr (U.erase δ)| * Z P (fun γ => -|wr γ|) T)
-              * Z P (fun γ => -|wr γ|) U
-              ≤ (|Z P wr T| * Z P (fun γ => -|wr γ|) (U.erase δ))
-              * Z P (fun γ => -|wr γ|) U := by
-            calc (|Z P wr (U.erase δ)| * Z P (fun γ => -|wr γ|) T)
-                  * Z P (fun γ => -|wr γ|) U
-                = (|Z P wr (U.erase δ)| * Z P (fun γ => -|wr γ|) U)
-                  * Z P (fun γ => -|wr γ|) T := by ring
-              _ ≤ (Z P (fun γ => -|wr γ|) (U.erase δ) * |Z P wr U|)
-                  * Z P (fun γ => -|wr γ|) T :=
+          have hkey : (‖Z P wr (U.erase δ)‖ * Z P (fun γ => -‖wr γ‖) T)
+              * Z P (fun γ => -‖wr γ‖) U
+              ≤ (‖Z P wr T‖ * Z P (fun γ => -‖wr γ‖) (U.erase δ))
+              * Z P (fun γ => -‖wr γ‖) U := by
+            calc (‖Z P wr (U.erase δ)‖ * Z P (fun γ => -‖wr γ‖) T)
+                  * Z P (fun γ => -‖wr γ‖) U
+                = (‖Z P wr (U.erase δ)‖ * Z P (fun γ => -‖wr γ‖) U)
+                  * Z P (fun γ => -‖wr γ‖) T := by ring
+              _ ≤ (Z P (fun γ => -‖wr γ‖) (U.erase δ) * ‖Z P wr U‖)
+                  * Z P (fun γ => -‖wr γ‖) T :=
                   mul_le_mul_of_nonneg_right hstep hQT'
-              _ = (|Z P wr U| * Z P (fun γ => -|wr γ|) T)
-                  * Z P (fun γ => -|wr γ|) (U.erase δ) := by ring
-              _ ≤ (|Z P wr T| * Z P (fun γ => -|wr γ|) U)
-                  * Z P (fun γ => -|wr γ|) (U.erase δ) :=
+              _ = (‖Z P wr U‖ * Z P (fun γ => -‖wr γ‖) T)
+                  * Z P (fun γ => -‖wr γ‖) (U.erase δ) := by ring
+              _ ≤ (‖Z P wr T‖ * Z P (fun γ => -‖wr γ‖) U)
+                  * Z P (fun γ => -‖wr γ‖) (U.erase δ) :=
                   mul_le_mul_of_nonneg_right hprev hQUδ
-              _ = (|Z P wr T| * Z P (fun γ => -|wr γ|) (U.erase δ))
-                  * Z P (fun γ => -|wr γ|) U := by ring
+              _ = (‖Z P wr T‖ * Z P (fun γ => -‖wr γ‖) (U.erase δ))
+                  * Z P (fun γ => -‖wr γ‖) U := by ring
           exact le_of_mul_le_mul_right hkey hQU
       have hchainD := chain D (Finset.Subset.refl D)
       rw [hTD] at hchainD
@@ -1174,40 +1202,38 @@ private theorem fp_transfer_aux (Λ : Finset ι) (h : FPCondition P wr μ Λ) :
           = Z P wr T + wr x * Z P wr (compat P S x) := by
         rw [hT]
         exact Z_recursion P wr S x hxS
-      have hrecQ : Z P (fun γ => -|wr γ|) S
-          = Z P (fun γ => -|wr γ|) T
-            + -|wr x| * Z P (fun γ => -|wr γ|) (compat P S x) := by
+      have hrecQ : Z P (fun γ => -‖wr γ‖) S
+          = Z P (fun γ => -‖wr γ‖) T
+            + -‖wr x‖ * Z P (fun γ => -‖wr γ‖) (compat P S x) := by
         rw [hT]
-        exact Z_recursion P (fun γ => -|wr γ|) S x hxS
-      have habs : |Z P wr T|
-          ≤ |Z P wr S| + |wr x| * |Z P wr (compat P S x)| := by
+        exact Z_recursion P (fun γ => -‖wr γ‖) S x hxS
+      have habs : ‖Z P wr T‖
+          ≤ ‖Z P wr S‖ + ‖wr x‖ * ‖Z P wr (compat P S x)‖ := by
         have hz : Z P wr T = Z P wr S - wr x * Z P wr (compat P S x) := by
           rw [hrecW]
           ring
-        calc |Z P wr T|
-            = |Z P wr S - wr x * Z P wr (compat P S x)| := by rw [hz]
-          _ ≤ |Z P wr S| + |wr x * Z P wr (compat P S x)| := by
-              have h1 := abs_add_le (Z P wr S)
-                (-(wr x * Z P wr (compat P S x)))
-              simpa [sub_eq_add_neg, abs_neg] using h1
-          _ = |Z P wr S| + |wr x| * |Z P wr (compat P S x)| := by
-              rw [abs_mul]
-      have hQT : 0 < Z P (fun γ => -|wr γ|) T := hQ T hTΛ
-      have h1 : |Z P wr T| * Z P (fun γ => -|wr γ|) T
-          ≤ (|Z P wr S| + |wr x| * |Z P wr (compat P S x)|)
-            * Z P (fun γ => -|wr γ|) T :=
+        calc ‖Z P wr T‖
+            = ‖Z P wr S - wr x * Z P wr (compat P S x)‖ := by rw [hz]
+          _ ≤ ‖Z P wr S‖ + ‖wr x * Z P wr (compat P S x)‖ :=
+              norm_sub_le _ _
+          _ = ‖Z P wr S‖ + ‖wr x‖ * ‖Z P wr (compat P S x)‖ := by
+              rw [norm_mul]
+      have hQT : 0 < Z P (fun γ => -‖wr γ‖) T := hQ T hTΛ
+      have h1 : ‖Z P wr T‖ * Z P (fun γ => -‖wr γ‖) T
+          ≤ (‖Z P wr S‖ + ‖wr x‖ * ‖Z P wr (compat P S x)‖)
+            * Z P (fun γ => -‖wr γ‖) T :=
         mul_le_mul_of_nonneg_right habs hQT.le
-      have h2 : |wr x| * (|Z P wr (compat P S x)| * Z P (fun γ => -|wr γ|) T)
-          ≤ |wr x| * (|Z P wr T| * Z P (fun γ => -|wr γ|) (compat P S x)) :=
-        mul_le_mul_of_nonneg_left hchainD (abs_nonneg _)
-      have hexp : |Z P wr T| * Z P (fun γ => -|wr γ|) S
-          = |Z P wr T| * Z P (fun γ => -|wr γ|) T
-            - |wr x| * (|Z P wr T|
-              * Z P (fun γ => -|wr γ|) (compat P S x)) := by
+      have h2 : ‖wr x‖ * (‖Z P wr (compat P S x)‖ * Z P (fun γ => -‖wr γ‖) T)
+          ≤ ‖wr x‖ * (‖Z P wr T‖ * Z P (fun γ => -‖wr γ‖) (compat P S x)) :=
+        mul_le_mul_of_nonneg_left hchainD (norm_nonneg _)
+      have hexp : ‖Z P wr T‖ * Z P (fun γ => -‖wr γ‖) S
+          = ‖Z P wr T‖ * Z P (fun γ => -‖wr γ‖) T
+            - ‖wr x‖ * (‖Z P wr T‖
+              * Z P (fun γ => -‖wr γ‖) (compat P S x)) := by
         rw [hrecQ]
         ring
       linarith [h1, h2, hexp]
-    have part1 : Z P (fun γ => -|wr γ|) S ≤ |Z P wr S| := by
+    have part1 : Z P (fun γ => -‖wr γ‖) S ≤ ‖Z P wr S‖ := by
       rcases S.eq_empty_or_nonempty with rfl | ⟨x, hxS⟩
       · rw [Z_empty, Z_empty]
         norm_num
@@ -1217,51 +1243,51 @@ private theorem fp_transfer_aux (Λ : Finset ι) (h : FPCondition P wr μ Λ) :
           have h1 := card_erase_of_mem hxS
           omega
         have hIH := (IHn (S.erase x) hTΛ hTcard).1
-        have hQS : 0 ≤ Z P (fun γ => -|wr γ|) S := (hQ S hSΛ).le
-        have hQT : 0 < Z P (fun γ => -|wr γ|) (S.erase x) := hQ _ hTΛ
-        have hstep : Z P (fun γ => -|wr γ|) (S.erase x)
-              * Z P (fun γ => -|wr γ|) S
-            ≤ Z P (fun γ => -|wr γ|) (S.erase x) * |Z P wr S| := by
-          calc Z P (fun γ => -|wr γ|) (S.erase x)
-                * Z P (fun γ => -|wr γ|) S
-              ≤ |Z P wr (S.erase x)| * Z P (fun γ => -|wr γ|) S :=
+        have hQS : 0 ≤ Z P (fun γ => -‖wr γ‖) S := (hQ S hSΛ).le
+        have hQT : 0 < Z P (fun γ => -‖wr γ‖) (S.erase x) := hQ _ hTΛ
+        have hstep : Z P (fun γ => -‖wr γ‖) (S.erase x)
+              * Z P (fun γ => -‖wr γ‖) S
+            ≤ Z P (fun γ => -‖wr γ‖) (S.erase x) * ‖Z P wr S‖ := by
+          calc Z P (fun γ => -‖wr γ‖) (S.erase x)
+                * Z P (fun γ => -‖wr γ‖) S
+              ≤ ‖Z P wr (S.erase x)‖ * Z P (fun γ => -‖wr γ‖) S :=
                 mul_le_mul_of_nonneg_right hIH hQS
-            _ ≤ Z P (fun γ => -|wr γ|) (S.erase x) * |Z P wr S| := h2
+            _ ≤ Z P (fun γ => -‖wr γ‖) (S.erase x) * ‖Z P wr S‖ := h2
         exact le_of_mul_le_mul_left hstep hQT
     exact ⟨part1, part2⟩
 
 /-- **Positivität des alternierenden Polymergases** unter der
-FP-Bedingung: `0 < Z_Λ(-|w|)`. -/
+FP-Bedingung: `0 < Z_Λ(-‖w‖)`. Rein reelle Aussage. -/
 theorem Z_neg_pos_of_fp (Λ : Finset ι) (h : FPCondition P wr μ Λ) :
-    0 < Z P (fun γ => -|wr γ|) Λ :=
-  (fp_aux P μ Λ (fun γ => |wr γ|) h.1 (fun γ _ => abs_nonneg _) h.2
+    0 < Z P (fun γ => -‖wr γ‖) Λ :=
+  (fp_aux P μ Λ (fun γ => ‖wr γ‖) h.1 (fun γ _ => norm_nonneg _) h.2
     Λ.card Λ (Finset.Subset.refl Λ) le_rfl).1
 
 /-- **Fernández-Procacci-Kriterium, Teil 1** (Fernández–Procacci,
 Comm. Math. Phys. 274, 2007; induktiver Beweis nach Fialho,
 J. Stat. Phys. 178, 2020): unter der FP-Bedingung — der schwächsten der
 drei klassischen Bedingungen — verschwindet die Zustandssumme nicht.
-Beweis über `0 < Z_Λ(-|w|) ≤ |Z_Λ(w)|`. -/
+Beweis über `0 < Z_Λ(-‖w‖) ≤ ‖Z_Λ(w)‖`. -/
 theorem Z_ne_zero_of_fp (Λ : Finset ι) (h : FPCondition P wr μ Λ) :
     Z P wr Λ ≠ 0 := by
   have h1 := Z_neg_pos_of_fp P wr μ Λ h
   have h2 := (fp_transfer_aux P wr μ Λ h Λ.card Λ
     (Finset.Subset.refl Λ) le_rfl).1
   intro hz
-  rw [hz, abs_zero] at h2
+  rw [hz, norm_zero] at h2
   linarith
 
 /-- **Fernández-Procacci-Kriterium, Teil 2:** die Quotientenschranke
-`|Z (Λ ∖ {x})| ≤ (1 + μ x) · |Z Λ|` — wie bei Dobrushin, nur unter der
+`‖Z (Λ ∖ {x})‖ ≤ (1 + μ x) · ‖Z Λ‖` — wie bei Dobrushin, nur unter der
 schwächeren FP-Bedingung. -/
 theorem Z_ratio_bound_of_fp (Λ : Finset ι) (h : FPCondition P wr μ Λ)
     (x : ι) (hx : x ∈ Λ) :
-    |Z P wr (Λ.erase x)| ≤ (1 + μ x) * |Z P wr Λ| := by
-  have haux := fp_aux P μ Λ (fun γ => |wr γ|) h.1 (fun γ _ => abs_nonneg _)
+    ‖Z P wr (Λ.erase x)‖ ≤ (1 + μ x) * ‖Z P wr Λ‖ := by
+  have haux := fp_aux P μ Λ (fun γ => ‖wr γ‖) h.1 (fun γ _ => norm_nonneg _)
     h.2 Λ.card Λ (Finset.Subset.refl Λ) le_rfl
   have htrans := fp_transfer_aux P wr μ Λ h Λ.card Λ
     (Finset.Subset.refl Λ) le_rfl
-  have hQΛ : 0 < Z P (fun γ => -|wr γ|) Λ := haux.1
+  have hQΛ : 0 < Z P (fun γ => -‖wr γ‖) Λ := haux.1
   have hstar := haux.2 x hx
   rw [sdiff_self, bot_eq_empty, Z_empty] at hstar
   have hset2 : Λ \ Λ.erase x = {x} := by
@@ -1276,14 +1302,14 @@ theorem Z_ratio_bound_of_fp (Λ : Finset ι) (h : FPCondition P wr μ Λ)
   rw [hset2, Z_singleton, mul_one] at hstar
   -- hstar : Q (Λ.erase x) ≤ Q Λ * (1 + μ x)
   have hb := htrans.2 x hx
-  have hZabs : (0:ℝ) ≤ |Z P wr Λ| := abs_nonneg _
-  have hfin : |Z P wr (Λ.erase x)| * Z P (fun γ => -|wr γ|) Λ
-      ≤ ((1 + μ x) * |Z P wr Λ|) * Z P (fun γ => -|wr γ|) Λ := by
-    calc |Z P wr (Λ.erase x)| * Z P (fun γ => -|wr γ|) Λ
-        ≤ Z P (fun γ => -|wr γ|) (Λ.erase x) * |Z P wr Λ| := hb
-      _ ≤ (Z P (fun γ => -|wr γ|) Λ * (1 + μ x)) * |Z P wr Λ| :=
+  have hZabs : (0:ℝ) ≤ ‖Z P wr Λ‖ := norm_nonneg _
+  have hfin : ‖Z P wr (Λ.erase x)‖ * Z P (fun γ => -‖wr γ‖) Λ
+      ≤ ((1 + μ x) * ‖Z P wr Λ‖) * Z P (fun γ => -‖wr γ‖) Λ := by
+    calc ‖Z P wr (Λ.erase x)‖ * Z P (fun γ => -‖wr γ‖) Λ
+        ≤ Z P (fun γ => -‖wr γ‖) (Λ.erase x) * ‖Z P wr Λ‖ := hb
+      _ ≤ (Z P (fun γ => -‖wr γ‖) Λ * (1 + μ x)) * ‖Z P wr Λ‖ :=
           mul_le_mul_of_nonneg_right hstar hZabs
-      _ = ((1 + μ x) * |Z P wr Λ|) * Z P (fun γ => -|wr γ|) Λ := by ring
+      _ = ((1 + μ x) * ‖Z P wr Λ‖) * Z P (fun γ => -‖wr γ‖) Λ := by ring
   exact le_of_mul_le_mul_right hfin hQΛ
 
 end FernandezProcacci
