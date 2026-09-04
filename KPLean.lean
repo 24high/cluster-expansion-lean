@@ -9,3 +9,7 @@ import KPLean.Mayer
 import KPLean.ClusterSeries
 import KPLean.Exponential
 import KPLean.Trees
+import KPLean.TreeDecomp
+import KPLean.TreeRelabel
+import KPLean.TreeLink
+import KPLean.SharpKP
