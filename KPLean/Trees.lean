@@ -372,4 +372,56 @@ theorem treeTrunc_le_exp (w : ι → ℝ) (a : ι → ℝ) (Λ : Finset ι)
       exact mul_le_mul_of_nonneg_left (IH δ hδΛ) (abs_nonneg _)
     exact (hpow.trans hexpS).trans (Real.exp_le_exp.mpr hSle)
 
+/-! ## Die scharfe Summierbarkeitsschranke -/
+
+omit [DecidableEq ι] [DecidableEq J] [Fintype J] in
+/-- **Scharfe Kotecký-Preiss-Summierbarkeit** (modulo Rekursion und
+Verknüpfung): unter der KP-Bedingung ist die bei `γ₀` verankerte
+Betragsreihe der Cluster-Entwicklung durch `|w γ₀| · exp (a γ₀)`
+beschränkt — gleichmäßig im Volumen und ohne Kleinheitsvoraussetzung. -/
+theorem tsum_pinned_le_of_kp (w : ι → ℝ) (a : ι → ℝ) (Λ : Finset ι) (γ₀ : ι)
+    (hγ₀ : γ₀ ∈ Λ) (hKP : KPCondition P w a Λ)
+    (hRec : ∀ γ ∈ Λ, ∀ n : ℕ,
+      treeCoeff P w Λ γ n / (Nat.factorial n : ℝ)
+        ≤ ∑ k ∈ Finset.range (n + 1), (Nat.factorial k : ℝ)⁻¹ *
+            ∑ c ∈ compositionsF n k, ∏ j, nbhdTerm P w Λ γ (c j))
+    (hLink : ∀ n : ℕ,
+      pinnedOrderSum P w Λ γ₀ n ≤ |w γ₀| * treeCoeff P w Λ γ₀ n) :
+    ∑' n, pinnedOrderSum P w Λ γ₀ n / (Nat.factorial n : ℝ)
+      ≤ |w γ₀| * Real.exp (a γ₀) := by
+  refine Real.tsum_le_of_sum_range_le (fun n => ?_) (fun N => ?_)
+  · exact div_nonneg (pinnedOrderSum_nonneg P w Λ γ₀ n) (by positivity)
+  · have hstep : ∀ n ∈ Finset.range N,
+        pinnedOrderSum P w Λ γ₀ n / (Nat.factorial n : ℝ)
+          ≤ |w γ₀| * (treeCoeff P w Λ γ₀ n / (Nat.factorial n : ℝ)) := by
+      intro n _
+      calc pinnedOrderSum P w Λ γ₀ n / (Nat.factorial n : ℝ)
+          ≤ (|w γ₀| * treeCoeff P w Λ γ₀ n) / (Nat.factorial n : ℝ) := by
+            gcongr
+            exact hLink n
+        _ = |w γ₀| * (treeCoeff P w Λ γ₀ n / (Nat.factorial n : ℝ)) := by
+            rw [mul_div_assoc]
+    have htail : ∑ n ∈ Finset.range N,
+        (treeCoeff P w Λ γ₀ n / (Nat.factorial n : ℝ))
+          ≤ treeTrunc P w Λ γ₀ N := by
+      unfold treeTrunc
+      refine Finset.sum_le_sum_of_subset_of_nonneg ?_ ?_
+      · intro x hx
+        rw [Finset.mem_range] at hx ⊢
+        omega
+      · intro n _ _
+        exact div_nonneg (treeCoeff_nonneg P w Λ γ₀ n) (by positivity)
+    calc ∑ n ∈ Finset.range N, pinnedOrderSum P w Λ γ₀ n / (Nat.factorial n : ℝ)
+        ≤ ∑ n ∈ Finset.range N,
+            |w γ₀| * (treeCoeff P w Λ γ₀ n / (Nat.factorial n : ℝ)) :=
+          Finset.sum_le_sum hstep
+      _ = |w γ₀| * ∑ n ∈ Finset.range N,
+            (treeCoeff P w Λ γ₀ n / (Nat.factorial n : ℝ)) := by
+          rw [Finset.mul_sum]
+      _ ≤ |w γ₀| * treeTrunc P w Λ γ₀ N :=
+          mul_le_mul_of_nonneg_left htail (abs_nonneg _)
+      _ ≤ |w γ₀| * Real.exp (a γ₀) :=
+          mul_le_mul_of_nonneg_left
+            (treeTrunc_le_exp P w a Λ hKP hRec N γ₀ hγ₀) (abs_nonneg _)
+
 end ClusterExpansion
