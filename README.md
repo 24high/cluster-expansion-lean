@@ -47,6 +47,11 @@ All in `KPLean/ClusterExpansion.lean`, namespace `ClusterExpansion`:
 
   (`Z_recursion`), proved for weights in an arbitrary commutative ring;
 
+All three criteria hold for weights in an arbitrary **normed field**,
+so complex weights are covered; the comparison functions `μ`, `a` and
+all bounds are real. Over `ℝ` the norm and the absolute value coincide
+definitionally, so the real statements are literally the `K = ℝ` case.
+
 - the **Dobrushin criterion** (product form): if `μ ≥ 0` and
   `|w γ| * ∏_{δ ≁ γ} (1 + μ δ) ≤ μ γ` for every polymer `γ` in `Λ`, then
   `Z Λ ≠ 0` (`Z_ne_zero_of_dobrushin`) and deleting a polymer changes
@@ -253,6 +258,8 @@ The toolchain (`lean-toolchain`) and the mathlib revision
 | `KPLean/TreeLink.lean` | the tree–graph bound in parent-map form |
 | `KPLean/SharpKP.lean` | the recursion inequality, the Kotecký–Preiss induction, the sharp estimate |
 | `KPLean/KPExponential.lean` | convergence of the cluster series under the KP condition, and `log Z = clusterSeries` there |
+| `KPLean/UrsellSymmetry.lean` | invariance of the Ursell sum under relabelling; symmetry of the Ursell function |
+| `KPLean/Locality.lean` | the volume-independent effect of removing one polymer on `log Z` |
 | `paper/kp-formalisation.tex` | LaTeX note describing the formalisation |
 
 ## Background

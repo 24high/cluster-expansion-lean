@@ -138,6 +138,30 @@ formalised, with no `sorry`s at any completed step.
       (`summable_abs_clusterCoeff_of_kp`). This also sharpens
       nonvanishing (`Z_ne_zero_of_kp`) to positivity.
 
+- [x] **Weights in a normed field**: the Dobrushin, Kotecký–Preiss and
+      Fernández–Procacci criteria now hold for weights in any normed
+      field, so **complex weights** — the case contour activities take —
+      are covered. Statement shapes and theorem names are unchanged, and
+      nothing downstream needed touching: over `ℝ` the norm and the
+      absolute value are definitionally equal. The alternating-gas
+      lemmas stay real, since they carry order arguments (positivity,
+      monotonicity, submultiplicativity) that a normed field has no room
+      for.
+- [x] **Symmetry of the Ursell function**: `ursellSum_image_equiv` —
+      a bijection of the vertex set leaves the alternating sum
+      unchanged — hence `ursellInt_comp_perm`: the Ursell function
+      depends on the tuple only up to reordering.
+- [x] **Locality**: under the Kotecký–Preiss condition, removing a
+      single polymer changes the cluster series, and hence `log Z`, by
+      at most `|w γ₀| · exp (a γ₀)` — independently of the volume
+      (`abs_clusterSeries_sub_erase_le_of_kp`,
+      `abs_log_Z_sub_erase_le_of_kp`). This is the two-sided sharpening
+      of `Z_ratio_bound_of_kp` and the form in which truncation errors
+      are controlled in renormalisation group arguments. Together with
+      `abs_clusterSeries_le_of_kp` it also re-derives the volume-linear
+      bound `|log Z| ≤ Σ_Λ |w| · exp a` from the series, which the
+      telescoping induction already gave — the two routes agree.
+
 ## Next
 
 Nothing scheduled. The convergence machinery the roadmap set out to
@@ -147,11 +171,12 @@ exponential formula, the sharp Kotecký–Preiss estimate, and the
 identification of `log Z` with the cluster series under that same
 condition.
 
-Natural continuations, in rough order of size: complex weights (the
-criteria are stated for arbitrary commutative rings, but the analytic
-layer is real); the thermodynamic limit of the free energy; and,
-further out, the Balaban-style renormalisation group estimates this
-infrastructure was built for.
+Natural continuations, in rough order of size: the analytic layer —
+cluster series, exponential formula, sharp estimate — is still real,
+so carrying it over to complex weights is the obvious next step; then
+the thermodynamic limit of the free energy; and, further out, the
+Balaban-style renormalisation group estimates this infrastructure was
+built for.
 
 ## Beyond
 
