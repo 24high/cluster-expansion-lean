@@ -490,13 +490,16 @@ theorem card_fiber_orderedPartitionsF {A : Finset J} {k : ℕ}
   rw [hbij, Fintype.card_embedding_eq, Fintype.card_coe, Fintype.card_fin,
     hCcard, Nat.descFactorial_self]
 
+variable {𝕜 : Type*} [Field 𝕜] [CharZero 𝕜]
+
 omit [DecidableEq ι] [Fintype J] in
+omit [CharZero 𝕜] in
 /-- **Geordnete gegen ungeordnete Partitionen**: die Summe eines nur von
 den Blockgrößen abhängenden Produkts über die geordneten Partitionen ist
 das `k!`-fache der Summe über die Partitionen mit `k` Blöcken. -/
-theorem sum_orderedPartitionsF_eq (A : Finset J) (k : ℕ) (f : ℕ → ℝ) :
+theorem sum_orderedPartitionsF_eq (A : Finset J) (k : ℕ) (f : ℕ → 𝕜) :
     ∑ T ∈ orderedPartitionsF A k, ∏ i, f (T i).card
-      = (Nat.factorial k : ℝ) *
+      = (Nat.factorial k : 𝕜) *
           ∑ C ∈ (partitionsOf A).filter (fun C => C.card = k),
             ∏ B ∈ C, f B.card := by
   have hmaps : ∀ T ∈ orderedPartitionsF A k,
@@ -598,12 +601,13 @@ theorem mem_cons_orderedPartitionsF {A : Finset J} {k : ℕ} {B₀ : Finset J}
       exact Finset.union_sdiff_of_subset hB₀sub
 
 omit [DecidableEq ι] [Fintype J] in
+omit [CharZero 𝕜] in
 /-- **Zerlegung geordneter Partitionen nach dem ersten Block**: die
 Summe über `orderedPartitionsF A (k+1)` zerfällt in die Doppelsumme über
 den nichtleeren ersten Block `B₀ ⊆ A` und die geordneten Partitionen des
 Rests `A \ B₀`. -/
 theorem sum_orderedPartitionsF_succ (A : Finset J) (k : ℕ)
-    (g : (Fin (k + 1) → Finset J) → ℝ) :
+    (g : (Fin (k + 1) → Finset J) → 𝕜) :
     ∑ T ∈ orderedPartitionsF A (k + 1), g T
       = ∑ B₀ ∈ A.powerset.filter (fun B => B.Nonempty),
           ∑ T' ∈ orderedPartitionsF (A \ B₀) k, g (Fin.cons B₀ T') := by
@@ -664,10 +668,11 @@ theorem mem_cons_compositionsF {m k d : ℕ} {c' : Fin k → ℕ} :
       exact hc'ne j
 
 omit [DecidableEq ι] [DecidableEq J] [Fintype J] in
+omit [CharZero 𝕜] in
 /-- **Zerlegung der Kompositionen nach dem ersten Teil**: die Summe über
 `compositionsF m (k+1)` zerfällt in die Doppelsumme über den ersten Teil
 `d ∈ [1, m]` und die Kompositionen von `m - d` in `k` Teile. -/
-theorem sum_compositionsF_succ (m k : ℕ) (g : (Fin (k + 1) → ℕ) → ℝ) :
+theorem sum_compositionsF_succ (m k : ℕ) (g : (Fin (k + 1) → ℕ) → 𝕜) :
     ∑ c ∈ compositionsF m (k + 1), g c
       = ∑ d ∈ Finset.Icc 1 m, ∑ c' ∈ compositionsF (m - d) k,
           g (Fin.cons d c') := by
@@ -695,19 +700,20 @@ theorem sum_compositionsF_succ (m k : ℕ) (g : (Fin (k + 1) → ℕ) → ℝ) :
     rw [Fin.cons_self_tail]
 
 omit [DecidableEq ι] [DecidableEq J] [Fintype J] in
+omit [CharZero 𝕜] in
 /-- Eine nur von der Größe abhängige Summe über die nichtleeren
 Teilmengen von `A` bündelt sich zu einer Summe über die Größen mit den
 Binomialkoeffizienten als Vielfachheiten. -/
-theorem sum_powerset_nonempty_card (A : Finset J) (F : ℕ → ℝ) :
-    ∑ B ∈ A.powerset.filter (fun B => B.Nonempty), F B.card
-      = ∑ d ∈ Finset.Icc 1 A.card, (A.card.choose d : ℝ) * F d := by
+theorem sum_powerset_nonempty_card (A : Finset J) (g : ℕ → 𝕜) :
+    ∑ B ∈ A.powerset.filter (fun B => B.Nonempty), g B.card
+      = ∑ d ∈ Finset.Icc 1 A.card, (A.card.choose d : 𝕜) * g d := by
   have hmaps : ∀ B ∈ A.powerset.filter (fun B => B.Nonempty),
       B.card ∈ Finset.Icc 1 A.card := by
     intro B hB
     obtain ⟨hpow, hne⟩ := Finset.mem_filter.mp hB
     exact Finset.mem_Icc.mpr ⟨Finset.card_pos.mpr hne,
       Finset.card_le_card (Finset.mem_powerset.mp hpow)⟩
-  rw [← Finset.sum_fiberwise_of_maps_to hmaps (fun B => F B.card)]
+  rw [← Finset.sum_fiberwise_of_maps_to hmaps (fun B => g B.card)]
   refine Finset.sum_congr rfl fun d hd => ?_
   obtain ⟨hd1, -⟩ := Finset.mem_Icc.mp hd
   have hfil : (A.powerset.filter (fun B => B.Nonempty)).filter
@@ -721,21 +727,21 @@ theorem sum_powerset_nonempty_card (A : Finset J) (F : ℕ → ℝ) :
     · rintro ⟨hsub, hcard⟩
       exact ⟨⟨hsub, Finset.card_pos.mp (by omega)⟩, hcard⟩
   rw [hfil, Finset.sum_congr rfl
-      (fun B hB => congrArg F (Finset.mem_powersetCard.mp hB).2),
+      (fun B hB => congrArg g (Finset.mem_powersetCard.mp hB).2),
     Finset.sum_const, Finset.card_powersetCard, nsmul_eq_mul]
 
 omit [DecidableEq ι] [DecidableEq J] [Fintype J] in
-/-- Der Multinomial-Schritt in `ℝ`: Binomialkoeffizient mal
+/-- Der Multinomial-Schritt in `𝕜`: Binomialkoeffizient mal
 Restfakultät über einem Nenner ist die volle Fakultät über dem um `d!`
 erweiterten Nenner. -/
-theorem choose_mul_factorial_div {m d : ℕ} (hd : d ≤ m) {Q : ℝ} (hQ : Q ≠ 0) :
-    (m.choose d : ℝ) * ((Nat.factorial (m - d) : ℝ) / Q)
-      = (Nat.factorial m : ℝ) / ((Nat.factorial d : ℝ) * Q) := by
-  have hfd : (Nat.factorial d : ℝ) ≠ 0 :=
+theorem choose_mul_factorial_div {m d : ℕ} (hd : d ≤ m) {Q : 𝕜} (hQ : Q ≠ 0) :
+    (m.choose d : 𝕜) * ((Nat.factorial (m - d) : 𝕜) / Q)
+      = (Nat.factorial m : 𝕜) / ((Nat.factorial d : 𝕜) * Q) := by
+  have hfd : (Nat.factorial d : 𝕜) ≠ 0 :=
     Nat.cast_ne_zero.mpr (Nat.factorial_ne_zero d)
-  have hfr : (Nat.factorial (m - d) : ℝ) ≠ 0 :=
+  have hfr : (Nat.factorial (m - d) : 𝕜) ≠ 0 :=
     Nat.cast_ne_zero.mpr (Nat.factorial_ne_zero (m - d))
-  rw [Nat.cast_choose ℝ hd]
+  rw [Nat.cast_choose 𝕜 hd]
   field_simp
 
 omit [DecidableEq ι] [Fintype J] in
@@ -747,10 +753,10 @@ Induktion über `k` bei mitlaufendem `A`: Abspalten des ersten Blocks,
 Bündelung nach seiner Größe (Binomialkoeffizient) und die
 Multinomial-Identität `C(m,d) · (m−d)!/∏ = m!/(d!·∏)`. -/
 theorem sum_orderedPartitionsF_eq_compositions (A : Finset J) (k : ℕ)
-    (f : ℕ → ℝ) :
+    (f : ℕ → 𝕜) :
     ∑ T ∈ orderedPartitionsF A k, ∏ i, f (T i).card
       = ∑ c ∈ compositionsF A.card k,
-          ((Nat.factorial A.card : ℝ) / ∏ i, (Nat.factorial (c i) : ℝ)) *
+          ((Nat.factorial A.card : 𝕜) / ∏ i, (Nat.factorial (c i) : 𝕜)) *
             ∏ i, f (c i) := by
   induction k generalizing A with
   | zero =>
@@ -802,8 +808,8 @@ theorem sum_orderedPartitionsF_eq_compositions (A : Finset J) (k : ℕ)
       rw [Fin.prod_univ_succ, Fin.cons_zero]
       exact congrArg _ (Finset.prod_congr rfl fun i _ => by rw [Fin.cons_succ])
     have hconsFac : ∀ (d : ℕ) (c' : Fin k → ℕ),
-        (∏ i, (Nat.factorial ((Fin.cons d c' : Fin (k + 1) → ℕ) i) : ℝ))
-          = (Nat.factorial d : ℝ) * ∏ i, (Nat.factorial (c' i) : ℝ) := by
+        (∏ i, (Nat.factorial ((Fin.cons d c' : Fin (k + 1) → ℕ) i) : 𝕜))
+          = (Nat.factorial d : 𝕜) * ∏ i, (Nat.factorial (c' i) : 𝕜) := by
       intro d c'
       rw [Fin.prod_univ_succ, Fin.cons_zero]
       exact congrArg _ (Finset.prod_congr rfl fun i _ => by rw [Fin.cons_succ])
@@ -821,8 +827,8 @@ theorem sum_orderedPartitionsF_eq_compositions (A : Finset J) (k : ℕ)
             (fun T : Fin (k + 1) → Finset J => ∏ i, f (T i).card)
       _ = ∑ B₀ ∈ A.powerset.filter (fun B => B.Nonempty),
             f B₀.card * ∑ c' ∈ compositionsF (A.card - B₀.card) k,
-              ((Nat.factorial (A.card - B₀.card) : ℝ)
-                  / ∏ i, (Nat.factorial (c' i) : ℝ)) * ∏ i, f (c' i) := by
+              ((Nat.factorial (A.card - B₀.card) : 𝕜)
+                  / ∏ i, (Nat.factorial (c' i) : 𝕜)) * ∏ i, f (c' i) := by
           refine Finset.sum_congr rfl fun B₀ hB₀ => ?_
           have hsub : B₀ ⊆ A :=
             Finset.mem_powerset.mp (Finset.mem_filter.mp hB₀).1
@@ -834,33 +840,33 @@ theorem sum_orderedPartitionsF_eq_compositions (A : Finset J) (k : ℕ)
             rw [Finset.mul_sum]
             exact Finset.sum_congr rfl fun T' _ => hconsCard B₀ T'
           rw [hstep, IH (A \ B₀), Finset.card_sdiff_of_subset hsub]
-      _ = ∑ d ∈ Finset.Icc 1 A.card, (A.card.choose d : ℝ) *
+      _ = ∑ d ∈ Finset.Icc 1 A.card, (A.card.choose d : 𝕜) *
             (f d * ∑ c' ∈ compositionsF (A.card - d) k,
-              ((Nat.factorial (A.card - d) : ℝ)
-                  / ∏ i, (Nat.factorial (c' i) : ℝ)) * ∏ i, f (c' i)) :=
+              ((Nat.factorial (A.card - d) : 𝕜)
+                  / ∏ i, (Nat.factorial (c' i) : 𝕜)) * ∏ i, f (c' i)) :=
           sum_powerset_nonempty_card A (fun d : ℕ =>
             f d * ∑ c' ∈ compositionsF (A.card - d) k,
-              ((Nat.factorial (A.card - d) : ℝ)
-                  / ∏ i, (Nat.factorial (c' i) : ℝ)) * ∏ i, f (c' i))
+              ((Nat.factorial (A.card - d) : 𝕜)
+                  / ∏ i, (Nat.factorial (c' i) : 𝕜)) * ∏ i, f (c' i))
       _ = ∑ d ∈ Finset.Icc 1 A.card, ∑ c' ∈ compositionsF (A.card - d) k,
-            ((Nat.factorial A.card : ℝ)
+            ((Nat.factorial A.card : 𝕜)
                 / ∏ i, (Nat.factorial
-                    ((Fin.cons d c' : Fin (k + 1) → ℕ) i) : ℝ))
+                    ((Fin.cons d c' : Fin (k + 1) → ℕ) i) : 𝕜))
               * ∏ i, f ((Fin.cons d c' : Fin (k + 1) → ℕ) i) := by
           refine Finset.sum_congr rfl fun d hd => ?_
           obtain ⟨-, hd2⟩ := Finset.mem_Icc.mp hd
           rw [Finset.mul_sum, Finset.mul_sum]
           refine Finset.sum_congr rfl fun c' _ => ?_
-          have hQ : (∏ i, (Nat.factorial (c' i) : ℝ)) ≠ 0 :=
+          have hQ : (∏ i, (Nat.factorial (c' i) : 𝕜)) ≠ 0 :=
             Finset.prod_ne_zero_iff.mpr fun i _ =>
               Nat.cast_ne_zero.mpr (Nat.factorial_ne_zero _)
           rw [hconsFac d c', hconsF d c', ← choose_mul_factorial_div hd2 hQ]
           ring
       _ = ∑ c ∈ compositionsF A.card (k + 1),
-            ((Nat.factorial A.card : ℝ) / ∏ i, (Nat.factorial (c i) : ℝ)) *
+            ((Nat.factorial A.card : 𝕜) / ∏ i, (Nat.factorial (c i) : 𝕜)) *
               ∏ i, f (c i) :=
           (sum_compositionsF_succ A.card k (fun c : Fin (k + 1) → ℕ =>
-            ((Nat.factorial A.card : ℝ) / ∏ i, (Nat.factorial (c i) : ℝ)) *
+            ((Nat.factorial A.card : 𝕜) / ∏ i, (Nat.factorial (c i) : 𝕜)) *
               ∏ i, f (c i))).symm
 
 omit [DecidableEq ι] [Fintype J] in
@@ -869,18 +875,18 @@ abhängige Summe über alle Partitionen von `A` ist die nach Blockzahl und
 Größenprofil sortierte Kompositionssumme. Das ist die kombinatorische
 Brücke zwischen der Partitionsform der Zustandssumme und der
 Kompositionsform des Exponentials. -/
-theorem sum_partitionsOf_card (A : Finset J) (f : ℕ → ℝ) :
+theorem sum_partitionsOf_card (A : Finset J) (f : ℕ → 𝕜) :
     ∑ C ∈ partitionsOf A, ∏ B ∈ C, f B.card
-      = ∑ k ∈ Finset.range (A.card + 1), (Nat.factorial k : ℝ)⁻¹ *
+      = ∑ k ∈ Finset.range (A.card + 1), (Nat.factorial k : 𝕜)⁻¹ *
           ∑ c ∈ compositionsF A.card k,
-            ((Nat.factorial A.card : ℝ) / ∏ i, (Nat.factorial (c i) : ℝ)) *
+            ((Nat.factorial A.card : 𝕜) / ∏ i, (Nat.factorial (c i) : 𝕜)) *
               ∏ i, f (c i) := by
   have hmaps : ∀ C ∈ partitionsOf A, C.card ∈ Finset.range (A.card + 1) :=
     fun C hC =>
       Finset.mem_range.mpr (Nat.lt_succ_of_le (card_le_of_mem_partitionsOf hC))
   rw [← Finset.sum_fiberwise_of_maps_to hmaps (fun C => ∏ B ∈ C, f B.card)]
   refine Finset.sum_congr rfl fun k _ => ?_
-  have hfac : (Nat.factorial k : ℝ) ≠ 0 :=
+  have hfac : (Nat.factorial k : 𝕜) ≠ 0 :=
     Nat.cast_ne_zero.mpr (Nat.factorial_ne_zero k)
   rw [← sum_orderedPartitionsF_eq_compositions A k f,
     sum_orderedPartitionsF_eq A k f, ← mul_assoc, inv_mul_cancel₀ hfac, one_mul]
