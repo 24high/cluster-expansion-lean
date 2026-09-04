@@ -121,8 +121,11 @@ analytic object, with absolute convergence and anchored bounds in the
 small-weight regime (Section~\ref{sec:series}). Eighth, the exponential
 formula (Theorem~\ref{thm:exp}), which identifies that series with
 $\log Z$ in the same regime and so upgrades the volume-linear bounds of
-Theorem~\ref{thm:log} to an exact expansion. The development is about 5400 lines of Lean in
-five files, compiles against current \textsf{mathlib}, and contains no
+Theorem~\ref{thm:log} to an exact expansion. Ninth, the sharp
+Kotecký--Preiss summability estimate (Theorem~\ref{thm:sharp}), which
+replaces the smallness hypothesis by the Kotecký--Preiss condition
+itself (Section~\ref{sec:sharp}). The development is about 7500 lines of Lean in
+eleven files, compiles against current \textsf{mathlib}, and contains no
 \texttt{sorry} placeholders.
 Section~\ref{sec:kp} documents a claim made in an earlier version of this
 note that the formalisation subsequently refuted.
@@ -612,11 +615,9 @@ reindexing of tuples (\texttt{pinnedOrderSum\_le},
 
 Theorem~\ref{thm:series} is the crude form of the summability estimate
 over clusters: it requires smallness of the total weight rather than
-the Kotecký--Preiss condition. The sharp form — replacing the root-tree
-count $(n+1)^n$ by counts of labelled trees with prescribed degrees, as
-in \cite{KP86,Uel04}, with Theorem~\ref{thm:penrose} as the per-cluster
-input — remains open; Section~\ref{sec:exp} identifies what the series
-computes.
+the Kotecký--Preiss condition. Section~\ref{sec:exp} identifies what
+the series computes; Section~\ref{sec:sharp} replaces the smallness
+hypothesis by the Kotecký--Preiss condition itself.
 
 \section{The exponential formula}\label{sec:exp}
 
@@ -689,11 +690,80 @@ larger independent sets, and equals $Z(\Lambda)$.
 We note that \textsf{mathlib} does not supply the multinomial count:
 \texttt{Multiset.bell} is \emph{defined} multinomially, and the
 statement that it counts partitions is an explicit \texttt{TODO} in the
-file that introduces it. The same holds, more consequentially, for the
-sharp Kotecký--Preiss estimate: counting labelled trees with prescribed
-degrees needs the Prüfer correspondence and Cayley's formula, neither of
-which is in \textsf{mathlib}, so that milestone is a project of its own
-rather than a finishing touch.
+file that introduces it.
+
+\section{The sharp Kotecký--Preiss estimate}\label{sec:sharp}
+
+Theorem~\ref{thm:series} needs the total weight to be small. The sharp
+estimate replaces that by the Kotecký--Preiss condition itself.
+
+\begin{theorem}[\texttt{tsum\_pinned\_le\_of\_kp}]\label{thm:sharp}
+If $\sum_{\delta \nsim \gamma} \lvert w(\delta)\rvert e^{a(\delta)}
+\le a(\gamma)$ for all $\gamma \in \Lambda$, then for every
+$\gamma_0 \in \Lambda$
+\[
+  \sum_{n \ge 0} \frac{1}{n!}
+  \sum_{\substack{\gamma \in \Lambda^{n+1} \\ \gamma_1 = \gamma_0}}
+  \lvert \varphi^{T}(\gamma) \rvert \prod_i \lvert w(\gamma_i) \rvert
+  \;\le\; \lvert w(\gamma_0) \rvert\, e^{a(\gamma_0)},
+\]
+uniformly in the volume.
+\end{theorem}
+
+The textbook route to this bound counts labelled trees with prescribed
+degrees, which needs the Prüfer correspondence and Cayley's formula —
+neither of which is in \textsf{mathlib}. The formalisation avoids both,
+by carrying trees as \emph{parent maps} rather than edge sets: since
+only an upper bound is wanted, an \emph{injection} from spanning trees
+into parent maps suffices, and the Penrose scheme of
+Section~\ref{sec:ursell} already provides one — the map $T \mapsto
+\mathrm{par}_T$ is injective on spanning trees because
+$\tau(T) = T$ (\texttt{penroseTree\_of\_isTree}), exactly the argument
+behind the root-tree bound. This is \texttt{treeCount\_le\_card\_rootedTrees};
+composed with Theorem~\ref{thm:penrose} it gives
+\texttt{pinnedOrderSum\_le\_treeCoeff}, bounding the anchored Ursell sum
+by $\lvert w(\gamma_0)\rvert$ times a weighted sum over rooted trees
+whose edges all join incompatible polymers (\texttt{treeSum}).
+
+\begin{proof}[Proof as formalised]
+A rooted tree decomposes at its root: the subtrees hanging below the
+children of the root partition the non-root vertices
+(\texttt{subtreeOf\_image\_mem\_partitionsOf}), and each is itself a
+rooted tree (\texttt{restrictParent\_mem\_rootedTrees}). Splitting off
+one block at a time — the block containing a fixed vertex — turns the
+tree sum into
+\[
+  \mathrm{treeSum}(A) \;\le\; \sum_{a_0 \in B_0 \subseteq A}
+  \mathrm{blockFactor}(B_0)\, \mathrm{treeSum}(A \setminus B_0)
+\]
+(\texttt{treeSum\_le\_peel}). Its proof fibres the tree--assignment
+pairs over the triple (block of $a_0$, its root, the value there); for a
+fixed triple each pair splits into block data and outer data, injectively,
+so the fibre embeds into a product of \emph{two} tree--assignment sets
+and is bounded by a product of two tree sums (\texttt{fibre\_sum\_le}).
+Peeling one block at a time avoids the dependent choice functions that
+peeling all blocks at once would require. Induction on the vertex count,
+together with the matching split of a partition sum
+(\texttt{sum\_partitionsOf\_peel}), converts this into a bound by the
+partition sum of block factors. Relabelling invariance
+(\texttt{treeSum\_eq\_treeCoeff}) collapses each block factor to a
+function of its size alone, and the multinomial count of
+Section~\ref{sec:exp} — reused verbatim — sorts the partition sum into
+compositions, giving the recursion
+\[
+  \frac{g_n(\gamma_0)}{n!} \;\le\; \sum_k \frac{1}{k!}
+  \sum_{c \vDash_k n} \prod_j v_{c_j}(\gamma_0),
+  \qquad
+  v_m(\gamma) = \sum_{\delta \nsim \gamma} \lvert w(\delta)\rvert
+  \frac{g_{m-1}(\delta)}{(m-1)!}
+\]
+(\texttt{treeCoeff\_div\_le}). Finally, induction on the truncation
+height bounds every partial sum: the composition sum is at most
+$\exp S$ with $S = \sum_m v_m(\gamma_0)$, the induction hypothesis
+replaces the neighbour terms by $e^{a(\delta)}$, and the Kotecký--Preiss
+condition contracts $S$ to $a(\gamma_0)$
+(\texttt{treeTrunc\_le\_exp}).
+\end{proof}
 
 \section{A corrected claim}\label{sec:kp}
 
