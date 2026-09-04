@@ -842,7 +842,7 @@ theorem IsClusterCollection.mono {C D : Finset (Finset ι)} (hCD : C ⊆ D)
 
 /-- Einfügen eines nichtleeren, zu allen Blöcken disjunkten Blocks
 erhält die Kollektionseigenschaft. -/
-private theorem isClusterCollection_insert {B₀ : Finset ι}
+theorem isClusterCollection_insert {B₀ : Finset ι}
     {C : Finset (Finset ι)} (hB₀ : B₀.Nonempty) (hC : IsClusterCollection C)
     (hdisj : ∀ B ∈ C, Disjoint B₀ B) : IsClusterCollection (insert B₀ C) := by
   constructor
@@ -860,7 +860,7 @@ private theorem isClusterCollection_insert {B₀ : Finset ι}
 
 /-- In einer Cluster-Kollektion enthält höchstens ein Block ein festes
 Polymer: der Filter nach `γ₀ ∈ B` ist ein Singleton. -/
-private theorem filter_mem_eq_singleton {C : Finset (Finset ι)} {γ₀ : ι}
+theorem filter_mem_eq_singleton {C : Finset (Finset ι)} {γ₀ : ι}
     {B₀ : Finset ι} (hC : IsClusterCollection C) (hB₀ : B₀ ∈ C)
     (hγ : γ₀ ∈ B₀) : C.filter (fun B => γ₀ ∈ B) = {B₀} := by
   ext B

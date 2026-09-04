@@ -227,6 +227,144 @@ theorem prod_eq_prod_blocks {M : Type*} [CommMonoid M] {A : Finset J}
   rw [← hsup, sup_id_eq_biUnion, Finset.prod_biUnion hpd]
   simp only [id_eq]
 
+/-! ## Abspalten eines Blocks aus einer Partition -/
+
+
+omit [Fintype J] in
+/-- **Abspalten des `a₀`-Blocks aus einer Partition**: eine
+Partitionssumme eines Blockprodukts zerfällt in die Wahl des Blocks, der
+`a₀` enthält, und eine Partition des Rests. Das ist dieselbe Bijektion
+wie in der Cluster-Faktorisierung. -/
+theorem sum_partitionsOf_peel (A : Finset J) {a₀ : J} (ha₀ : a₀ ∈ A)
+    (f : Finset J → ℝ) :
+    ∑ C ∈ partitionsOf A, ∏ B ∈ C, f B
+      = ∑ B₀ ∈ A.powerset.filter (fun B => a₀ ∈ B),
+          f B₀ * ∑ C' ∈ partitionsOf (A \ B₀), ∏ B ∈ C', f B := by
+  have hmul : ∑ B₀ ∈ A.powerset.filter (fun B => a₀ ∈ B),
+        f B₀ * ∑ C' ∈ partitionsOf (A \ B₀), ∏ B ∈ C', f B
+      = ∑ B₀ ∈ A.powerset.filter (fun B => a₀ ∈ B),
+          ∑ C' ∈ partitionsOf (A \ B₀), f B₀ * ∏ B ∈ C', f B :=
+    Finset.sum_congr rfl fun B₀ _ => by rw [Finset.mul_sum]
+  rw [hmul]
+  refine Eq.trans ?_ (Finset.sum_sigma'
+    (A.powerset.filter (fun B => a₀ ∈ B))
+    (fun B₀ => partitionsOf (A \ B₀))
+    (fun B₀ C' => f B₀ * ∏ B ∈ C', f B)).symm
+  refine Finset.sum_nbij'
+    (fun C => (⟨(C.filter (fun B => a₀ ∈ B)).sup id,
+      C.filter (fun B => a₀ ∉ B)⟩ : (_ : Finset J) × Finset (Finset J)))
+    (fun q => insert q.1 q.2) ?_ ?_ ?_ ?_ ?_
+  -- Hinrichtung.
+  · intro C hC
+    obtain ⟨hsub, hICC, hsup⟩ := mem_partitionsOf.mp hC
+    obtain ⟨B₀, hB₀C, hB₀a⟩ : ∃ B₀ ∈ C, a₀ ∈ B₀ := by
+      have : a₀ ∈ C.sup id := by rw [hsup]; exact ha₀
+      obtain ⟨B, hB, hmem⟩ := Finset.mem_sup.mp this
+      exact ⟨B, hB, hmem⟩
+    have hfil : C.filter (fun B => a₀ ∈ B) = {B₀} :=
+      filter_mem_eq_singleton hICC hB₀C hB₀a
+    have hsup0 : (C.filter (fun B => a₀ ∈ B)).sup id = B₀ := by
+      rw [hfil, Finset.sup_singleton, id_eq]
+    -- Der Rest partitioniert `A \ B₀`.
+    have hrest : C.filter (fun B => a₀ ∉ B) ∈ partitionsOf (A \ B₀) := by
+      refine mem_partitionsOf.mpr ⟨fun B hB => ?_, hICC.mono (Finset.filter_subset _ _),
+        ?_⟩
+      · obtain ⟨hBC, hBa⟩ := Finset.mem_filter.mp hB
+        intro x hx
+        refine Finset.mem_sdiff.mpr ⟨hsub B hBC hx, fun hxB₀ => ?_⟩
+        have hne : B ≠ B₀ := fun h => hBa (h ▸ hB₀a)
+        exact Finset.disjoint_left.mp (hICC.2 B hBC B₀ hB₀C hne) hx hxB₀
+      · refine le_antisymm (Finset.sup_le fun B hB => ?_) ?_
+        · obtain ⟨hBC, hBa⟩ := Finset.mem_filter.mp hB
+          intro x hx
+          refine Finset.mem_sdiff.mpr ⟨hsub B hBC hx, fun hxB₀ => ?_⟩
+          have hne : B ≠ B₀ := fun h => hBa (h ▸ hB₀a)
+          exact Finset.disjoint_left.mp (hICC.2 B hBC B₀ hB₀C hne) hx hxB₀
+        · intro x hx
+          obtain ⟨hxA, hxB₀⟩ := Finset.mem_sdiff.mp hx
+          have : x ∈ C.sup id := by rw [hsup]; exact hxA
+          obtain ⟨B, hB, hmem⟩ := Finset.mem_sup.mp this
+          refine Finset.mem_sup.mpr ⟨B, Finset.mem_filter.mpr ⟨hB, fun ha => ?_⟩, hmem⟩
+          have hBB₀ : B = B₀ := by
+            by_contra hne
+            exact Finset.disjoint_left.mp (hICC.2 B hB B₀ hB₀C hne) ha hB₀a
+          exact hxB₀ (hBB₀ ▸ hmem)
+    refine Finset.mem_sigma.mpr ⟨?_, ?_⟩
+    · dsimp only
+      rw [hsup0]
+      exact Finset.mem_filter.mpr ⟨Finset.mem_powerset.mpr (hsub B₀ hB₀C), hB₀a⟩
+    · dsimp only
+      rw [hsup0]
+      exact hrest
+  -- Rückrichtung.
+  · rintro ⟨B₀, C'⟩ hq
+    obtain ⟨hB₀, hC'⟩ := Finset.mem_sigma.mp hq
+    obtain ⟨hB₀pow, hB₀a⟩ := Finset.mem_filter.mp hB₀
+    have hB₀A : B₀ ⊆ A := Finset.mem_powerset.mp hB₀pow
+    obtain ⟨hsub', hICC', hsup'⟩ := mem_partitionsOf.mp hC'
+    have hdisj : ∀ B ∈ C', Disjoint B₀ B := by
+      intro B hB
+      exact Finset.disjoint_right.mpr fun x hx =>
+        (Finset.mem_sdiff.mp (hsub' B hB hx)).2
+    refine mem_partitionsOf.mpr ⟨fun B hB => ?_, ?_, ?_⟩
+    · rcases Finset.mem_insert.mp hB with rfl | hB'
+      · exact hB₀A
+      · exact (hsub' B hB').trans Finset.sdiff_subset
+    · exact isClusterCollection_insert ⟨a₀, hB₀a⟩ hICC' hdisj
+    · rw [Finset.sup_insert, id_eq, hsup']
+      exact Finset.union_sdiff_of_subset hB₀A
+  -- Linksinverse.
+  · intro C hC
+    obtain ⟨-, hICC, hsup⟩ := mem_partitionsOf.mp hC
+    obtain ⟨B₀, hB₀C, hB₀a⟩ : ∃ B₀ ∈ C, a₀ ∈ B₀ := by
+      have : a₀ ∈ C.sup id := by rw [hsup]; exact ha₀
+      obtain ⟨B, hB, hmem⟩ := Finset.mem_sup.mp this
+      exact ⟨B, hB, hmem⟩
+    have hfil : C.filter (fun B => a₀ ∈ B) = {B₀} :=
+      filter_mem_eq_singleton hICC hB₀C hB₀a
+    dsimp only
+    rw [hfil, Finset.sup_singleton, id_eq, ← Finset.singleton_union, ← hfil,
+      Finset.filter_union_filter_not_eq]
+  -- Rechtsinverse.
+  · rintro ⟨B₀, C'⟩ hq
+    obtain ⟨hB₀, hC'⟩ := Finset.mem_sigma.mp hq
+    obtain ⟨hB₀pow, hB₀a⟩ := Finset.mem_filter.mp hB₀
+    obtain ⟨hsub', hICC', -⟩ := mem_partitionsOf.mp hC'
+    have hna : ∀ B ∈ C', a₀ ∉ B := by
+      intro B hB hmem
+      exact (Finset.mem_sdiff.mp (hsub' B hB hmem)).2 hB₀a
+    have hdisj : ∀ B ∈ C', Disjoint B₀ B := by
+      intro B hB
+      exact Finset.disjoint_right.mpr fun x hx =>
+        (Finset.mem_sdiff.mp (hsub' B hB hx)).2
+    have hICCins : IsClusterCollection (insert B₀ C') :=
+      isClusterCollection_insert ⟨a₀, hB₀a⟩ hICC' hdisj
+    have h1 : ((insert B₀ C').filter (fun B => a₀ ∈ B)).sup id = B₀ := by
+      rw [filter_mem_eq_singleton hICCins (Finset.mem_insert_self B₀ C') hB₀a,
+        Finset.sup_singleton, id_eq]
+    have h2 : (insert B₀ C').filter (fun B => a₀ ∉ B) = C' := by
+      rw [Finset.filter_insert, if_neg (not_not_intro hB₀a),
+        Finset.filter_true_of_mem hna]
+    dsimp only
+    rw [h1, h2]
+  -- Die Summanden stimmen überein.
+  · intro C hC
+    obtain ⟨-, hICC, hsup⟩ := mem_partitionsOf.mp hC
+    obtain ⟨B₀, hB₀C, hB₀a⟩ : ∃ B₀ ∈ C, a₀ ∈ B₀ := by
+      have : a₀ ∈ C.sup id := by rw [hsup]; exact ha₀
+      obtain ⟨B, hB, hmem⟩ := Finset.mem_sup.mp this
+      exact ⟨B, hB, hmem⟩
+    have hfil : C.filter (fun B => a₀ ∈ B) = {B₀} :=
+      filter_mem_eq_singleton hICC hB₀C hB₀a
+    have hnotmem : B₀ ∉ C.filter (fun B => a₀ ∉ B) :=
+      fun h => (Finset.mem_filter.mp h).2 hB₀a
+    have hrepr : insert B₀ (C.filter (fun B => a₀ ∉ B)) = C := by
+      rw [← Finset.singleton_union, ← hfil, Finset.filter_union_filter_not_eq]
+    dsimp only
+    rw [hfil, Finset.sup_singleton, id_eq]
+    conv_lhs => rw [← hrepr]
+    rw [Finset.prod_insert hnotmem]
+
 /-! ## Bausteine der Baumsummenschranke -/
 
 section Polymer
