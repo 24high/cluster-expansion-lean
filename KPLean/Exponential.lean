@@ -359,6 +359,146 @@ theorem card_mem_compositionsF {A : Finset J} {k : ℕ}
     ⟨fun i => (Finset.card_pos.mpr (hne i)).ne',
      sum_card_of_mem_orderedPartitionsF hT⟩
 
+/-! ## Geordnete gegen ungeordnete Partitionen: der Faktor `k!`
+
+Die Faserzählung über die Abbildung `T ↦ Bild von T`: jede geordnete
+Partition `T : Fin k → Finset J` hat als Bild eine Partition mit genau
+`k` Blöcken, und über jeder solchen Partition liegen genau `k!` viele
+geordnete Partitionen — die Einbettungen `Fin k ↪ C`. -/
+
+omit [DecidableEq ι] [Fintype J] in
+/-- Eine geordnete Partition ist als Abbildung injektiv: zwei gleiche
+Blöcke an verschiedenen Stellen wären zu sich selbst disjunkt, also
+leer — im Widerspruch zur Nichtleerheit. -/
+theorem injective_of_mem_orderedPartitionsF {A : Finset J} {k : ℕ}
+    {T : Fin k → Finset J} (hT : T ∈ orderedPartitionsF A k) :
+    Function.Injective T := by
+  obtain ⟨hne, hdisj, -⟩ := mem_orderedPartitionsF.mp hT
+  intro i j hij
+  by_contra hij'
+  have hd : Disjoint (T i) (T i) := by
+    have := hdisj i j hij'
+    rwa [← hij] at this
+  rw [Finset.disjoint_self_iff_empty] at hd
+  exact Finset.not_nonempty_iff_eq_empty.mpr hd (hne i)
+
+omit [DecidableEq ι] [Fintype J] in
+/-- Das Bild einer geordneten Partition ist eine Partition der
+Grundmenge mit genau `k` Blöcken. -/
+theorem image_mem_partitionsOf {A : Finset J} {k : ℕ}
+    {T : Fin k → Finset J} (hT : T ∈ orderedPartitionsF A k) :
+    Finset.univ.image T ∈ (partitionsOf A).filter (fun C => C.card = k) := by
+  obtain ⟨hne, hdisj, hsup⟩ := mem_orderedPartitionsF.mp hT
+  have hsupimg : (Finset.univ.image T).sup id = Finset.univ.sup T :=
+    Finset.sup_image _ _ _
+  refine Finset.mem_filter.mpr
+    ⟨mem_partitionsOf.mpr ⟨?_, ⟨?_, ?_⟩, hsupimg.trans hsup⟩, ?_⟩
+  · intro B hB
+    obtain ⟨i, -, rfl⟩ := Finset.mem_image.mp hB
+    rw [← hsup]
+    exact Finset.le_sup (Finset.mem_univ i)
+  · intro B hB
+    obtain ⟨i, -, rfl⟩ := Finset.mem_image.mp hB
+    exact hne i
+  · intro B₁ h₁ B₂ h₂ hne12
+    obtain ⟨i, -, rfl⟩ := Finset.mem_image.mp h₁
+    obtain ⟨j, -, rfl⟩ := Finset.mem_image.mp h₂
+    exact hdisj i j fun hij => hne12 (congrArg T hij)
+  · rw [Finset.card_image_of_injective _
+      (injective_of_mem_orderedPartitionsF hT),
+      Finset.card_univ, Fintype.card_fin]
+
+omit [DecidableEq ι] [Fintype J] in
+/-- Rückrichtung der Faserzählung: aus einer Einbettung `Fin k ↪ C`
+wird eine geordnete Partition mit Bildkollektion `C`. Nichtleerheit und
+Disjunktheit erbt sie von `C`, die Bildgleichung folgt aus
+Injektivität und `|C| = k`. -/
+theorem mem_fiber_of_embedding {A : Finset J} {k : ℕ}
+    {C : Finset (Finset J)} (hC : C ∈ partitionsOf A) (hCcard : C.card = k)
+    (e : Fin k ↪ {x // x ∈ C}) :
+    (fun i => ((e i : Finset J))) ∈ (orderedPartitionsF A k).filter
+      (fun T => Finset.univ.image T = C) := by
+  obtain ⟨-, hICC, hsup⟩ := mem_partitionsOf.mp hC
+  have hinj : Function.Injective fun i => ((e i : Finset J)) :=
+    fun i j hij => e.injective (Subtype.val_injective hij)
+  have himg : Finset.univ.image (fun i => ((e i : Finset J))) = C := by
+    refine Finset.eq_of_subset_of_card_le ?_ (le_of_eq ?_)
+    · intro B hB
+      obtain ⟨i, -, rfl⟩ := Finset.mem_image.mp hB
+      exact (e i).2
+    · rw [Finset.card_image_of_injective _ hinj, Finset.card_univ,
+        Fintype.card_fin, hCcard]
+  have hsupimg : (Finset.univ.image (fun i => ((e i : Finset J)))).sup id
+      = Finset.univ.sup (fun i => ((e i : Finset J))) :=
+    Finset.sup_image _ _ _
+  refine Finset.mem_filter.mpr ⟨mem_orderedPartitionsF.mpr ⟨?_, ?_, ?_⟩, himg⟩
+  · exact fun i => hICC.1 _ (e i).2
+  · exact fun i j hij => hICC.2 _ (e i).2 _ (e j).2
+      fun h => hij (e.injective (Subtype.ext h))
+  · rw [← hsupimg, himg]
+    exact hsup
+
+omit [DecidableEq ι] [Fintype J] in
+/-- Faserkardinalität: die geordneten Partitionen mit Bildkollektion `C`
+entsprechen genau den Einbettungen `Fin k ↪ C` — es gibt `k!` viele. -/
+theorem card_fiber_orderedPartitionsF {A : Finset J} {k : ℕ}
+    {C : Finset (Finset J)} (hC : C ∈ partitionsOf A) (hCcard : C.card = k) :
+    ((orderedPartitionsF A k).filter
+        (fun T => Finset.univ.image T = C)).card
+      = Nat.factorial k := by
+  have hbij : ((orderedPartitionsF A k).filter
+      (fun T => Finset.univ.image T = C)).card
+      = Fintype.card (Fin k ↪ {x // x ∈ C}) := by
+    rw [← Finset.card_univ]
+    refine Finset.card_bij'
+      (fun T hT => ⟨fun i => ⟨T i, ?_⟩, ?_⟩)
+      (fun e _ => fun i => ((e i : Finset J))) ?_ ?_ ?_ ?_
+    -- Werte liegen in `C`.
+    · exact (Finset.mem_filter.mp hT).2 ▸
+        Finset.mem_image_of_mem T (Finset.mem_univ i)
+    -- Injektivität der Einbettung.
+    · exact fun i j hij =>
+        injective_of_mem_orderedPartitionsF (Finset.mem_filter.mp hT).1
+          (congrArg Subtype.val hij)
+    -- Hinrichtung: alles landet in `univ`.
+    · exact fun T _ => Finset.mem_univ _
+    -- Rückrichtung: die Einbettung liefert eine geordnete Partition.
+    · exact fun e _ => mem_fiber_of_embedding hC hCcard e
+    -- Linksinverse.
+    · intro T _
+      rfl
+    -- Rechtsinverse.
+    · intro e _
+      exact Function.Embedding.ext fun i => Subtype.ext rfl
+  rw [hbij, Fintype.card_embedding_eq, Fintype.card_coe, Fintype.card_fin,
+    hCcard, Nat.descFactorial_self]
+
+omit [DecidableEq ι] [Fintype J] in
+/-- **Geordnete gegen ungeordnete Partitionen**: die Summe eines nur von
+den Blockgrößen abhängenden Produkts über die geordneten Partitionen ist
+das `k!`-fache der Summe über die Partitionen mit `k` Blöcken. -/
+theorem sum_orderedPartitionsF_eq (A : Finset J) (k : ℕ) (f : ℕ → ℝ) :
+    ∑ T ∈ orderedPartitionsF A k, ∏ i, f (T i).card
+      = (Nat.factorial k : ℝ) *
+          ∑ C ∈ (partitionsOf A).filter (fun C => C.card = k),
+            ∏ B ∈ C, f B.card := by
+  have hmaps : ∀ T ∈ orderedPartitionsF A k,
+      Finset.univ.image T ∈ (partitionsOf A).filter (fun C => C.card = k) :=
+    fun _ hT => image_mem_partitionsOf hT
+  rw [← Finset.sum_fiberwise_of_maps_to hmaps (fun T => ∏ i, f (T i).card),
+    Finset.mul_sum]
+  refine Finset.sum_congr rfl fun C hC => ?_
+  obtain ⟨hCmem, hCcard⟩ := Finset.mem_filter.mp hC
+  have hval : ∀ T ∈ (orderedPartitionsF A k).filter
+      (fun T => Finset.univ.image T = C),
+      ∏ i, f (T i).card = ∏ B ∈ C, f B.card := by
+    intro T hT
+    obtain ⟨hTmem, himg⟩ := Finset.mem_filter.mp hT
+    rw [← himg, Finset.prod_image
+      (fun i _ j _ hij => injective_of_mem_orderedPartitionsF hTmem hij)]
+  rw [Finset.sum_congr rfl hval, Finset.sum_const,
+    card_fiber_orderedPartitionsF hCmem hCcard, nsmul_eq_mul]
+
 /-! ## Die Partitionsidentität des Unabhängigkeits-Indikators -/
 
 omit [DecidableEq ι] [Fintype J] in

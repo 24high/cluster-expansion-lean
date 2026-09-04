@@ -147,7 +147,27 @@ All in `KPLean/ClusterExpansion.lean`, namespace `ClusterExpansion`:
   `abs_clusterSeries_le`). The series anchored at a fixed polymer `γ₀`
   is bounded by `e |w γ₀| / (1 − e Σ_Λ |w|)`, proportionally to the
   anchor weight and uniformly in the volume (`tsum_pinned_le`) — the
-  crude form of the Kotecký–Preiss summability over clusters.
+  crude form of the Kotecký–Preiss summability over clusters;
+
+- **the building blocks of the exponential formula**
+  (`KPLean/Exponential.lean`), on the way to `log Z = clusterSeries`:
+  the polymer system pulled back along an assignment
+  (`PolymerSystem.pull`) with the tuple sums `tupleZ`, `tupleU` built on
+  it, and four identities linking them to `Z` and to the series —
+
+  `[Indep Q A] = Σ_{partitions of A} Π φ(B)`
+  (`indep_indicator_eq_sum_partitions`, by comparing degree-`|A|`
+  coefficients in the cluster factorisation over `Polynomial ℤ`),
+
+  `tupleZ K = Σ_{partitions of K} Π tupleU B`
+  (`tupleZ_eq_sum_partitions`, block decomposition of pinned assignment
+  sums), `tupleU B = clusterOrderSum (|B| − 1)`
+  (`tupleU_eq_clusterOrderSum`, via the order isomorphism `Fin |B| ≃ B`
+  and the bridge lemma), and `Z = Σ_m tupleZ_m / m!`
+  (`tupleZ_univ_eq`, `Z_eq_sum_tupleZ`, counting the fibres of
+  assignments by embeddings) — together with the analytic step
+  `exp_tsum_eq`, which expands `exp` of an absolutely convergent series
+  into compositions grouped by total weight.
 
 The hierarchy is strict: a single self-incompatible polymer of weight
 `1/2` satisfies the Dobrushin condition with `μ = 1`, while
@@ -176,6 +196,7 @@ The toolchain (`lean-toolchain`) and the mathlib revision
 | `KPLean/Ursell.lean` | Ursell functions, the Penrose partition scheme, the tree–graph bound |
 | `KPLean/Mayer.lean` | Mayer expansion, the finite cluster recursion, the bridge lemma, the cluster factorisation |
 | `KPLean/ClusterSeries.lean` | the cluster series, the root-tree bound, convergence and anchored bounds in the small-weight regime |
+| `KPLean/Exponential.lean` | pulled-back polymer systems, tuple sums, the partition identity, block decomposition and reduction, the layer count, the analytic exponential step |
 | `paper/kp-formalisation.tex` | LaTeX note describing the formalisation |
 
 ## Background
@@ -218,12 +239,16 @@ intended.
 
 ## Roadmap
 
-Everything through the Mayer expansion, the cluster factorisation and
-the convergence of the cluster series in the small-weight regime is
-formalised; remaining are the exponential formula identifying the
-series with `log Z`, and the sharp Kotecký–Preiss summability estimate
-via prescribed-degree tree counts. See [`ROADMAP.md`](ROADMAP.md) for
-the full list with the relevant theorem names.
+Everything through the Mayer expansion, the cluster factorisation, the
+convergence of the cluster series and the building blocks of the
+exponential formula is formalised. What remains for
+`log Z = clusterSeries` is the multinomial count of ordered set
+partitions by size profile — Mathlib's `Multiset.bell` is defined
+multinomially and the proof that it counts partitions is an explicit
+TODO there. Beyond that, the sharp Kotecký–Preiss estimate via
+prescribed-degree tree counts needs the Prüfer correspondence, which
+Mathlib also lacks. See [`ROADMAP.md`](ROADMAP.md) for the full list
+with the relevant theorem names.
 
 Contributions and corrections are welcome; please open an issue.
 

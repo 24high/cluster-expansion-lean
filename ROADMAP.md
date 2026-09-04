@@ -70,20 +70,43 @@ formalised, with no `sorry`s at any completed step.
       (`IsClusterCollection`, `Z_eq_sum_clusterCollections`) — the
       finite exponential formula in set form.
 
+- [x] **The building blocks of the exponential formula**
+      (`KPLean/Exponential.lean`), all proved: the polymer system pulled
+      back along an assignment (`PolymerSystem.pull`) and the tuple sums
+      `tupleZ`, `tupleU` built on it; the **partition identity of the
+      independence indicator** `[Indep Q A] = Σ_{partitions of A} ∏ φ(B)`
+      (`indep_indicator_eq_sum_partitions`, by comparing degree-`|A|`
+      coefficients in the cluster factorisation over `Polynomial ℤ`);
+      the **block decomposition**
+      `tupleZ K = Σ_{partitions of K} ∏ tupleU B`
+      (`tupleZ_eq_sum_partitions`); the **block reduction**
+      `tupleU B = clusterOrderSum (|B| − 1)`
+      (`tupleU_eq_clusterOrderSum`, via `Fin |B| ≃o B` and the bridge
+      lemma); the **layer count** `tupleZ_m = m! · (m-th layer of Z)`,
+      hence `Z = Σ_m tupleZ_m / m!` (`tupleZ_univ_eq`,
+      `Z_eq_sum_tupleZ`); and the **analytic exponential step**
+      (`exp_tsum_eq`) expanding `exp` of an absolutely convergent series
+      into compositions grouped by total weight.
+
 ## Next
 
-- [ ] **The exponential formula**: identify the cluster series with
-      `log Z`, i.e. `log Z Λ = clusterSeries P w Λ` in the convergence
-      regime. With the set-level factorisation and the bridge lemma in
-      place, what remains is the symmetrisation over labelled tuples
-      (multinomial regrouping of ordered set partitions, with repeats)
-      and the log/exp identification itself.
+- [ ] **The exponential formula**: `log Z Λ = clusterSeries P w Λ` in
+      the convergence regime. All the blocks above are proved and the
+      assembly is verified; what is still missing is the **multinomial
+      count** — that ordered set partitions of an `m`-set with size
+      profile `c` number `m!/∏ cᵢ!`, and unordered ones a further `k!`
+      fewer. Mathlib does not supply this: `Multiset.bell` is defined
+      multinomially and the statement that it counts partitions is an
+      explicit TODO there.
 - [ ] **The sharp Kotecký–Preiss summability estimate** over clusters:
       replace the root-tree count `(n+1)ⁿ` by counts of labelled trees
       with prescribed degrees, so that the anchored series is controlled
       under the KP condition `Σ_{δ ≁ γ} |w δ| · exp (a δ) ≤ a γ` rather
       than only in the small-weight regime — the tree–graph bound
       (`abs_ursellInt_le_treeCount`) supplies the per-cluster input.
+      This needs the Prüfer correspondence and Cayley's formula, neither
+      of which is in Mathlib, so it is a project of its own rather than
+      a finishing touch.
 
 ## Beyond
 
