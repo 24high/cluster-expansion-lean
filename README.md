@@ -37,8 +37,8 @@ bound, the Mayer expansion with its finite cluster recursion, the
 exponential formula identifying `log Z` with the cluster series, the
 sharp Kotecký–Preiss summability estimate, the locality of `log Z` under
 removal of a single polymer, the existence of the thermodynamic limit,
-and the analyticity of the free energy in the fugacity. Weights may be
-real or complex throughout.
+the analyticity of the free energy in the fugacity, and the convergence
+of the correlation functions. Weights may be real or complex throughout.
 
 ## Main results
 
@@ -295,7 +295,24 @@ literally the `K = ℝ` case.
 
   (`analyticOnNhd_clusterLimit`). In the Kotecký–Preiss regime the
   pressure is an analytic function of the activity — no phase
-  transition. This is what every volume-independent bound above was for.
+  transition. This is what every volume-independent bound above was for;
+
+- **derivatives of the pressure — the correlation functions**
+  (`KPLean/Correlations.lean`): the first derivative at the origin is the
+  total activity,
+
+  `∂_z log Z(z·w)|_{z=0} = Σ_{γ ∈ Λ} w γ`
+
+  (`deriv_clusterSeries_scale_zero`) — in first order every polymer
+  counts once and interactions have not yet entered; it is also the check
+  that the cluster expansion really is the Taylor series of the pressure.
+  Every derivative is again analytic on the disc, in finite volume and in
+  the limit (`analyticOnNhd_iterated_deriv_clusterSeries`,
+  `analyticOnNhd_iterated_deriv_clusterLimit`), and the finite-volume
+  correlation functions converge locally uniformly to the infinite-volume
+  ones (`tendstoLocallyUniformlyOn_deriv_clusterSeries`) — the second
+  half of the Weierstrass theorem, and the reason uniform convergence was
+  worth more than pointwise.
 
 None of this is vacuous: `KPLean/Examples.lean` exhibits a polymer
 system and weights satisfying every hypothesis, and applies each
@@ -344,6 +361,7 @@ The toolchain (`lean-toolchain`) and the mathlib revision
 | `KPLean/ThermodynamicLimit.lean` | the global KP condition, the volume-difference bound, convergence of `log Z` and bounds on the limit |
 | `KPLean/Fugacity.lean` | homogeneity in the fugacity, the power series, radius `≥ 1`, analyticity in finite volume |
 | `KPLean/LimitAnalyticity.lean` | uniform convergence on the disc; analyticity of the free energy in the thermodynamic limit |
+| `KPLean/Correlations.lean` | derivatives of the pressure: the first Taylor coefficient, analyticity of all orders, convergence of the correlation functions |
 | `KPLean/Examples.lean` | the free polymer system, `Z = ∏ (1 + w)`, and a worked instance of every headline theorem |
 | `paper/kp-formalisation.tex` | LaTeX note describing the formalisation |
 
@@ -388,8 +406,8 @@ intended.
 ## Roadmap
 
 Every milestone the roadmap set out is formalised, up to and including
-locality, complex weights, the thermodynamic limit and analyticity of
-the free energy. See
+locality, complex weights, the thermodynamic limit, analyticity of the
+free energy and the correlation functions. See
 [`ROADMAP.md`](ROADMAP.md) for the full list with the relevant theorem
 names, and for the natural continuations.
 

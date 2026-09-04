@@ -230,6 +230,20 @@ formalised, with no `sorry`s at any completed step.
       `‖w γ‖ · e ≤ 1` (`globalKP_freeSystem`), and `w n = e⁻¹ · 2⁻ⁿ`
       on `ℕ` satisfies it summably. Every headline theorem is then
       applied to that system.
+- [x] **Derivatives of the pressure — the correlation functions**
+      (`KPLean/Correlations.lean`). The first derivative at the origin is
+      the total activity, `∂_z log Z(z·w)|_0 = Σ_{γ ∈ Λ} w γ`
+      (`deriv_clusterSeries_scale_zero`) — in first order every polymer
+      counts once and interactions have not yet entered; it is also the
+      check that the cluster expansion really is the Taylor series of the
+      pressure. Every derivative is again analytic on the disc, in finite
+      volume (`analyticOnNhd_iterated_deriv_clusterSeries`) and in the
+      limit (`analyticOnNhd_iterated_deriv_clusterLimit`), and the
+      finite-volume correlation functions converge locally uniformly to
+      the infinite-volume ones
+      (`tendstoLocallyUniformlyOn_deriv_clusterSeries`) — the second half
+      of the Weierstrass theorem, and the reason uniform convergence was
+      worth more than pointwise.
 
       Writing the example exposed a real defect: the downstream theorems
       had `Classical.propDecidable` baked into their statements, so none
@@ -244,17 +258,18 @@ formalise is complete and `sorry`-free: the three criteria, the
 tree–graph bound, the Mayer expansion, the cluster factorisation, the
 exponential formula, the sharp Kotecký–Preiss estimate, the
 identification of `log Z` with the cluster series under that same
-condition, locality, the thermodynamic limit, and analyticity of the
-free energy in the fugacity.
+condition, locality, the thermodynamic limit, analyticity of the free
+energy in the fugacity, and the convergence of the correlation
+functions.
 
 Everything is stated over `ℝ` and `ℂ` alike, so contour activities are
 covered.
 
 Natural continuations, in rough order of size: the translation-invariant
 setting, where the free energy *density* and its limit make sense;
-derivatives of the pressure — the correlation functions — for which the
-power series is now available; and, further out, the Balaban-style
-renormalisation group estimates this infrastructure was built for.
+explicit formulas for the higher Taylor coefficients in terms of Ursell
+functions; and, further out, the Balaban-style renormalisation group
+estimates this infrastructure was built for.
 
 ## Beyond
 

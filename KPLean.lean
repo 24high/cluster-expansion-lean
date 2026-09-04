@@ -20,4 +20,5 @@ import KPLean.Locality
 import KPLean.ThermodynamicLimit
 import KPLean.Fugacity
 import KPLean.LimitAnalyticity
+import KPLean.Correlations
 import KPLean.Examples

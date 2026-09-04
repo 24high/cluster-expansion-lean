@@ -3,7 +3,7 @@ Copyright (c) 2026 Dennis Michael Heine. All rights reserved.
 Released under the CC BY-NC-SA 4.0 license as described in the file LICENSE.
 Authors: Dennis Michael Heine
 -/
-import KPLean.LimitAnalyticity
+import KPLean.Correlations
 
 /-!
 # Beispiele und Gegenproben zur Leere
@@ -157,6 +157,24 @@ example : ∃ L : ℂ, Tendsto
 example : AnalyticOnNhd ℂ (clusterLimit (freeSystem ℕ) exampleWeight)
     (Metric.eball (0 : ℂ) 1) :=
   analyticOnNhd_clusterLimit (freeSystem ℕ) exampleWeight (fun _ => 1)
+    globalKP_example summable_example
+
+/-- Der Druck des Beispiels beginnt in erster Ordnung mit der
+Gesamtaktivität. Von Hand: im freien System ist
+`log Z(z·w) = ∑ log (1 + z w γ)`, und dessen Ableitung bei `0` ist
+`∑ w γ` — die allgemeine Formel liefert dasselbe. -/
+example (Λ : Finset ℕ) :
+    deriv (fun z : ℂ =>
+      clusterSeries (freeSystem ℕ) (fun γ => z * exampleWeight γ) Λ) 0
+      = ∑ γ ∈ Λ, exampleWeight γ :=
+  deriv_clusterSeries_scale_zero (freeSystem ℕ) exampleWeight (fun _ => 1) Λ
+    (globalKP_example.toKP (freeSystem ℕ) Λ)
+
+/-- Die Korrelationsfunktion des Beispiels ist im thermodynamischen
+Limes analytisch. -/
+example : AnalyticOnNhd ℂ (deriv (clusterLimit (freeSystem ℕ) exampleWeight))
+    (Metric.eball (0 : ℂ) 1) :=
+  analyticOnNhd_deriv_clusterLimit (freeSystem ℕ) exampleWeight (fun _ => 1)
     globalKP_example summable_example
 
 end ClusterExpansion

@@ -81,9 +81,11 @@ series in $z$ of radius at least one, uniformly in the volume; with the
 uniform volume-difference bound this yields, by the Weierstrass
 convergence theorem, that the free energy is analytic in the fugacity
 both in finite volume and in the thermodynamic limit --- no phase
-transition in the Kotecký--Preiss regime. A worked example exhibits
-weights satisfying every hypothesis, so that none of the results is
-vacuous.
+transition in the Kotecký--Preiss regime. The derivatives of the pressure
+--- the correlation functions --- are then analytic to every order and
+converge with the volume, and the first Taylor coefficient is the total
+activity. A worked example exhibits weights satisfying every hypothesis,
+so that none of the results is vacuous.
 An earlier version of this note claimed that the sum form was not
 obtainable from the product form; the formalisation of the comparison
 argument corrected this, and we document both the error and its repair.
@@ -161,10 +163,14 @@ volume exhausts the polymer set (Theorem~\ref{thm:limit},
 Section~\ref{sec:limit}). Fourteenth, the fugacity expansion and the
 analyticity of the pressure, in finite volume and in the limit
 (Theorems~\ref{thm:analytic} and~\ref{thm:limitanalytic},
-Section~\ref{sec:fugacity}); and a worked example showing that none of
-this is vacuous (Section~\ref{sec:examples}). The development is about
-9100 lines of Lean in eighteen files, compiles against current
-\textsf{mathlib}, and contains no \texttt{sorry} placeholders.
+Section~\ref{sec:fugacity}). Fifteenth, the derivatives of the pressure:
+the first Taylor coefficient is the total activity, every order is
+analytic, and the finite-volume correlation functions converge to the
+infinite-volume ones (Theorem~\ref{thm:corr}, Section~\ref{sec:corr});
+and a worked example showing that none of this is vacuous
+(Section~\ref{sec:examples}). The development is about 9250 lines of Lean
+in nineteen files, compiles against current \textsf{mathlib}, and
+contains no \texttt{sorry} placeholders.
 Section~\ref{sec:kp} documents a claim made in an earlier version of this
 note that the formalisation subsequently refuted.
 
@@ -1056,6 +1062,46 @@ convergence into analyticity. The formal proof is the composition
 `\texttt{analyticOnNhd\_clusterSeries}' $\circ$
 `\texttt{tendstoUniformlyOn\_clusterSeries}' $\circ$
 `\texttt{TendstoLocallyUniformlyOn.differentiableOn}'.
+
+\section{Derivatives of the pressure}\label{sec:corr}
+
+Once the pressure is a power series in the fugacity, its derivatives come
+free, and they are the thermodynamically interesting objects:
+$z\,\partial_z \log Z$ is the mean polymer density, and the higher
+derivatives are the correlation functions.
+
+The first Taylor coefficient can be read off, and it is what it should
+be. The order-$0$ contribution to the cluster series is a sum over
+$1$-tuples with $\varphi^{\mathrm T}(\gamma) = 1$, so
+\[
+  \partial_z \Bigl(\sum_{n \ge 0} c_n(zw)\Bigr)\Big|_{z = 0}
+  = \sum_{\gamma \in \Lambda} w(\gamma)
+\]
+(\texttt{deriv\_clusterSeries\_scale\_zero}). In first order every
+polymer counts once and the interaction has not yet entered. This is
+also the check that the cluster expansion really is the Taylor series of
+the pressure: an independent computation in the free system of
+Section~\ref{sec:examples}, where $\log Z(zw) = \sum_\gamma \log(1 + z
+w(\gamma))$, gives the same answer, and the formalisation records the
+agreement.
+
+Analyticity propagates to every order, in finite volume
+(\texttt{analyticOnNhd\_iterated\_deriv\_clusterSeries}) and in the limit
+(\texttt{analyticOnNhd\_iterated\_deriv\_clusterLimit}). More is true:
+the Weierstrass theorem also transports the convergence.
+
+\begin{theorem}[\texttt{tendstoLocallyUniformlyOn\_deriv\_clusterSeries}]\label{thm:corr}
+Under the hypotheses of Theorem~\ref{thm:limitanalytic}, the derivatives
+of the finite-volume pressures converge to the derivative of $L$, locally
+uniformly on the open unit disc.
+\end{theorem}
+
+That is the convergence of the correlation functions to their
+infinite-volume values, and it is the payoff of having proved
+\emph{uniform} rather than merely pointwise convergence in
+Section~\ref{sec:fugacity}: pointwise convergence of holomorphic
+functions says nothing about their derivatives, uniform convergence says
+everything.
 
 \section{Against vacuity}\label{sec:examples}
 
