@@ -32,9 +32,10 @@ limits, analyticity of free energies, and the convergence estimates of
 the expansion. This repository machine-checks the three classical
 answers — the criteria of Kotecký–Preiss, Dobrushin, and
 Fernández–Procacci — together with the recursion they all rest on, and
-the combinatorial layers of the cluster series itself: Ursell functions,
-the Penrose tree–graph bound, and the Mayer expansion with its finite
-cluster recursion.
+the cluster series itself: Ursell functions, the Penrose tree–graph
+bound, the Mayer expansion with its finite cluster recursion, the
+exponential formula identifying `log Z` with the cluster series, and the
+sharp Kotecký–Preiss summability estimate.
 
 ## Main results
 
@@ -179,7 +180,27 @@ All in `KPLean/ClusterExpansion.lean`, namespace `ClusterExpansion`:
   `c` number `|A|!/Π cᵢ!` and unordered ones a further `k!` fewer. That
   count is proved from scratch — Mathlib's `Multiset.bell` is *defined*
   multinomially, and the statement that it counts partitions is an
-  explicit TODO there.
+  explicit TODO there.;
+
+- **the sharp Kotecký–Preiss summability estimate**
+  (`KPLean/SharpKP.lean`): under the Kotecký–Preiss condition
+  `Σ_{δ ≁ γ} |w δ| exp (a δ) ≤ a γ`, the anchored absolute series of the
+  cluster expansion satisfies
+
+  `Σ'_n pinnedOrderSum(γ₀, n)/n! ≤ |w γ₀| · exp (a γ₀)`
+
+  (`tsum_pinned_le_of_kp`), uniformly in the volume and with no
+  smallness hypothesis. The point that makes this affordable is the
+  representation of trees by their **parent maps**: a bound needs only
+  an injection from spanning trees into parent maps, which the Penrose
+  scheme already provides (`treeCount_le_card_rootedTrees`), so neither
+  Cayley's formula nor the Prüfer correspondence — absent from Mathlib —
+  is needed. The proof decomposes a rooted tree at its root
+  (`subtreeOf_image_mem_partitionsOf`), peels off one block at a time
+  (`treeSum_le_peel`), uses relabelling invariance
+  (`treeSum_eq_treeCoeff`) and the multinomial count carried over from
+  the exponential formula, and closes by induction on the truncation
+  height (`treeTrunc_le_exp`).
 
 The hierarchy is strict: a single self-incompatible polymer of weight
 `1/2` satisfies the Dobrushin condition with `μ = 1`, while
@@ -209,6 +230,12 @@ The toolchain (`lean-toolchain`) and the mathlib revision
 | `KPLean/Mayer.lean` | Mayer expansion, the finite cluster recursion, the bridge lemma, the cluster factorisation |
 | `KPLean/ClusterSeries.lean` | the cluster series, the root-tree bound, convergence and anchored bounds in the small-weight regime |
 | `KPLean/Exponential.lean` | pulled-back polymer systems, tuple sums, the partition identity, block decomposition and reduction, the layer count, the analytic exponential step |
+| `KPLean/Trees.lean` | rooted trees as parent maps, subtrees, the weighted tree sum and its coefficients |
+| `KPLean/TreeDecomp.lean` | decomposition of a rooted tree at its root; peeling a block off a partition sum |
+| `KPLean/TreePeel.lean` | the peel inequality for tree sums, by fibring over the block of a fixed vertex |
+| `KPLean/TreeRelabel.lean` | relabelling invariance of the tree sum |
+| `KPLean/TreeLink.lean` | the tree–graph bound in parent-map form |
+| `KPLean/SharpKP.lean` | the recursion inequality, the Kotecký–Preiss induction, the sharp estimate |
 | `paper/kp-formalisation.tex` | LaTeX note describing the formalisation |
 
 ## Background
@@ -251,13 +278,10 @@ intended.
 
 ## Roadmap
 
-Everything through the exponential formula `log Z = clusterSeries` is
-formalised. The remaining milestone is the sharp Kotecký–Preiss
-summability estimate, which would replace the small-weight hypothesis
-by the Kotecký–Preiss condition; it needs counts of labelled trees with
-prescribed degrees, hence the Prüfer correspondence and Cayley's
-formula, neither of which is in Mathlib. See [`ROADMAP.md`](ROADMAP.md)
-for the full list with the relevant theorem names.
+Every milestone the roadmap set out is formalised, up to and including
+the sharp Kotecký–Preiss summability estimate. See
+[`ROADMAP.md`](ROADMAP.md) for the full list with the relevant theorem
+names, and for the natural continuations.
 
 Contributions and corrections are welcome; please open an issue.
 

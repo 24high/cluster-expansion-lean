@@ -105,17 +105,39 @@ formalised, with no `sorry`s at any completed step.
       thereby identified with `log Z` itself, and the geometric bound
       `abs_clusterSeries_le` becomes a bound on `log Z`.
 
+- [x] **The sharp Kotecký–Preiss summability estimate**: under the KP
+      condition `Σ_{δ ≁ γ} |w δ| · exp (a δ) ≤ a γ`, the anchored
+      absolute series obeys
+      `Σ'_n pinnedOrderSum(γ₀, n)/n! ≤ |w γ₀| · exp (a γ₀)`
+      (`tsum_pinned_le_of_kp`) — uniformly in the volume and with no
+      smallness hypothesis. Trees are carried as **parent maps**
+      (`rootedTrees`, `treeSum`, `treeCoeff`), which is what makes this
+      cheap: a *bound* only needs an injection from spanning trees into
+      parent maps, and the Penrose scheme already supplies one
+      (`treeCount_le_card_rootedTrees`), so neither Cayley's formula nor
+      the Prüfer correspondence is required. The chain is: the
+      decomposition of a rooted tree at its root
+      (`subtreeOf_image_mem_partitionsOf`), the peel inequality
+      splitting off one block (`treeSum_le_peel`, via `fibre_sum_le`),
+      relabelling invariance (`treeSum_eq_treeCoeff`), the multinomial
+      count reused from the exponential formula
+      (`treeCoeff_div_le`), and induction on the truncation height
+      (`treeTrunc_le_exp`).
+
 ## Next
 
-- [ ] **The sharp Kotecký–Preiss summability estimate** over clusters:
-      replace the root-tree count `(n+1)ⁿ` by counts of labelled trees
-      with prescribed degrees, so that the anchored series is controlled
-      under the KP condition `Σ_{δ ≁ γ} |w δ| · exp (a δ) ≤ a γ` rather
-      than only in the small-weight regime — the tree–graph bound
-      (`abs_ursellInt_le_treeCount`) supplies the per-cluster input.
-      This needs the Prüfer correspondence and Cayley's formula, neither
-      of which is in Mathlib, so it is a project of its own rather than
-      a finishing touch.
+Nothing scheduled. The convergence machinery the roadmap set out to
+formalise — the three criteria, the tree–graph bound, the Mayer
+expansion, the exponential formula, and the sharp Kotecký–Preiss
+estimate — is complete and `sorry`-free.
+
+Natural continuations, in rough order of size: the exponential formula
+currently identifies `log Z` with the cluster series in the small-weight
+regime, and the sharp estimate now controls the same series under the
+weaker KP condition — closing that gap (`log Z = clusterSeries` under KP
+itself) would need an analytic continuation argument rather than new
+combinatorics. Further out, the complex-weight case and the
+thermodynamic limit of the free energy.
 
 ## Beyond
 
