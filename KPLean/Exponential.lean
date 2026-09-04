@@ -225,12 +225,12 @@ theorem incompatEdges_pull_congr {h h' : J → ι} {B : Finset J}
     constructor
     · rintro ⟨hu, hv, hne, hinc⟩
       refine ⟨hu, hv, hne, ?_⟩
-      show P.incomp (h' u) (h' v) = true
+      change P.incomp (h' u) (h' v) = true
       rw [← hagree u hu, ← hagree v hv]
       exact hinc
     · rintro ⟨hu, hv, hne, hinc⟩
       refine ⟨hu, hv, hne, ?_⟩
-      show P.incomp (h u) (h v) = true
+      change P.incomp (h u) (h v) = true
       rw [hagree u hu, hagree v hv]
       exact hinc
 
@@ -269,11 +269,11 @@ theorem indep_pull_congr {h h' : J → ι} {K : Finset J}
     Indep (P.pull h) K ↔ Indep (P.pull h') K := by
   constructor <;> intro hI i hi j hj hne
   · have := hI i hi j hj hne
-    show P.incomp (h' i) (h' j) = false
+    change P.incomp (h' i) (h' j) = false
     rw [← hagree i hi, ← hagree j hj]
     exact this
   · have := hI i hi j hj hne
-    show P.incomp (h i) (h j) = false
+    change P.incomp (h i) (h j) = false
     rw [hagree i hi, hagree j hj]
     exact this
 
@@ -1239,7 +1239,7 @@ theorem tupleU_eq_clusterOrderSum [LinearOrder J] (w : ι → ℝ) (Λ : Finset 
   have hfB : ∀ i, f i ∈ B := fun i => (oi i).2
   have hfsymm : ∀ j, ∀ hj : j ∈ B, f (oi.symm ⟨j, hj⟩) = j := by
     intro j hj
-    show ((oi (oi.symm ⟨j, hj⟩) : {x // x ∈ B}) : J) = j
+    change ((oi (oi.symm ⟨j, hj⟩) : {x // x ∈ B}) : J) = j
     rw [OrderIso.apply_symm_apply]
   have hsymmf : ∀ i, ∀ hi : f i ∈ B, oi.symm ⟨f i, hi⟩ = i := by
     intro i hi
@@ -1297,7 +1297,7 @@ theorem tupleU_eq_clusterOrderSum [LinearOrder J] (w : ι → ℝ) (Λ : Finset 
   -- Rechtsinverse.
   · intro γ _
     funext i
-    show (if hj : f i ∈ B then γ (oi.symm ⟨f i, hj⟩) else γstar) = γ i
+    change (if hj : f i ∈ B then γ (oi.symm ⟨f i, hj⟩) else γstar) = γ i
     rw [dif_pos (hfB i), hsymmf i (hfB i)]
   -- Die Summanden stimmen überein.
   · intro h _
@@ -1334,7 +1334,7 @@ theorem indep_pull_univ_iff {m : ℕ} (h : Fin m → ι) :
       by_contra hne
       have hfalse := hI i (Finset.mem_univ i) j (Finset.mem_univ j) hne
       have htrue : (P.pull h).incomp i j = true := by
-        show P.incomp (h i) (h j) = true
+        change P.incomp (h i) (h j) = true
         rw [hij]
         exact P.refl (h j)
       rw [hfalse] at htrue
@@ -1346,7 +1346,7 @@ theorem indep_pull_univ_iff {m : ℕ} (h : Fin m → ι) :
     exact hI i (Finset.mem_univ i) j (Finset.mem_univ j)
       (fun hij => hne (congrArg h hij))
   · rintro ⟨hinj, hind⟩ i _ j _ hne
-    show P.incomp (h i) (h j) = false
+    change P.incomp (h i) (h j) = false
     exact hind (h i) (Finset.mem_image_of_mem h (Finset.mem_univ i))
       (h j) (Finset.mem_image_of_mem h (Finset.mem_univ j))
       (fun heq => hne (hinj heq))
@@ -1707,10 +1707,10 @@ theorem exp_tsum_eq (v : ℕ → ℝ) (hv0 : v 0 = 0)
   have hH : Summable fun p : ℕ × ℕ => (Nat.factorial p.1 : ℝ)⁻¹ *
       ∑ c ∈ compositionsF p.2 p.1, ∏ i, |v (c i)| := by
     refine (summable_prod_of_nonneg hHpos).mpr ⟨fun k => ?_, ?_⟩
-    · show Summable fun m : ℕ => (Nat.factorial k : ℝ)⁻¹ *
+    · change Summable fun m : ℕ => (Nat.factorial k : ℝ)⁻¹ *
         ∑ c ∈ compositionsF m k, ∏ i, |v (c i)|
       exact (summable_compositions_abs v habs k).mul_left _
-    · show Summable fun k : ℕ => ∑' m : ℕ, (Nat.factorial k : ℝ)⁻¹ *
+    · change Summable fun k : ℕ => ∑' m : ℕ, (Nat.factorial k : ℝ)⁻¹ *
         ∑ c ∈ compositionsF m k, ∏ i, |v (c i)|
       have hgeom : Summable fun k : ℕ =>
           (Nat.factorial k : ℝ)⁻¹ * (∑' j, |v j|) ^ k :=
