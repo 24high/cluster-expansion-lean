@@ -76,6 +76,7 @@ def PolymerSystem.pull {ι J : Type*} (P : PolymerSystem ι) (h : J → ι) :
   symm i j := P.symm (h i) (h j)
   refl i := P.refl (h i)
 
+variable {𝕂 : Type*} [RCLike 𝕂]
 variable {ι J : Type*} [DecidableEq ι] [DecidableEq J] (P : PolymerSystem ι)
 
 /-! ## Partitionen als Cluster-Kollektionen -/
@@ -188,21 +189,21 @@ theorem restrictOn_mem_pinnedTuples {Λ : Finset ι} {γstar : ι}
 
 /-- Tupelsumme mit Unabhängigkeits-Indikator: die Ordnung-`|K|`-Schicht
 der Zustandssumme in Tupelform. -/
-noncomputable def tupleZ (w : ι → ℝ) (Λ : Finset ι) (γstar : ι)
-    (K : Finset J) : ℝ :=
+noncomputable def tupleZ (w : ι → 𝕂) (Λ : Finset ι) (γstar : ι)
+    (K : Finset J) : 𝕂 :=
   ∑ h ∈ pinnedTuples Λ γstar K, (∏ j ∈ K, w (h j)) *
     (if Indep (P.pull h) K then 1 else 0)
 
 /-- Tupelsumme mit Ursell-Gewicht: der Block-Beitrag der Cluster-Reihe
 in Tupelform. -/
-noncomputable def tupleU (w : ι → ℝ) (Λ : Finset ι) (γstar : ι)
-    (B : Finset J) : ℝ :=
+noncomputable def tupleU (w : ι → 𝕂) (Λ : Finset ι) (γstar : ι)
+    (B : Finset J) : 𝕂 :=
   ∑ h ∈ pinnedTuples Λ γstar B, (∏ j ∈ B, w (h j)) *
-    (ursellSetSum (P.pull h) B : ℝ)
+    (ursellSetSum (P.pull h) B : 𝕂)
 
 omit [DecidableEq ι] in
 /-- Die leere Tupelsumme ist `1`. -/
-theorem tupleZ_empty (w : ι → ℝ) (Λ : Finset ι) (γstar : ι) :
+theorem tupleZ_empty (w : ι → 𝕂) (Λ : Finset ι) (γstar : ι) :
     tupleZ P w Λ γstar (∅ : Finset J) = 1 := by
   unfold tupleZ
   rw [pinnedTuples_empty, Finset.sum_singleton, Finset.prod_empty, one_mul,
@@ -1026,8 +1027,8 @@ theorem indep_indicator_eq_sum_partitions {R : Type*} [CommRing R]
 omit [DecidableEq ι] in
 /-- Aufspalten einer festgenagelten Belegungssumme entlang einer
 disjunkten Zerlegung `B ∪ S` des Trägers. -/
-theorem sum_pinnedTuples_union (Λ : Finset ι) (γstar : ι) {B S : Finset J}
-    (hdisj : Disjoint B S) (φ : (J → ι) → ℝ) :
+theorem sum_pinnedTuples_union {R : Type*} [CommRing R] (Λ : Finset ι)
+    (γstar : ι) {B S : Finset J} (hdisj : Disjoint B S) (φ : (J → ι) → R) :
     ∑ h ∈ pinnedTuples Λ γstar (B ∪ S), φ h
       = ∑ p ∈ pinnedTuples Λ γstar B ×ˢ pinnedTuples Λ γstar S,
           φ (combineOn B p.1 p.2) := by
@@ -1114,10 +1115,10 @@ omit [DecidableEq ι] in
 /-- Blockzerlegung: eine festgenagelte Belegungssumme eines Produkts
 blocklokaler Funktionale über eine disjunkte Kollektion faktorisiert
 in das Produkt der Blocksummen. -/
-theorem sum_pinnedTuples_prod_blocks (Λ : Finset ι) (γstar : ι)
-    (C : Finset (Finset J))
+theorem sum_pinnedTuples_prod_blocks {R : Type*} [CommRing R] (Λ : Finset ι)
+    (γstar : ι) (C : Finset (Finset J))
     (hdisj : ∀ B₁ ∈ C, ∀ B₂ ∈ C, B₁ ≠ B₂ → Disjoint B₁ B₂)
-    (F : Finset J → (J → ι) → ℝ)
+    (F : Finset J → (J → ι) → R)
     (hF : ∀ B ∈ C, ∀ h h' : J → ι, (∀ j ∈ B, h j = h' j) → F B h = F B h') :
     ∑ h ∈ pinnedTuples Λ γstar (C.sup id), ∏ B ∈ C, F B h
       = ∏ B ∈ C, ∑ h ∈ pinnedTuples Λ γstar B, F B h := by
@@ -1171,7 +1172,7 @@ omit [DecidableEq ι] in
 /-- **Tupel-Faktorisierung**: die Tupelsumme mit
 Unabhängigkeits-Indikator zerfällt in die Summe über die Partitionen
 des Trägers der Produkte der Ursell-Blocksummen. -/
-theorem tupleZ_eq_sum_partitions (w : ι → ℝ) (Λ : Finset ι)
+theorem tupleZ_eq_sum_partitions (w : ι → 𝕂) (Λ : Finset ι)
     (γstar : ι) (K : Finset J) :
     tupleZ P w Λ γstar K
       = ∑ C ∈ partitionsOf K, ∏ B ∈ C, tupleU P w Λ γstar B := by
@@ -1202,7 +1203,7 @@ theorem tupleZ_eq_sum_partitions (w : ι → ℝ) (Λ : Finset ι)
     intro B _ h h' hagree
     have h1 : ∏ j ∈ B, w (h j) = ∏ j ∈ B, w (h' j) :=
       Finset.prod_congr rfl fun j hj => by rw [hagree j hj]
-    have h2 : (ursellSetSum (P.pull h) B : ℝ) = ursellSetSum (P.pull h') B :=
+    have h2 : (ursellSetSum (P.pull h) B : 𝕂) = ursellSetSum (P.pull h') B :=
       ursellSetSum_pull_congr P hagree
     rw [h1, h2]
   have hkey := sum_pinnedTuples_prod_blocks (Λ := Λ) (γstar := γstar) C hdisj
@@ -1231,7 +1232,7 @@ die Summationsbereiche entlang der Ordnungsbijektion
 `|B|`-Tupeln aus `Λ`, und das Brückenlemma identifiziert die
 mengenwertige Ursell-Summe des zurückgezogenen Systems mit der
 Ursell-Funktion des Bildtupels. -/
-theorem tupleU_eq_clusterOrderSum [LinearOrder J] (w : ι → ℝ) (Λ : Finset ι)
+theorem tupleU_eq_clusterOrderSum [LinearOrder J] (w : ι → 𝕂) (Λ : Finset ι)
     (γstar : ι) {B : Finset J} (hB : B.Nonempty) :
     tupleU P w Λ γstar B = clusterOrderSum P w Λ (B.card - 1) := by
   obtain ⟨n, hn⟩ : ∃ n, B.card = n + 1 :=
@@ -1262,7 +1263,7 @@ theorem tupleU_eq_clusterOrderSum [LinearOrder J] (w : ι → ℝ) (Λ : Finset 
   -- Brückenlemma: mengenwertige Ursell-Summe des Pullbacks = Ursell-Funktion
   -- des Bildtupels.
   have hUrsell : ∀ h : J → ι,
-      (ursellSetSum (P.pull h) B : ℝ) = ((ursellInt P (h ∘ f) : ℤ) : ℝ) := by
+      (ursellSetSum (P.pull h) B : 𝕂) = ((ursellInt P (h ∘ f) : ℤ) : 𝕂) := by
     intro h
     have h1 : (ursellInt (P.pull h) f : ℤ) = ursellSetSum (P.pull h) B := by
       have h0 := ursellInt_eq_ursellSetSum (P.pull h) hinj
@@ -1307,8 +1308,8 @@ theorem tupleU_eq_clusterOrderSum [LinearOrder J] (w : ι → ℝ) (Λ : Finset 
     rw [dif_pos (hfB i), hsymmf i (hfB i)]
   -- Die Summanden stimmen überein.
   · intro h _
-    show (∏ j ∈ B, w (h j)) * (ursellSetSum (P.pull h) B : ℝ)
-        = ((ursellInt P (h ∘ f) : ℤ) : ℝ) * ∏ i, w ((h ∘ f) i)
+    show (∏ j ∈ B, w (h j)) * (ursellSetSum (P.pull h) B : 𝕂)
+        = ((ursellInt P (h ∘ f) : ℤ) : 𝕂) * ∏ i, w ((h ∘ f) i)
     rw [hUrsell h, hprod h]
     exact mul_comm _ _
 
@@ -1423,13 +1424,13 @@ private theorem card_fiber_eq {Λ S : Finset ι} {m : ℕ} (hSsub : S ⊆ Λ)
 
 /-- Auswertung einer Faser: die injektiven Belegungen mit Bild `S`
 summieren sich zu `m! · ∏_{γ ∈ S} w γ`. -/
-private theorem fiber_sum_eq (w : ι → ℝ) {Λ S : Finset ι} {m : ℕ}
+private theorem fiber_sum_eq (w : ι → 𝕂) {Λ S : Finset ι} {m : ℕ}
     (hSsub : S ⊆ Λ) (hSind : Indep P S) (hScard : S.card = m) :
     ∑ h ∈ ((Fintype.piFinset fun _ : Fin m => Λ).filter
         (fun h => Function.Injective h ∧ Indep P (Finset.univ.image h))).filter
         (fun h => Finset.univ.image h = S),
       ∏ j, w (h j)
-    = (Nat.factorial m : ℝ) * ∏ γ ∈ S, w γ := by
+    = (Nat.factorial m : 𝕂) * ∏ γ ∈ S, w γ := by
   have hval : ∀ h ∈ ((Fintype.piFinset fun _ : Fin m => Λ).filter
       (fun h => Function.Injective h ∧ Indep P (Finset.univ.image h))).filter
       (fun h => Finset.univ.image h = S),
@@ -1443,9 +1444,9 @@ private theorem fiber_sum_eq (w : ι → ℝ) {Λ S : Finset ι} {m : ℕ}
 /-- **Die Tupel-Z-Summe zählt die Z-Schichten mit Faktor `m!`**: über der
 vollen Blockmenge ist `tupleZ` das `m!`-fache der Summe über die
 unabhängigen `m`-elementigen Teilmengen von `Λ`. -/
-theorem tupleZ_univ_eq (w : ι → ℝ) (Λ : Finset ι) (γstar : ι) (m : ℕ) :
+theorem tupleZ_univ_eq (w : ι → 𝕂) (Λ : Finset ι) (γstar : ι) (m : ℕ) :
     tupleZ P w Λ γstar (Finset.univ : Finset (Fin m))
-      = (Nat.factorial m : ℝ) *
+      = (Nat.factorial m : 𝕂) *
           ∑ S ∈ Λ.powerset.filter (fun S => Indep P S ∧ S.card = m),
             ∏ γ ∈ S, w γ := by
   have hstep1 : tupleZ P w Λ γstar (Finset.univ : Finset (Fin m))
@@ -1477,11 +1478,11 @@ theorem tupleZ_univ_eq (w : ι → ℝ) (Λ : Finset ι) (γstar : ι) (m : ℕ)
 
 /-- **Z als Summe der Tupel-Schichten**: die Zustandssumme ist die Summe
 der durch `m!` normierten Tupel-Z-Summen aller Ordnungen `m ≤ M`. -/
-theorem Z_eq_sum_tupleZ (w : ι → ℝ) (Λ : Finset ι) (γstar : ι) {M : ℕ}
+theorem Z_eq_sum_tupleZ (w : ι → 𝕂) (Λ : Finset ι) (γstar : ι) {M : ℕ}
     (hM : Λ.card ≤ M) :
     Z P w Λ = ∑ m ∈ Finset.range (M + 1),
       tupleZ P w Λ γstar (Finset.univ : Finset (Fin m))
-        / (Nat.factorial m : ℝ) := by
+        / (Nat.factorial m : 𝕂) := by
   have hmaps : ∀ S ∈ Λ.powerset.filter (fun S => Indep P S),
       S.card ∈ Finset.range (M + 1) := by
     intro S hS
@@ -1491,7 +1492,7 @@ theorem Z_eq_sum_tupleZ (w : ι → ℝ) (Λ : Finset ι) (γstar : ι) {M : ℕ
   unfold Z
   rw [← Finset.sum_fiberwise_of_maps_to hmaps (fun S => ∏ γ ∈ S, w γ)]
   refine Finset.sum_congr rfl fun m _ => ?_
-  have hfac : (Nat.factorial m : ℝ) ≠ 0 :=
+  have hfac : (Nat.factorial m : 𝕂) ≠ 0 :=
     Nat.cast_ne_zero.mpr (Nat.factorial_ne_zero m)
   rw [tupleZ_univ_eq, mul_div_cancel_left₀ _ hfac, Finset.filter_filter]
 
@@ -1499,7 +1500,7 @@ theorem Z_eq_sum_tupleZ (w : ι → ℝ) (Λ : Finset ι) (γstar : ι) {M : ℕ
 
 omit [DecidableEq ι] [DecidableEq J] [Fintype J] in
 /-- Über der leeren Polymermenge verschwindet jeder Reihenbeitrag. -/
-theorem clusterOrderSum_of_empty (w : ι → ℝ) (n : ℕ) :
+theorem clusterOrderSum_of_empty (w : ι → 𝕂) (n : ℕ) :
     clusterOrderSum P w (∅ : Finset ι) n = 0 := by
   unfold clusterOrderSum
   have hempty : (Fintype.piFinset fun _ : Fin (n + 1) => (∅ : Finset ι))
@@ -1511,7 +1512,7 @@ theorem clusterOrderSum_of_empty (w : ι → ℝ) (n : ℕ) :
 
 omit [DecidableEq ι] [DecidableEq J] [Fintype J] in
 /-- Über der leeren Polymermenge ist die Cluster-Reihe null. -/
-theorem clusterSeries_empty (w : ι → ℝ) :
+theorem clusterSeries_empty (w : ι → 𝕂) :
     clusterSeries P w (∅ : Finset ι) = 0 := by
   unfold clusterSeries clusterCoeff
   rw [tsum_congr fun n => by rw [clusterOrderSum_of_empty, zero_div]]
@@ -1520,25 +1521,25 @@ theorem clusterSeries_empty (w : ι → ℝ) :
 /-- Die um eins verschobene Koeffizientenfolge der Cluster-Reihe:
 `v 0 = 0`, `v (n+1) = clusterCoeff n`. Sie erfüllt die Voraussetzung
 `v 0 = 0` des Exponentialschritts. -/
-noncomputable def seriesSeq (w : ι → ℝ) (Λ : Finset ι) (j : ℕ) : ℝ :=
+noncomputable def seriesSeq (w : ι → 𝕂) (Λ : Finset ι) (j : ℕ) : 𝕂 :=
   if j = 0 then 0 else clusterCoeff P w Λ (j - 1)
 
 omit [DecidableEq ι] [DecidableEq J] [Fintype J] in
-theorem seriesSeq_zero (w : ι → ℝ) (Λ : Finset ι) : seriesSeq P w Λ 0 = 0 :=
+theorem seriesSeq_zero (w : ι → 𝕂) (Λ : Finset ι) : seriesSeq P w Λ 0 = 0 :=
   rfl
 
 omit [DecidableEq ι] [DecidableEq J] [Fintype J] in
-theorem seriesSeq_succ (w : ι → ℝ) (Λ : Finset ι) (n : ℕ) :
+theorem seriesSeq_succ (w : ι → 𝕂) (Λ : Finset ι) (n : ℕ) :
     seriesSeq P w Λ (n + 1) = clusterCoeff P w Λ n := by
   unfold seriesSeq
   rw [if_neg (Nat.succ_ne_zero n), Nat.add_sub_cancel]
 
 omit [DecidableEq ι] [DecidableEq J] [Fintype J] in
-theorem abs_seriesSeq_le (w : ι → ℝ) (Λ : Finset ι) (j : ℕ) :
-    |seriesSeq P w Λ j| ≤ (Real.exp 1 * ∑ x ∈ Λ, |w x|) ^ j := by
+theorem abs_seriesSeq_le (w : ι → 𝕂) (Λ : Finset ι) (j : ℕ) :
+    ‖seriesSeq P w Λ j‖ ≤ (Real.exp 1 * ∑ x ∈ Λ, ‖w x‖) ^ j := by
   cases j with
   | zero =>
-    rw [seriesSeq_zero, abs_zero, pow_zero]
+    rw [seriesSeq_zero, norm_zero, pow_zero]
     exact zero_le_one
   | succ n =>
     rw [seriesSeq_succ]
@@ -1547,22 +1548,22 @@ theorem abs_seriesSeq_le (w : ι → ℝ) (Λ : Finset ι) (j : ℕ) :
 omit [DecidableEq ι] [DecidableEq J] [Fintype J] in
 /-- Absolute Summierbarkeit der Reihenglieder überträgt sich auf die
 verschobene Folge: das nullte Glied ist null. -/
-theorem summable_abs_seriesSeq (w : ι → ℝ) (Λ : Finset ι)
-    (h : Summable fun n => |clusterCoeff P w Λ n|) :
-    Summable fun j => |seriesSeq P w Λ j| := by
+theorem summable_abs_seriesSeq (w : ι → 𝕂) (Λ : Finset ι)
+    (h : Summable fun n => ‖clusterCoeff P w Λ n‖) :
+    Summable fun j => ‖seriesSeq P w Λ j‖ := by
   refine (summable_nat_add_iff 1).mp (h.congr fun n => ?_)
   rw [seriesSeq_succ]
 
 omit [DecidableEq ι] [DecidableEq J] [Fintype J] in
-theorem summable_seriesSeq (w : ι → ℝ) (Λ : Finset ι)
-    (h : Summable fun n => |clusterCoeff P w Λ n|) :
+theorem summable_seriesSeq (w : ι → 𝕂) (Λ : Finset ι)
+    (h : Summable fun n => ‖clusterCoeff P w Λ n‖) :
     Summable fun j => seriesSeq P w Λ j :=
-  Summable.of_abs (summable_abs_seriesSeq P w Λ h)
+  Summable.of_norm (summable_abs_seriesSeq P w Λ h)
 
 omit [DecidableEq ι] [DecidableEq J] [Fintype J] in
 /-- Die verschobene Folge summiert sich zur Cluster-Reihe. -/
-theorem tsum_seriesSeq (w : ι → ℝ) (Λ : Finset ι)
-    (h : Summable fun n => |clusterCoeff P w Λ n|) :
+theorem tsum_seriesSeq (w : ι → 𝕂) (Λ : Finset ι)
+    (h : Summable fun n => ‖clusterCoeff P w Λ n‖) :
     ∑' j, seriesSeq P w Λ j = clusterSeries P w Λ := by
   rw [(summable_seriesSeq P w Λ h).tsum_eq_zero_add, seriesSeq_zero, zero_add]
   unfold clusterSeries
@@ -1578,22 +1579,22 @@ verbleibenden Beiträge werden über `compositionsF` nach dem
 Gesamtgewicht `m` gebündelt. -/
 
 /-- Die Betrags-Produktfamilie über `k`-Tupel ist summierbar. -/
-theorem summable_tupleProd (u : ℕ → ℝ) (hu : Summable fun j => |u j|) (k : ℕ) :
-    Summable fun c : Fin k → ℕ => ∏ i, |u (c i)| := by
+theorem summable_tupleProd (u : ℕ → 𝕂) (hu : Summable fun j => ‖u j‖) (k : ℕ) :
+    Summable fun c : Fin k → ℕ => ∏ i, ‖u (c i)‖ := by
   induction k with
   | zero => exact .of_finite
   | succ k ih =>
-    have hp : Summable fun p : ℕ × (Fin k → ℕ) => |u p.1| * ∏ i, |u (p.2 i)| :=
-      Summable.mul_of_nonneg (f := fun j => |u j|)
-        (g := fun c : Fin k → ℕ => ∏ i, |u (c i)|) hu ih
-        (fun _ => abs_nonneg _)
-        (fun _ => Finset.prod_nonneg fun _ _ => abs_nonneg _)
+    have hp : Summable fun p : ℕ × (Fin k → ℕ) => ‖u p.1‖ * ∏ i, ‖u (p.2 i)‖ :=
+      Summable.mul_of_nonneg (f := fun j => ‖u j‖)
+        (g := fun c : Fin k → ℕ => ∏ i, ‖u (c i)‖) hu ih
+        (fun _ => norm_nonneg _)
+        (fun _ => Finset.prod_nonneg fun _ _ => norm_nonneg _)
     refine (Equiv.summable_iff (Fin.consEquiv fun _ : Fin (k + 1) => ℕ)).mp
       (hp.congr fun p => ?_)
     simp [Fin.prod_univ_succ]
 
 /-- Potenzen einer absolut konvergenten Reihe als Tupelsummen. -/
-theorem tsum_pow_eq_tsum_tuple (u : ℕ → ℝ) (hu : Summable fun j => |u j|)
+theorem tsum_pow_eq_tsum_tuple (u : ℕ → 𝕂) (hu : Summable fun j => ‖u j‖)
     (k : ℕ) :
     (∑' j, u j) ^ k = ∑' c : Fin k → ℕ, ∏ i, u (c i) := by
   induction k with
@@ -1602,10 +1603,10 @@ theorem tsum_pow_eq_tsum_tuple (u : ℕ → ℝ) (hu : Summable fun j => |u j|)
     simp
   | succ k ih =>
     have hnu : Summable fun j => ‖u j‖ := by
-      simpa [Real.norm_eq_abs] using hu
+      exact hu
     have hnt : Summable fun c : Fin k → ℕ => ‖∏ i, u (c i)‖ :=
       (summable_tupleProd u hu k).congr fun c => by
-        rw [Real.norm_eq_abs, Finset.abs_prod]
+        rw [norm_prod]
     calc (∑' j, u j) ^ (k + 1)
         = (∑' j, u j) * (∑' j, u j) ^ k := pow_succ' _ _
       _ = (∑' j, u j) * ∑' c : Fin k → ℕ, ∏ i, u (c i) := by rw [ih]
@@ -1637,7 +1638,7 @@ theorem compEmb_injective (k : ℕ) : Function.Injective (compEmb k) := by
 /-- Träger der Produktfamilie: wegen `u 0 = 0` tragen nur Tupel mit
 lauter positiven Einträgen bei, und diese liegen im Bild von
 `compEmb`. -/
-theorem support_subset_range_compEmb (u : ℕ → ℝ) (hu0 : u 0 = 0) (k : ℕ) :
+theorem support_subset_range_compEmb (u : ℕ → 𝕂) (hu0 : u 0 = 0) (k : ℕ) :
     Function.support (fun c : Fin k → ℕ => ∏ i, u (c i))
       ⊆ Set.range (compEmb k) := by
   intro c hc
@@ -1648,16 +1649,16 @@ theorem support_subset_range_compEmb (u : ℕ → ℝ) (hu0 : u 0 = 0) (k : ℕ)
   exact ⟨⟨∑ i, c i, c, mem_compositionsF.mpr ⟨hne, rfl⟩⟩, rfl⟩
 
 /-- Die Tupelsumme, nach dem Gesamtgewicht gebündelt. -/
-theorem tsum_tuple_eq_tsum_compositions (u : ℕ → ℝ) (hu0 : u 0 = 0)
-    (hu : Summable fun j => |u j|) (k : ℕ) :
+theorem tsum_tuple_eq_tsum_compositions (u : ℕ → 𝕂) (hu0 : u 0 = 0)
+    (hu : Summable fun j => ‖u j‖) (k : ℕ) :
     ∑' c : Fin k → ℕ, ∏ i, u (c i)
       = ∑' m : ℕ, ∑ c ∈ compositionsF m k, ∏ i, u (c i) := by
-  have habs : Summable fun c : Fin k → ℕ => |∏ i, u (c i)| :=
-    (summable_tupleProd u hu k).congr fun c => (Finset.abs_prod _ _).symm
+  have habs : Summable fun c : Fin k → ℕ => ‖∏ i, u (c i)‖ :=
+    (summable_tupleProd u hu k).congr fun c => (norm_prod _ _).symm
   have hsig : Summable
       fun x : Σ m : ℕ, {c : Fin k → ℕ // c ∈ compositionsF m k} =>
       ∏ i, u (x.2.val i) :=
-    habs.of_abs.comp_injective (compEmb_injective k)
+    habs.of_norm.comp_injective (compEmb_injective k)
   calc ∑' c : Fin k → ℕ, ∏ i, u (c i)
       = ∑' x : Σ m : ℕ, {c : Fin k → ℕ // c ∈ compositionsF m k},
           ∏ i, u (x.2.val i) :=
@@ -1670,89 +1671,93 @@ theorem tsum_tuple_eq_tsum_compositions (u : ℕ → ℝ) (hu0 : u 0 = 0)
           (fun c => ∏ i, u (c i))
 
 /-- Summierbarkeit der nach Gesamtgewicht gebündelten Betragsreihe. -/
-theorem summable_compositions_abs (u : ℕ → ℝ)
-    (hu : Summable fun j => |u j|) (k : ℕ) :
-    Summable fun m : ℕ => ∑ c ∈ compositionsF m k, ∏ i, |u (c i)| := by
+theorem summable_compositions_abs (u : ℕ → 𝕂)
+    (hu : Summable fun j => ‖u j‖) (k : ℕ) :
+    Summable fun m : ℕ => ∑ c ∈ compositionsF m k, ∏ i, ‖u (c i)‖ := by
   have hsig : Summable
       fun x : Σ m : ℕ, {c : Fin k → ℕ // c ∈ compositionsF m k} =>
-      ∏ i, |u (x.2.val i)| :=
+      ∏ i, ‖u (x.2.val i)‖ :=
     (summable_tupleProd u hu k).comp_injective (compEmb_injective k)
   exact hsig.sigma.congr fun m => Finset.tsum_subtype (compositionsF m k)
-    (fun c => ∏ i, |u (c i)|)
+    (fun c => ∏ i, ‖u (c i)‖)
 
 /-- Wert der gebündelten Betragsreihe: die `k`-te Potenz der
 Betragssumme. -/
-theorem tsum_compositions_abs (u : ℕ → ℝ) (hu0 : u 0 = 0)
-    (hu : Summable fun j => |u j|) (k : ℕ) :
-    ∑' m : ℕ, ∑ c ∈ compositionsF m k, ∏ i, |u (c i)|
-      = (∑' j, |u j|) ^ k := by
-  have hw : Summable fun j => abs |u j| :=
-    hu.congr fun j => (abs_abs (u j)).symm
-  have hw0 : |u 0| = 0 := by rw [hu0, abs_zero]
-  calc ∑' m : ℕ, ∑ c ∈ compositionsF m k, ∏ i, |u (c i)|
-      = ∑' c : Fin k → ℕ, ∏ i, |u (c i)| :=
-        (tsum_tuple_eq_tsum_compositions (fun j => |u j|) hw0 hw k).symm
-    _ = (∑' j, |u j|) ^ k :=
-        (tsum_pow_eq_tsum_tuple (fun j => |u j|) hw k).symm
+theorem tsum_compositions_abs (u : ℕ → 𝕂) (hu0 : u 0 = 0)
+    (hu : Summable fun j => ‖u j‖) (k : ℕ) :
+    ∑' m : ℕ, ∑ c ∈ compositionsF m k, ∏ i, ‖u (c i)‖
+      = (∑' j, ‖u j‖) ^ k := by
+  have hw : Summable fun j => ‖‖u j‖‖ :=
+    hu.congr fun j => (norm_norm (u j)).symm
+  have hw0 : ‖u 0‖ = 0 := by rw [hu0, norm_zero]
+  calc ∑' m : ℕ, ∑ c ∈ compositionsF m k, ∏ i, ‖u (c i)‖
+      = ∑' c : Fin k → ℕ, ∏ i, ‖u (c i)‖ :=
+        (tsum_tuple_eq_tsum_compositions (fun j => ‖u j‖) hw0 hw k).symm
+    _ = (∑' j, ‖u j‖) ^ k :=
+        (tsum_pow_eq_tsum_tuple (fun j => ‖u j‖) hw k).symm
 
 /-- **Der analytische Exponentialschritt**: `exp` einer absolut
 konvergenten Reihe ist die nach dem Gesamtgewicht `m` umgruppierte
 Kompositionssumme. -/
-theorem exp_tsum_eq (v : ℕ → ℝ) (hv0 : v 0 = 0)
-    (habs : Summable fun j => |v j|) :
-    Real.exp (∑' j, v j)
-      = ∑' m, ∑ k ∈ Finset.range (m + 1), (Nat.factorial k : ℝ)⁻¹ *
+theorem exp_tsum_eq (v : ℕ → 𝕂) (hv0 : v 0 = 0)
+    (habs : Summable fun j => ‖v j‖) :
+    NormedSpace.exp (∑' j, v j)
+      = ∑' m, ∑ k ∈ Finset.range (m + 1), (Nat.factorial k : 𝕂)⁻¹ *
           ∑ c ∈ compositionsF m k, ∏ i, v (c i) := by
+  have hnn : ∀ k : ℕ, ‖((Nat.factorial k : 𝕂))⁻¹‖ = (Nat.factorial k : ℝ)⁻¹ := by
+    intro k
+    rw [norm_inv, ← RCLike.ofReal_natCast, RCLike.norm_ofReal,
+      abs_of_nonneg (Nat.cast_nonneg _)]
   have hfac : ∀ k : ℕ, (0 : ℝ) ≤ (Nat.factorial k : ℝ)⁻¹ := fun k =>
     inv_nonneg.mpr (Nat.cast_nonneg _)
   -- Summierbarkeit der Betrags-Majorante über dem Produktgitter.
   have hHpos : ∀ p : ℕ × ℕ, 0 ≤ (Nat.factorial p.1 : ℝ)⁻¹ *
-      ∑ c ∈ compositionsF p.2 p.1, ∏ i, |v (c i)| := fun p =>
+      ∑ c ∈ compositionsF p.2 p.1, ∏ i, ‖v (c i)‖ := fun p =>
     mul_nonneg (hfac p.1) (Finset.sum_nonneg fun c _ =>
-      Finset.prod_nonneg fun i _ => abs_nonneg _)
+      Finset.prod_nonneg fun i _ => norm_nonneg _)
   have hH : Summable fun p : ℕ × ℕ => (Nat.factorial p.1 : ℝ)⁻¹ *
-      ∑ c ∈ compositionsF p.2 p.1, ∏ i, |v (c i)| := by
+      ∑ c ∈ compositionsF p.2 p.1, ∏ i, ‖v (c i)‖ := by
     refine (summable_prod_of_nonneg hHpos).mpr ⟨fun k => ?_, ?_⟩
     · change Summable fun m : ℕ => (Nat.factorial k : ℝ)⁻¹ *
-        ∑ c ∈ compositionsF m k, ∏ i, |v (c i)|
+        ∑ c ∈ compositionsF m k, ∏ i, ‖v (c i)‖
       exact (summable_compositions_abs v habs k).mul_left _
     · change Summable fun k : ℕ => ∑' m : ℕ, (Nat.factorial k : ℝ)⁻¹ *
-        ∑ c ∈ compositionsF m k, ∏ i, |v (c i)|
+        ∑ c ∈ compositionsF m k, ∏ i, ‖v (c i)‖
       have hgeom : Summable fun k : ℕ =>
-          (Nat.factorial k : ℝ)⁻¹ * (∑' j, |v j|) ^ k :=
-        (Real.summable_pow_div_factorial (∑' j, |v j|)).congr fun k =>
+          (Nat.factorial k : ℝ)⁻¹ * (∑' j, ‖v j‖) ^ k :=
+        (Real.summable_pow_div_factorial (∑' j, ‖v j‖)).congr fun k =>
           (inv_mul_eq_div _ _).symm
       refine hgeom.congr fun k => ?_
       rw [tsum_mul_left, tsum_compositions_abs v hv0 habs k]
   -- Absolute Schranke für die vorzeichenbehaftete Familie.
   have hGabs : ∀ p : ℕ × ℕ,
-      |(Nat.factorial p.1 : ℝ)⁻¹ * ∑ c ∈ compositionsF p.2 p.1, ∏ i, v (c i)|
+      ‖(Nat.factorial p.1 : 𝕂)⁻¹ * ∑ c ∈ compositionsF p.2 p.1, ∏ i, v (c i)‖
         ≤ (Nat.factorial p.1 : ℝ)⁻¹ *
-            ∑ c ∈ compositionsF p.2 p.1, ∏ i, |v (c i)| := by
+            ∑ c ∈ compositionsF p.2 p.1, ∏ i, ‖v (c i)‖ := by
     intro p
-    rw [abs_mul, abs_of_nonneg (hfac p.1)]
+    rw [norm_mul, hnn p.1]
     refine mul_le_mul_of_nonneg_left ?_ (hfac p.1)
-    calc |∑ c ∈ compositionsF p.2 p.1, ∏ i, v (c i)|
-        ≤ ∑ c ∈ compositionsF p.2 p.1, |∏ i, v (c i)| :=
-          Finset.abs_sum_le_sum_abs _ _
-      _ = ∑ c ∈ compositionsF p.2 p.1, ∏ i, |v (c i)| :=
-          Finset.sum_congr rfl fun c _ => Finset.abs_prod _ _
-  have hG : Summable fun p : ℕ × ℕ => (Nat.factorial p.1 : ℝ)⁻¹ *
+    calc ‖∑ c ∈ compositionsF p.2 p.1, ∏ i, v (c i)‖
+        ≤ ∑ c ∈ compositionsF p.2 p.1, ‖∏ i, v (c i)‖ :=
+          norm_sum_le _ _
+      _ = ∑ c ∈ compositionsF p.2 p.1, ∏ i, ‖v (c i)‖ :=
+          Finset.sum_congr rfl fun c _ => norm_prod _ _
+  have hG : Summable fun p : ℕ × ℕ => (Nat.factorial p.1 : 𝕂)⁻¹ *
       ∑ c ∈ compositionsF p.2 p.1, ∏ i, v (c i) :=
-    (Summable.of_nonneg_of_le (fun p => abs_nonneg _) hGabs hH).of_abs
-  calc Real.exp (∑' j, v j)
-      = ∑' k : ℕ, (∑' j, v j) ^ k / (Nat.factorial k : ℝ) := by
-        simp only [Real.exp_eq_exp_ℝ, NormedSpace.exp_eq_tsum_div]
-    _ = ∑' k : ℕ, ∑' m : ℕ, (Nat.factorial k : ℝ)⁻¹ *
+    (Summable.of_nonneg_of_le (fun p => norm_nonneg _) hGabs hH).of_norm
+  calc NormedSpace.exp (∑' j, v j)
+      = ∑' k : ℕ, (∑' j, v j) ^ k / (Nat.factorial k : 𝕂) := by
+        simp only [NormedSpace.exp_eq_tsum_div]
+    _ = ∑' k : ℕ, ∑' m : ℕ, (Nat.factorial k : 𝕂)⁻¹ *
           ∑ c ∈ compositionsF m k, ∏ i, v (c i) := by
         refine tsum_congr fun k => ?_
         rw [div_eq_inv_mul, tsum_pow_eq_tsum_tuple v habs k,
           tsum_tuple_eq_tsum_compositions v hv0 habs k, ← tsum_mul_left]
-    _ = ∑' m : ℕ, ∑' k : ℕ, (Nat.factorial k : ℝ)⁻¹ *
+    _ = ∑' m : ℕ, ∑' k : ℕ, (Nat.factorial k : 𝕂)⁻¹ *
           ∑ c ∈ compositionsF m k, ∏ i, v (c i) :=
-        (Summable.tsum_comm (f := fun k m => (Nat.factorial k : ℝ)⁻¹ *
+        (Summable.tsum_comm (f := fun k m => (Nat.factorial k : 𝕂)⁻¹ *
           ∑ c ∈ compositionsF m k, ∏ i, v (c i)) hG).symm
-    _ = ∑' m : ℕ, ∑ k ∈ Finset.range (m + 1), (Nat.factorial k : ℝ)⁻¹ *
+    _ = ∑' m : ℕ, ∑ k ∈ Finset.range (m + 1), (Nat.factorial k : 𝕂)⁻¹ *
           ∑ c ∈ compositionsF m k, ∏ i, v (c i) := by
         refine tsum_congr fun m => ?_
         refine tsum_eq_sum fun k hk => ?_
@@ -1769,7 +1774,7 @@ theorem exp_tsum_eq (v : ℕ → ℝ) (hv0 : v 0 = 0)
 omit [DecidableEq ι] [DecidableEq J] [Fintype J] in
 /-- Oberhalb der Kardinalität von `Λ` verschwindet die Tupel-Z-Summe:
 es gibt keine `m`-elementigen unabhängigen Teilmengen mehr. -/
-theorem tupleZ_univ_vanish (w : ι → ℝ) (Λ : Finset ι) (γstar : ι) {m : ℕ}
+theorem tupleZ_univ_vanish (w : ι → 𝕂) (Λ : Finset ι) (γstar : ι) {m : ℕ}
     (hm : Λ.card < m) :
     tupleZ P w Λ γstar (Finset.univ : Finset (Fin m)) = 0 := by
   rw [tupleZ_univ_eq]
@@ -1795,11 +1800,11 @@ Kompositionen; die Multinomialzählung (`sum_partitionsOf_card`)
 die Schichtzählung (`Z_eq_sum_tupleZ`) summiert die Schichten zu `Z`.
 Die Reihe bricht bei `|Λ|` ab, weil es keine größeren unabhängigen
 Mengen gibt. -/
-theorem exp_clusterSeries_eq_Z (w : ι → ℝ) (Λ : Finset ι)
-    (hconv : Summable fun n => |clusterCoeff P w Λ n|) :
-    Real.exp (clusterSeries P w Λ) = Z P w Λ := by
+theorem exp_clusterSeries_eq_Z (w : ι → 𝕂) (Λ : Finset ι)
+    (hconv : Summable fun n => ‖clusterCoeff P w Λ n‖) :
+    NormedSpace.exp (clusterSeries P w Λ) = Z P w Λ := by
   rcases Λ.eq_empty_or_nonempty with rfl | hne
-  · rw [clusterSeries_empty, Real.exp_zero, Z_empty]
+  · rw [clusterSeries_empty, NormedSpace.exp_zero, Z_empty]
   obtain ⟨γstar, -⟩ := hne
   -- Schritt 1: `exp` der Reihe als umgruppierte Kompositionssumme.
   have hexp := exp_tsum_eq (seriesSeq P w Λ) (seriesSeq_zero P w Λ)
@@ -1807,10 +1812,10 @@ theorem exp_clusterSeries_eq_Z (w : ι → ℝ) (Λ : Finset ι)
   rw [tsum_seriesSeq P w Λ hconv] at hexp
   -- Schritt 2: das `m`-te Glied ist `tupleZ (univ : Fin m) / m!`.
   have hterm : ∀ m : ℕ,
-      (∑ k ∈ Finset.range (m + 1), (Nat.factorial k : ℝ)⁻¹ *
+      (∑ k ∈ Finset.range (m + 1), (Nat.factorial k : 𝕂)⁻¹ *
         ∑ c ∈ compositionsF m k, ∏ i, seriesSeq P w Λ (c i))
       = tupleZ P w Λ γstar (Finset.univ : Finset (Fin m))
-          / (Nat.factorial m : ℝ) := by
+          / (Nat.factorial m : 𝕂) := by
     intro m
     have hcard : (Finset.univ : Finset (Fin m)).card = m := by
       rw [Finset.card_univ, Fintype.card_fin]
@@ -1824,14 +1829,16 @@ theorem exp_clusterSeries_eq_Z (w : ι → ℝ) (Λ : Finset ι)
         tupleU_eq_clusterOrderSum P w Λ γstar (hICC.1 B hB)
     rw [h1, sum_partitionsOf_card (Finset.univ : Finset (Fin m))
       (fun s => clusterOrderSum P w Λ (s - 1)), hcard]
-    rw [eq_div_iff (by positivity : (Nat.factorial m : ℝ) ≠ 0), Finset.sum_mul]
+    have hmne : (Nat.factorial m : 𝕂) ≠ 0 :=
+      Nat.cast_ne_zero.mpr (Nat.factorial_ne_zero m)
+    rw [eq_div_iff hmne, Finset.sum_mul]
     refine Finset.sum_congr rfl fun k _ => ?_
     rw [mul_assoc, Finset.sum_mul]
     congr 1
     refine Finset.sum_congr rfl fun c hc => ?_
     obtain ⟨hpos, -⟩ := mem_compositionsF.mp hc
     have hv : ∀ i, seriesSeq P w Λ (c i)
-        = clusterOrderSum P w Λ (c i - 1) / (Nat.factorial (c i) : ℝ) := by
+        = clusterOrderSum P w Λ (c i - 1) / (Nat.factorial (c i) : 𝕂) := by
       intro i
       unfold seriesSeq
       rw [if_neg (hpos i)]
@@ -1839,35 +1846,51 @@ theorem exp_clusterSeries_eq_Z (w : ι → ℝ) (Λ : Finset ι)
       have hci : c i - 1 + 1 = c i := by have := hpos i; omega
       rw [hci]
     rw [Finset.prod_congr rfl fun i _ => hv i, Finset.prod_div_distrib]
-    have hfacne : (∏ i, (Nat.factorial (c i) : ℝ)) ≠ 0 := by
+    have hfacne : (∏ i, (Nat.factorial (c i) : 𝕂)) ≠ 0 := by
       refine Finset.prod_ne_zero_iff.mpr fun i _ => ?_
       exact_mod_cast (Nat.factorial_pos (c i)).ne'
     field_simp
   -- Schritt 3: die Reihe bricht bei `|Λ|` ab und ist die Zustandssumme.
   have hvanish : ∀ m ∉ Finset.range (Λ.card + 1),
       tupleZ P w Λ γstar (Finset.univ : Finset (Fin m))
-        / (Nat.factorial m : ℝ) = 0 := by
+        / (Nat.factorial m : 𝕂) = 0 := by
     intro m hm
     rw [Finset.mem_range] at hm
     rw [tupleZ_univ_vanish P w Λ γstar (by omega), zero_div]
-  calc Real.exp (clusterSeries P w Λ)
-      = ∑' m, ∑ k ∈ Finset.range (m + 1), (Nat.factorial k : ℝ)⁻¹ *
+  calc NormedSpace.exp (clusterSeries P w Λ)
+      = ∑' m, ∑ k ∈ Finset.range (m + 1), (Nat.factorial k : 𝕂)⁻¹ *
           ∑ c ∈ compositionsF m k, ∏ i, seriesSeq P w Λ (c i) := hexp
     _ = ∑' m, tupleZ P w Λ γstar (Finset.univ : Finset (Fin m))
-          / (Nat.factorial m : ℝ) := tsum_congr hterm
+          / (Nat.factorial m : 𝕂) := tsum_congr hterm
     _ = ∑ m ∈ Finset.range (Λ.card + 1),
           tupleZ P w Λ γstar (Finset.univ : Finset (Fin m))
-            / (Nat.factorial m : ℝ) := tsum_eq_sum hvanish
+            / (Nat.factorial m : 𝕂) := tsum_eq_sum hvanish
     _ = Z P w Λ := (Z_eq_sum_tupleZ P w Λ γstar le_rfl).symm
 
 omit [DecidableEq J] [Fintype J] in
+/-- **Die Exponentialformel für reelle Gewichte.** -/
+theorem exp_clusterSeries_eq_Z_real (w : ι → ℝ) (Λ : Finset ι)
+    (hconv : Summable fun n => |clusterCoeff P w Λ n|) :
+    Real.exp (clusterSeries P w Λ) = Z P w Λ := by
+  rw [Real.exp_eq_exp_ℝ]
+  exact exp_clusterSeries_eq_Z P w Λ (hconv.congr fun n => (Real.norm_eq_abs _).symm)
+
+omit [DecidableEq J] [Fintype J] in
+/-- **Die Exponentialformel für komplexe Gewichte.** -/
+theorem exp_clusterSeries_eq_Z_complex (w : ι → ℂ) (Λ : Finset ι)
+    (hconv : Summable fun n => ‖clusterCoeff P w Λ n‖) :
+    Complex.exp (clusterSeries P w Λ) = Z P w Λ := by
+  rw [Complex.exp_eq_exp_ℂ]
+  exact exp_clusterSeries_eq_Z P w Λ hconv
+
+omit [DecidableEq J] [Fintype J] in
 /-- Im Kleinheitsregime ist die Zustandssumme strikt positiv — sie ist
-ein Exponential. Insbesondere ist sie nichtnull, ohne Umweg über die
-Konvergenzkriterien. -/
+ein reelles Exponential. Insbesondere ist sie nichtnull, ohne Umweg über
+die Konvergenzkriterien. -/
 theorem Z_pos_of_summable (w : ι → ℝ) (Λ : Finset ι)
     (hconv : Summable fun n => |clusterCoeff P w Λ n|) :
     0 < Z P w Λ := by
-  rw [← exp_clusterSeries_eq_Z P w Λ hconv]
+  rw [← exp_clusterSeries_eq_Z_real P w Λ hconv]
   exact Real.exp_pos _
 
 omit [DecidableEq J] [Fintype J] in
@@ -1878,14 +1901,15 @@ mit `abs_clusterSeries_le` liefert das die volumenlineare Kontrolle von
 theorem log_Z_eq_clusterSeries (w : ι → ℝ) (Λ : Finset ι)
     (hconv : Summable fun n => |clusterCoeff P w Λ n|) :
     Real.log (Z P w Λ) = clusterSeries P w Λ := by
-  rw [← exp_clusterSeries_eq_Z P w Λ hconv, Real.log_exp]
+  rw [← exp_clusterSeries_eq_Z_real P w Λ hconv, Real.log_exp]
 
 omit [DecidableEq J] [Fintype J] in
 /-- **Die Exponentialformel im Kleinheitsregime**: für
-`e · ∑_Λ |w| < 1` ist `Z` das Exponential der Cluster-Reihe. -/
-theorem exp_clusterSeries_eq_Z_of_small (w : ι → ℝ) (Λ : Finset ι)
-    (hsmall : Real.exp 1 * ∑ x ∈ Λ, |w x| < 1) :
-    Real.exp (clusterSeries P w Λ) = Z P w Λ :=
+`e · ∑_Λ ‖w‖ < 1` ist `Z` das Exponential der Cluster-Reihe. Die
+Aussage gilt über jedem `RCLike`-Körper, also reell wie komplex. -/
+theorem exp_clusterSeries_eq_Z_of_small (w : ι → 𝕂) (Λ : Finset ι)
+    (hsmall : Real.exp 1 * ∑ x ∈ Λ, ‖w x‖ < 1) :
+    NormedSpace.exp (clusterSeries P w Λ) = Z P w Λ :=
   exp_clusterSeries_eq_Z P w Λ (summable_abs_clusterCoeff P w Λ hsmall)
 
 omit [DecidableEq J] [Fintype J] in
@@ -1893,13 +1917,19 @@ omit [DecidableEq J] [Fintype J] in
 theorem Z_pos_of_small (w : ι → ℝ) (Λ : Finset ι)
     (hsmall : Real.exp 1 * ∑ x ∈ Λ, |w x| < 1) :
     0 < Z P w Λ :=
-  Z_pos_of_summable P w Λ (summable_abs_clusterCoeff P w Λ hsmall)
+  Z_pos_of_summable P w Λ
+    ((summable_abs_clusterCoeff P w Λ
+      (by simpa only [Real.norm_eq_abs] using hsmall)).congr
+      fun n => Real.norm_eq_abs _)
 
 omit [DecidableEq J] [Fintype J] in
 /-- **`log Z` ist die Cluster-Reihe** im Kleinheitsregime. -/
 theorem log_Z_eq_clusterSeries_of_small (w : ι → ℝ) (Λ : Finset ι)
     (hsmall : Real.exp 1 * ∑ x ∈ Λ, |w x| < 1) :
     Real.log (Z P w Λ) = clusterSeries P w Λ :=
-  log_Z_eq_clusterSeries P w Λ (summable_abs_clusterCoeff P w Λ hsmall)
+  log_Z_eq_clusterSeries P w Λ
+    ((summable_abs_clusterCoeff P w Λ
+      (by simpa only [Real.norm_eq_abs] using hsmall)).congr
+      fun n => Real.norm_eq_abs _)
 
 end ClusterExpansion

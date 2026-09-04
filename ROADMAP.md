@@ -161,22 +161,45 @@ formalised, with no `sorry`s at any completed step.
       `abs_clusterSeries_le_of_kp` it also re-derives the volume-linear
       bound `|log Z| ≤ Σ_Λ |w| · exp a` from the series, which the
       telescoping induction already gave — the two routes agree.
+- [x] **The analytic layer over complex weights**: the cluster series,
+      the exponential formula, the sharp Kotecký–Preiss estimate and
+      locality now all hold for weights in any `RCLike` field, that is
+      for `ℝ` and `ℂ` alike. `clusterOrderSum`, `clusterCoeff` and
+      `clusterSeries` take values in the field while every bound stays
+      real and norm-based. `Real.exp` is replaced by `NormedSpace.exp`
+      in the general statement, with `Real.exp` and `Complex.exp`
+      corollaries bridged by `Real.exp_eq_exp_ℝ` and
+      `Complex.exp_eq_exp_ℂ` (`exp_clusterSeries_eq_Z`,
+      `exp_clusterSeries_eq_Z_of_kp`,
+      `exp_clusterSeries_eq_Z_of_kp_complex`). For complex weights `Z`
+      has no logarithm, so `Z = exp (clusterSeries)` is the sharp form
+      of the statement — and it gives nonvanishing on the nose.
+      `Real.log`-valued results (`log_Z_eq_clusterSeries_of_kp`,
+      `abs_log_Z_le_of_kp`, `abs_log_Z_sub_erase_le_of_kp`) and the
+      positivity `Z_pos_of_kp` stay real, as they must.
+
+      `RCLike`, not a general normed field, is the right hypothesis
+      here: the proof needs `‖(m : K)‖ = |m|` for integer casts —
+      the Ursell function is integer-valued — and that fails in, say,
+      a `p`-adic field.
 
 ## Next
 
 Nothing scheduled. The convergence machinery the roadmap set out to
 formalise is complete and `sorry`-free: the three criteria, the
 tree–graph bound, the Mayer expansion, the cluster factorisation, the
-exponential formula, the sharp Kotecký–Preiss estimate, and the
+exponential formula, the sharp Kotecký–Preiss estimate, the
 identification of `log Z` with the cluster series under that same
-condition.
+condition, and locality.
 
-Natural continuations, in rough order of size: the analytic layer —
-cluster series, exponential formula, sharp estimate — is still real,
-so carrying it over to complex weights is the obvious next step; then
-the thermodynamic limit of the free energy; and, further out, the
-Balaban-style renormalisation group estimates this infrastructure was
-built for.
+Everything is stated over `ℝ` and `ℂ` alike, so contour activities are
+covered.
+
+Natural continuations, in rough order of size: the thermodynamic limit
+of the free energy, for which locality supplies the equicontinuity;
+analyticity of `log Z` in the weights, for which the complex layer is
+now in place; and, further out, the Balaban-style renormalisation group
+estimates this infrastructure was built for.
 
 ## Beyond
 

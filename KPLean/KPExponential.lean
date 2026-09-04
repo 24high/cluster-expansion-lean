@@ -32,25 +32,26 @@ open scoped Classical
 
 namespace ClusterExpansion
 
+variable {K : Type*} [RCLike K]
 variable {ι : Type*} (P : PolymerSystem ι)
 
 /-- Der Beitrag einer Ordnung, nach dem Wert der ersten Koordinate
 zerlegt: jedes Tupel ist bei genau einem Polymer verankert. -/
-theorem abs_clusterOrderSum_le_sum_pinned (w : ι → ℝ) (Λ : Finset ι)
+theorem abs_clusterOrderSum_le_sum_pinned (w : ι → K) (Λ : Finset ι)
     (n : ℕ) :
-    |clusterOrderSum P w Λ n|
+    ‖clusterOrderSum P w Λ n‖
       ≤ ∑ γ₀ ∈ Λ, pinnedOrderSum P w Λ γ₀ n := by
   have hmaps : ∀ γ ∈ Fintype.piFinset fun _ : Fin (n + 1) => Λ, γ 0 ∈ Λ :=
     fun γ hγ => Fintype.mem_piFinset.mp hγ 0
-  calc |clusterOrderSum P w Λ n|
+  calc ‖clusterOrderSum P w Λ n‖
       ≤ ∑ γ ∈ Fintype.piFinset fun _ : Fin (n + 1) => Λ,
-          |(ursellInt P γ : ℝ) * ∏ i, w (γ i)| :=
-        Finset.abs_sum_le_sum_abs _ _
+          ‖(ursellInt P γ : K) * ∏ i, w (γ i)‖ :=
+        norm_sum_le _ _
     _ = ∑ γ ∈ Fintype.piFinset fun _ : Fin (n + 1) => Λ,
-          |(ursellInt P γ : ℝ)| * ∏ i, |w (γ i)| :=
-        Finset.sum_congr rfl fun γ _ => by rw [abs_mul, Finset.abs_prod]
+          ‖(ursellInt P γ : K)‖ * ∏ i, ‖w (γ i)‖ :=
+        Finset.sum_congr rfl fun γ _ => by rw [norm_mul, norm_prod]
     _ = ∑ γ₀ ∈ Λ, ∑ γ ∈ (Fintype.piFinset fun _ : Fin (n + 1) => Λ).filter
-          (fun γ => γ 0 = γ₀), |(ursellInt P γ : ℝ)| * ∏ i, |w (γ i)| :=
+          (fun γ => γ 0 = γ₀), ‖(ursellInt P γ : K)‖ * ∏ i, ‖w (γ i)‖ :=
         (Finset.sum_fiberwise_of_maps_to hmaps _).symm
 
 /-- Eine Summe durch eine Konstante geteilt. -/
@@ -63,11 +64,11 @@ private theorem sum_div_eq {α : Type*} (s : Finset α) (f : α → ℝ) (c : �
 Kotecký-Preiss-Bedingung**: die scharfe verankerte Schranke summiert
 sich über die Anker zu `∑_{γ ∈ Λ} |w γ| · exp (a γ)`, und das ist
 gerade die volumenlineare Schranke aus `abs_log_abs_Z_le_of_kp`. -/
-theorem sum_range_abs_clusterCoeff_le_of_kp (w : ι → ℝ) (a : ι → ℝ)
+theorem sum_range_abs_clusterCoeff_le_of_kp (w : ι → K) (a : ι → ℝ)
     (Λ : Finset ι) (hKP : KPCondition P w a Λ) (N : ℕ) :
-    ∑ n ∈ Finset.range N, |clusterCoeff P w Λ n|
-      ≤ ∑ γ₀ ∈ Λ, |w γ₀| * Real.exp (a γ₀) := by
-  have hstep : ∀ n ∈ Finset.range N, |clusterCoeff P w Λ n|
+    ∑ n ∈ Finset.range N, ‖clusterCoeff P w Λ n‖
+      ≤ ∑ γ₀ ∈ Λ, ‖w γ₀‖ * Real.exp (a γ₀) := by
+  have hstep : ∀ n ∈ Finset.range N, ‖clusterCoeff P w Λ n‖
       ≤ ∑ γ₀ ∈ Λ, pinnedOrderSum P w Λ γ₀ n / (Nat.factorial n : ℝ) := by
     intro n _
     have hfacpos : (0 : ℝ) < (Nat.factorial n : ℝ) := by positivity
@@ -75,60 +76,75 @@ theorem sum_range_abs_clusterCoeff_le_of_kp (w : ι → ℝ) (a : ι → ℝ)
     have hfacle : (Nat.factorial n : ℝ) ≤ (Nat.factorial (n + 1) : ℝ) := by
       exact_mod_cast Nat.factorial_le (Nat.le_succ n)
     unfold clusterCoeff
-    rw [abs_div, abs_of_pos hfacpos']
-    calc |clusterOrderSum P w Λ n| / (Nat.factorial (n + 1) : ℝ)
-        ≤ |clusterOrderSum P w Λ n| / (Nat.factorial n : ℝ) :=
-          div_le_div_of_nonneg_left (abs_nonneg _) hfacpos hfacle
+    rw [norm_div, RCLike.norm_natCast]
+    calc ‖clusterOrderSum P w Λ n‖ / (Nat.factorial (n + 1) : ℝ)
+        ≤ ‖clusterOrderSum P w Λ n‖ / (Nat.factorial n : ℝ) :=
+          div_le_div_of_nonneg_left (norm_nonneg _) hfacpos hfacle
       _ ≤ (∑ γ₀ ∈ Λ, pinnedOrderSum P w Λ γ₀ n) / (Nat.factorial n : ℝ) :=
           div_le_div_of_nonneg_right
             (abs_clusterOrderSum_le_sum_pinned P w Λ n) hfacpos.le
       _ = ∑ γ₀ ∈ Λ, pinnedOrderSum P w Λ γ₀ n / (Nat.factorial n : ℝ) :=
           sum_div_eq _ _ _
-  calc ∑ n ∈ Finset.range N, |clusterCoeff P w Λ n|
+  calc ∑ n ∈ Finset.range N, ‖clusterCoeff P w Λ n‖
       ≤ ∑ n ∈ Finset.range N,
           ∑ γ₀ ∈ Λ, pinnedOrderSum P w Λ γ₀ n / (Nat.factorial n : ℝ) :=
         Finset.sum_le_sum hstep
     _ = ∑ γ₀ ∈ Λ, ∑ n ∈ Finset.range N,
           pinnedOrderSum P w Λ γ₀ n / (Nat.factorial n : ℝ) :=
         Finset.sum_comm
-    _ ≤ ∑ γ₀ ∈ Λ, |w γ₀| * Real.exp (a γ₀) :=
+    _ ≤ ∑ γ₀ ∈ Λ, ‖w γ₀‖ * Real.exp (a γ₀) :=
         Finset.sum_le_sum fun γ₀ hγ₀ =>
           sum_range_pinned_le_of_kp P w a Λ γ₀ hγ₀ hKP N
 
 /-- **Absolute Konvergenz der Cluster-Reihe unter der
 Kotecký-Preiss-Bedingung**. -/
-theorem summable_abs_clusterCoeff_of_kp (w : ι → ℝ) (a : ι → ℝ)
+theorem summable_abs_clusterCoeff_of_kp (w : ι → K) (a : ι → ℝ)
     (Λ : Finset ι) (hKP : KPCondition P w a Λ) :
-    Summable fun n => |clusterCoeff P w Λ n| :=
-  summable_of_sum_range_le (fun _ => abs_nonneg _)
+    Summable fun n => ‖clusterCoeff P w Λ n‖ :=
+  summable_of_sum_range_le (fun _ => norm_nonneg _)
     (sum_range_abs_clusterCoeff_le_of_kp P w a Λ hKP)
 
 /-- **Volumenlineare Schranke an die Cluster-Reihe** unter der
 Kotecký-Preiss-Bedingung. -/
-theorem abs_clusterSeries_le_of_kp (w : ι → ℝ) (a : ι → ℝ) (Λ : Finset ι)
+theorem abs_clusterSeries_le_of_kp (w : ι → K) (a : ι → ℝ) (Λ : Finset ι)
     (hKP : KPCondition P w a Λ) :
-    |clusterSeries P w Λ| ≤ ∑ γ ∈ Λ, |w γ| * Real.exp (a γ) := by
+    ‖clusterSeries P w Λ‖ ≤ ∑ γ ∈ Λ, ‖w γ‖ * Real.exp (a γ) := by
   have habs := summable_abs_clusterCoeff_of_kp P w a Λ hKP
-  have h1 : |clusterSeries P w Λ| ≤ ∑' n, |clusterCoeff P w Λ n| := by
-    have hn := norm_tsum_le_tsum_norm
-      (f := fun n => clusterCoeff P w Λ n)
-      (by simpa [Real.norm_eq_abs] using habs)
-    simpa [Real.norm_eq_abs, clusterSeries] using hn
-  exact h1.trans (Real.tsum_le_of_sum_range_le (fun _ => abs_nonneg _)
+  have h1 : ‖clusterSeries P w Λ‖ ≤ ∑' n, ‖clusterCoeff P w Λ n‖ :=
+    norm_tsum_le_tsum_norm (f := fun n => clusterCoeff P w Λ n) habs
+  exact h1.trans (Real.tsum_le_of_sum_range_le (fun _ => norm_nonneg _)
     (sum_range_abs_clusterCoeff_le_of_kp P w a Λ hKP))
 
 /-- **Die Exponentialformel unter der Kotecký-Preiss-Bedingung**: die
-Kleinheitsvoraussetzung entfällt. -/
-theorem exp_clusterSeries_eq_Z_of_kp (w : ι → ℝ) (a : ι → ℝ) (Λ : Finset ι)
+Kleinheitsvoraussetzung entfällt. Die Aussage gilt über jedem
+`RCLike`-Körper, also für reelle wie für komplexe Gewichte. -/
+theorem exp_clusterSeries_eq_Z_of_kp (w : ι → K) (a : ι → ℝ) (Λ : Finset ι)
     (hKP : KPCondition P w a Λ) :
-    Real.exp (clusterSeries P w Λ) = Z P w Λ :=
+    NormedSpace.exp (clusterSeries P w Λ) = Z P w Λ :=
   exp_clusterSeries_eq_Z P w Λ (summable_abs_clusterCoeff_of_kp P w a Λ hKP)
+
+/-- Die Exponentialformel unter Kotecký-Preiss, reell. -/
+theorem exp_clusterSeries_eq_Z_of_kp_real (w : ι → ℝ) (a : ι → ℝ)
+    (Λ : Finset ι) (hKP : KPCondition P w a Λ) :
+    Real.exp (clusterSeries P w Λ) = Z P w Λ := by
+  rw [Real.exp_eq_exp_ℝ]
+  exact exp_clusterSeries_eq_Z_of_kp P w a Λ hKP
+
+/-- Die Exponentialformel unter Kotecký-Preiss, komplex. Hier gibt es
+keinen Logarithmus mehr, wohl aber die Identität `Z = exp (…)` — und
+damit insbesondere `Z ≠ 0`. -/
+theorem exp_clusterSeries_eq_Z_of_kp_complex (w : ι → ℂ) (a : ι → ℝ)
+    (Λ : Finset ι) (hKP : KPCondition P w a Λ) :
+    Complex.exp (clusterSeries P w Λ) = Z P w Λ := by
+  rw [Complex.exp_eq_exp_ℂ]
+  exact exp_clusterSeries_eq_Z_of_kp P w a Λ hKP
 
 /-- Unter der Kotecký-Preiss-Bedingung ist die Zustandssumme strikt
 positiv — schärfer als das bloße Nichtverschwinden `Z_ne_zero_of_kp`. -/
 theorem Z_pos_of_kp (w : ι → ℝ) (a : ι → ℝ) (Λ : Finset ι)
-    (hKP : KPCondition P w a Λ) : 0 < Z P w Λ :=
-  Z_pos_of_summable P w Λ (summable_abs_clusterCoeff_of_kp P w a Λ hKP)
+    (hKP : KPCondition P w a Λ) : 0 < Z P w Λ := by
+  rw [← exp_clusterSeries_eq_Z_of_kp_real P w a Λ hKP]
+  exact Real.exp_pos _
 
 /-- **`log Z` ist die Cluster-Reihe, unter der
 Kotecký-Preiss-Bedingung**. Damit schließt sich die Lücke zwischen der
@@ -138,8 +154,8 @@ Kriterien `Z ≠ 0` liefern, macht die Cluster-Reihe zur exakten
 Entwicklung von `log Z`. -/
 theorem log_Z_eq_clusterSeries_of_kp (w : ι → ℝ) (a : ι → ℝ) (Λ : Finset ι)
     (hKP : KPCondition P w a Λ) :
-    Real.log (Z P w Λ) = clusterSeries P w Λ :=
-  log_Z_eq_clusterSeries P w Λ (summable_abs_clusterCoeff_of_kp P w a Λ hKP)
+    Real.log (Z P w Λ) = clusterSeries P w Λ := by
+  rw [← exp_clusterSeries_eq_Z_of_kp_real P w a Λ hKP, Real.log_exp]
 
 /-- **Volumenlineare Kontrolle des Logarithmus, aus der Reihe**: unter
 der Kotecký-Preiss-Bedingung ist `|log Z Λ| ≤ ∑_{γ ∈ Λ} |w γ| · exp (a γ)`.
@@ -150,6 +166,7 @@ theorem abs_log_Z_le_of_kp (w : ι → ℝ) (a : ι → ℝ) (Λ : Finset ι)
     (hKP : KPCondition P w a Λ) :
     |Real.log (Z P w Λ)| ≤ ∑ γ ∈ Λ, |w γ| * Real.exp (a γ) := by
   rw [log_Z_eq_clusterSeries_of_kp P w a Λ hKP]
-  exact abs_clusterSeries_le_of_kp P w a Λ hKP
+  have h := abs_clusterSeries_le_of_kp P w a Λ hKP
+  simpa only [Real.norm_eq_abs] using h
 
 end ClusterExpansion

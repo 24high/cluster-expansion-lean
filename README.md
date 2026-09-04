@@ -34,8 +34,10 @@ answers — the criteria of Kotecký–Preiss, Dobrushin, and
 Fernández–Procacci — together with the recursion they all rest on, and
 the cluster series itself: Ursell functions, the Penrose tree–graph
 bound, the Mayer expansion with its finite cluster recursion, the
-exponential formula identifying `log Z` with the cluster series, and the
-sharp Kotecký–Preiss summability estimate.
+exponential formula identifying `log Z` with the cluster series, the
+sharp Kotecký–Preiss summability estimate, and the locality of `log Z`
+under removal of a single polymer. Weights may be real or complex
+throughout.
 
 ## Main results
 
@@ -47,10 +49,13 @@ All in `KPLean/ClusterExpansion.lean`, namespace `ClusterExpansion`:
 
   (`Z_recursion`), proved for weights in an arbitrary commutative ring;
 
-All three criteria hold for weights in an arbitrary **normed field**,
-so complex weights are covered; the comparison functions `μ`, `a` and
-all bounds are real. Over `ℝ` the norm and the absolute value coincide
-definitionally, so the real statements are literally the `K = ℝ` case.
+**Complex weights are covered throughout.** The three criteria hold for
+weights in an arbitrary **normed field**; the cluster series, the
+exponential formula, the sharp estimate and locality hold over any
+`RCLike` field, that is over `ℝ` and `ℂ` alike. The comparison
+functions `μ`, `a` and every bound stay real. Over `ℝ` the norm and the
+absolute value coincide definitionally, so the real statements are
+literally the `K = ℝ` case.
 
 - the **Dobrushin criterion** (product form): if `μ ≥ 0` and
   `|w γ| * ∏_{δ ≁ γ} (1 + μ δ) ≤ μ γ` for every polymer `γ` in `Λ`, then
@@ -156,9 +161,9 @@ definitionally, so the real statements are literally the `K = ℝ` case.
   crude form of the Kotecký–Preiss summability over clusters;
 
 - **the exponential formula** (`KPLean/Exponential.lean`): in the
-  small-weight regime `e · Σ_{γ ∈ Λ} |w γ| < 1`,
+  small-weight regime `e · Σ_{γ ∈ Λ} ‖w γ‖ < 1`,
 
-  `Z Λ = exp (clusterSeries P w Λ)`, hence `log |Z Λ| = clusterSeries`
+  `Z Λ = exp (clusterSeries P w Λ)`, hence `log Z Λ = clusterSeries`
 
   (`exp_clusterSeries_eq_Z`, `log_Z_eq_clusterSeries`), with
   `Z Λ > 0` as a by-product (`Z_pos_of_small`). The convergent series
@@ -221,7 +226,31 @@ definitionally, so the real statements are literally the `K = ℝ` case.
   `Z_pos_of_kp`) under the Kotecký–Preiss condition alone. So the very
   condition under which the classical criteria give `Z ≠ 0` also makes
   the cluster series the exact expansion of `log Z`, and sharpens
-  nonvanishing to positivity.
+  nonvanishing to positivity. The identity `Z = exp (clusterSeries)` is
+  stated with `NormedSpace.exp` and holds over `ℝ` and `ℂ` alike, with
+  `Real.exp` and `Complex.exp` corollaries
+  (`exp_clusterSeries_eq_Z_of_kp_real`,
+  `exp_clusterSeries_eq_Z_of_kp_complex`). For complex weights there is
+  no logarithm to take, and `Z = exp (…)` is the sharp form of the
+  statement — nonvanishing follows on the nose;
+
+- **symmetry and locality** (`KPLean/UrsellSymmetry.lean`,
+  `KPLean/Locality.lean`): a bijection of the vertex set leaves the
+  Ursell sum unchanged (`ursellSum_image_equiv`), so the Ursell
+  function depends on its tuple only up to reordering
+  (`ursellInt_comp_perm`). That symmetry lets a cluster containing `γ₀`
+  anywhere be reduced to one anchored at `γ₀`, at the price of a factor
+  `n + 1` which the factorial absorbs
+  (`abs_clusterOrderSum_sub_le`). Hence **locality**: under the
+  Kotecký–Preiss condition, removing one polymer from the volume
+  changes the cluster series — and therefore `log Z` — by at most
+
+  `‖w γ₀‖ · exp (a γ₀)`
+
+  independently of `Λ` (`abs_clusterSeries_sub_erase_le_of_kp`,
+  `abs_log_Z_sub_erase_le_of_kp`). This is the two-sided sharpening of
+  the ratio bound `Z_ratio_bound_of_kp`, and the form in which
+  truncation errors are controlled in renormalisation group arguments.
 
 The hierarchy is strict: a single self-incompatible polymer of weight
 `1/2` satisfies the Dobrushin condition with `μ = 1`, while
@@ -303,7 +332,8 @@ intended.
 ## Roadmap
 
 Every milestone the roadmap set out is formalised, up to and including
-the sharp Kotecký–Preiss summability estimate. See
+locality and the carry-over of the analytic layer to complex weights.
+See
 [`ROADMAP.md`](ROADMAP.md) for the full list with the relevant theorem
 names, and for the natural continuations.
 

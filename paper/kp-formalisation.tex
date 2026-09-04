@@ -63,7 +63,14 @@ whose combinatorial core, the multinomial count of set partitions by
 block sizes, is proved from scratch. A sharp summability estimate then
 removes the smallness hypothesis, so that the Kotecký--Preiss condition
 alone yields nonvanishing, positivity, absolute convergence of the
-series and its identification with $\log Z$.
+series and its identification with $\log Z$. From the symmetry of the
+Ursell function we obtain locality: under that same condition, removing
+one polymer from the volume changes $\log Z$ by at most
+$\lvert w(\gamma_0)\rvert e^{a(\gamma_0)}$, independently of the volume.
+Weights are complex throughout --- the criteria hold over an arbitrary
+normed field, the analytic layer over $\mathbb R$ and $\mathbb C$ alike,
+where the exponential formula takes the form $Z = \exp(\cdot)$ with the
+exponential of a Banach algebra.
 An earlier version of this note claimed that the sum form was not
 obtainable from the product form; the formalisation of the comparison
 argument corrected this, and we document both the error and its repair.
@@ -131,9 +138,14 @@ itself (Section~\ref{sec:sharp}). Tenth, the removal of the smallness
 hypothesis from the exponential formula (Theorem~\ref{thm:kpexp}), so
 that a single condition carries nonvanishing, positivity, the
 convergence of the series and its identification with $\log Z$
-(Section~\ref{sec:kpexp}). The development is about 7700 lines of Lean in
-twelve files, compiles against current \textsf{mathlib}, and contains no
-\texttt{sorry} placeholders.
+(Section~\ref{sec:kpexp}). Eleventh, the symmetry of the Ursell function
+and the locality it yields: removing one polymer from the volume changes
+$\log Z$ by an amount independent of the volume
+(Theorem~\ref{thm:local}, Section~\ref{sec:local}). Twelfth, the whole
+development over complex weights (Section~\ref{sec:complex}). The
+development is about 8250 lines of Lean in fourteen files, compiles
+against current \textsf{mathlib}, and contains no \texttt{sorry}
+placeholders.
 Section~\ref{sec:kp} documents a claim made in an earlier version of this
 note that the formalisation subsequently refuted.
 
@@ -807,6 +819,101 @@ $\sum_{\gamma \in \Lambda} \lvert w(\gamma)\rvert e^{a(\gamma)}$, is the
 same volume-linear quantity that Theorem~\ref{thm:log} already bounds
 $\lvert \log \lvert Z\rvert \rvert$ by. As a by-product the
 nonvanishing of Theorem~\ref{thm:kp} sharpens to positivity.
+
+\section{Symmetry and locality}\label{sec:local}
+
+The bounds so far are uniform in the volume but say nothing about how
+$\log Z$ \emph{changes} with it. The natural statement is that removing
+one polymer has an effect controlled by that polymer alone.
+
+The combinatorial input is the symmetry of the Ursell function. A
+bijection of the vertex set carries connected spanning subgraphs to
+connected spanning subgraphs and preserves edge counts, so it leaves the
+alternating sum unchanged (\texttt{ursellSum\_image\_equiv}); applied to
+a permutation of the index set of a tuple this gives
+\[
+  \varphi^{\mathrm T}(\gamma \circ \sigma) = \varphi^{\mathrm T}(\gamma),
+  \qquad \sigma \in \mathfrak S_{n+1}
+\]
+(\texttt{ursellInt\_comp\_perm}). A tuple contributing to
+$c_n(\Lambda) - c_n(\Lambda \setminus \{\gamma_0\})$ must use $\gamma_0$
+at one of its $n+1$ places, and the symmetry makes all places
+equivalent, so the difference of orders is bounded by $n+1$ times the
+sum anchored at $\gamma_0$ (\texttt{abs\_clusterOrderSum\_sub\_le}).
+That factor $n+1$ is exactly what turns $1/(n+1)!$ into $1/n!$, which is
+the shape the sharp estimate of Theorem~\ref{thm:sharp} delivers.
+
+\begin{theorem}[\texttt{abs\_clusterSeries\_sub\_erase\_le\_of\_kp},
+\texttt{abs\_log\_Z\_sub\_erase\_le\_of\_kp}]\label{thm:local}
+Under the hypothesis of Theorem~\ref{thm:kp}, for every
+$\gamma_0 \in \Lambda$,
+\[
+  \Bigl\lvert
+    \sum_{n \ge 0} c_n(\Lambda) - \sum_{n \ge 0} c_n(\Lambda \setminus \{\gamma_0\})
+  \Bigr\rvert
+  \le \lVert w(\gamma_0)\rVert\, e^{a(\gamma_0)},
+\]
+and hence, for real weights,
+$\lvert \log Z(\Lambda) - \log Z(\Lambda \setminus \{\gamma_0\})\rvert
+\le \lvert w(\gamma_0)\rvert\, e^{a(\gamma_0)}$.
+\end{theorem}
+
+The bound does not depend on $\Lambda$. This is the two-sided sharpening
+of the ratio bound of Theorem~\ref{thm:kp}, which controls only one
+direction and only $\lvert Z \rvert$; and it is the form in which
+truncation errors are controlled in renormalisation group arguments,
+where the point is precisely that a local modification of the activity
+has a local effect on the free energy. The Kotecký--Preiss condition
+passes to subsets (\texttt{KPCondition.mono}), so both volumes in the
+statement satisfy it.
+
+\section{Complex weights}\label{sec:complex}
+
+Cluster expansions are applied with complex activities --- contour
+weights carry phases, and analyticity of the free energy in the
+activities is one of the standard payoffs of the method. The
+formalisation is therefore stated over general weight types rather than
+over $\mathbb R$.
+
+Two levels of generality suffice. The three criteria of
+Sections~\ref{sec:consequences} onward use nothing about the weights
+beyond the multiplicativity of the norm, and are stated over an
+arbitrary \texttt{NormedField}. The analytic layer --- the cluster
+series, the exponential formula, the sharp estimate, locality --- needs
+one thing more: $\varphi^{\mathrm T}$ is integer-valued, and the bounds
+compare its norm in the weight field with its absolute value in
+$\mathbb R$,
+\[
+  \lVert (m : K) \rVert = \lvert (m : \mathbb R) \rvert,
+  \qquad m \in \mathbb Z .
+\]
+This holds in $\mathbb R$ and $\mathbb C$ and fails in, say, a $p$-adic
+field, so the analytic layer is stated over \texttt{RCLike}, the
+\textsf{mathlib} class whose models are exactly $\mathbb R$ and
+$\mathbb C$. Throughout, the comparison functions $\mu$ and $a$ and every
+bound remain real; only $Z$, $\varphi^{\mathrm T}$ and the series take
+values in $K$.
+
+The exponential itself is then \texttt{NormedSpace.exp}, the exponential
+of a Banach algebra, and the identity of Theorem~\ref{thm:kpexp} reads
+\[
+  Z(\Lambda) = \exp\Bigl(\sum_{n \ge 0} c_n\Bigr)
+\]
+over any \texttt{RCLike} field
+(\texttt{exp\_clusterSeries\_eq\_Z\_of\_kp}), with \texttt{Real.exp} and
+\texttt{Complex.exp} corollaries obtained from the \textsf{mathlib}
+lemmas identifying those two functions with the Banach-algebra
+exponential. For complex weights there is
+no logarithm to take and the identity $Z = \exp(\cdot)$ is the sharp
+form of the statement; in particular it gives nonvanishing directly.
+The statements that mention $\log Z$ or the positivity of $Z$ stay real,
+as they must.
+
+The alternating-gas lemmas behind the Fernández--Procacci criterion also
+stay real: they carry order arguments --- positivity, monotonicity,
+submultiplicativity of the independence polynomial --- for which a
+normed field has no room. They are used only to establish the real
+criterion, so nothing downstream is weakened.
 
 \section{A corrected claim}\label{sec:kp}
 
