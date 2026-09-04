@@ -369,17 +369,18 @@ theorem sum_partitionsOf_peel (A : Finset J) {a₀ : J} (ha₀ : a₀ ∈ A)
 
 section Polymer
 
+variable {K : Type*} [RCLike K]
 variable {ι : Type*} (P : PolymerSystem ι)
 
 /-- **Fasern nach der Wurzelzerlegung**: die Baumsumme sortiert ihre
 Wurzelbäume nach der Partition, die sie an der Wurzel erzeugen. -/
-theorem treeSum_eq_sum_fiber (w : ι → ℝ) (Λ : Finset ι) (γ₀ : ι) (r : J)
+theorem treeSum_eq_sum_fiber (w : ι → K) (Λ : Finset ι) (γ₀ : ι) (r : J)
     {A : Finset J} (hr : r ∉ A) :
     treeSum P w Λ γ₀ r A
       = ∑ C ∈ partitionsOf A,
           ∑ p ∈ (rootedTrees A r).filter
               (fun p => (rootChildren A r p).image (subtreeOf A r p) = C),
-            ∑ h ∈ pinnedTuples Λ γ₀ A, (∏ v ∈ A, |w (h v)|) *
+            ∑ h ∈ pinnedTuples Λ γ₀ A, (∏ v ∈ A, ‖w (h v)‖) *
               (if TreeIncompatible P h A p then 1 else 0) := by
   unfold treeSum
   exact (Finset.sum_fiberwise_of_maps_to
@@ -441,13 +442,13 @@ theorem treeIncompatible_restrict {A : Finset J} {r : J} {p : J → J}
 unter einer festen Belegung wird vom zugehörigen Faktor der rechten Seite
 dominiert — der Blockfaktor enthält den Summanden mit dem Wurzelkind `c`,
 dem Nachbarn `h c` und dem eingeschränkten Baum. -/
-theorem block_weight_le (w : ι → ℝ) (Λ : Finset ι) (γ₀ : ι) {A : Finset J}
+theorem block_weight_le (w : ι → K) (Λ : Finset ι) (γ₀ : ι) {A : Finset J}
     {r : J} {p : J → J} {h : J → ι} (hp : p ∈ rootedTrees A r) (hr : r ∉ A)
     (hh : h ∈ pinnedTuples Λ γ₀ A) (hinc : TreeIncompatible P h A p)
     {c : J} (hc : c ∈ rootChildren A r p) :
-    ∏ v ∈ subtreeOf A r p c, |w (h v)|
+    ∏ v ∈ subtreeOf A r p c, ‖w (h v)‖
       ≤ ∑ c' ∈ subtreeOf A r p c, ∑ δ ∈ incompNbhd P Λ γ₀,
-          |w δ| * treeSum P w Λ δ c' ((subtreeOf A r p c).erase c') := by
+          ‖w δ‖ * treeSum P w Λ δ c' ((subtreeOf A r p c).erase c') := by
   obtain ⟨hcA, hpc⟩ := mem_rootChildren.mp hc
   set S : Finset J := (subtreeOf A r p c).erase c with hSdef
   set g : J → ι := restrictOn S (h c) h with hgdef
@@ -458,19 +459,19 @@ theorem block_weight_le (w : ι → ℝ) (Λ : Finset ι) (γ₀ : ι) {A : Fins
   have hqmem : restrictParent A r p c ∈ rootedTrees S c :=
     restrictParent_mem_rootedTrees hp hr hc
   have hnn : ∀ q : J → J, ∀ h' : J → ι,
-      0 ≤ (∏ v ∈ S, |w (h' v)|) *
+      0 ≤ (∏ v ∈ S, ‖w (h' v)‖) *
         (if TreeIncompatible P h' S q then 1 else 0) := by
     intro q h'
-    refine mul_nonneg (Finset.prod_nonneg fun v _ => abs_nonneg _) ?_
+    refine mul_nonneg (Finset.prod_nonneg fun v _ => norm_nonneg _) ?_
     split <;> norm_num
   -- Die Baumsumme des Blocks enthält den Summanden des eingeschränkten Baumes.
-  have htree : ∏ v ∈ S, |w (h v)| ≤ treeSum P w Λ (h c) c S := by
-    have hinner : (∏ v ∈ S, |w (g v)|) *
+  have htree : ∏ v ∈ S, ‖w (h v)‖ ≤ treeSum P w Λ (h c) c S := by
+    have hinner : (∏ v ∈ S, ‖w (g v)‖) *
         (if TreeIncompatible P g S (restrictParent A r p c) then 1 else 0)
-        ≤ ∑ h' ∈ pinnedTuples Λ (h c) S, (∏ v ∈ S, |w (h' v)|) *
+        ≤ ∑ h' ∈ pinnedTuples Λ (h c) S, (∏ v ∈ S, ‖w (h' v)‖) *
             (if TreeIncompatible P h' S (restrictParent A r p c) then 1 else 0) :=
       Finset.single_le_sum (fun h' _ => hnn _ h') hgmem
-    have houter : (∑ h' ∈ pinnedTuples Λ (h c) S, (∏ v ∈ S, |w (h' v)|) *
+    have houter : (∑ h' ∈ pinnedTuples Λ (h c) S, (∏ v ∈ S, ‖w (h' v)‖) *
           (if TreeIncompatible P h' S (restrictParent A r p c) then 1 else 0))
         ≤ treeSum P w Λ (h c) c S :=
       Finset.single_le_sum
@@ -483,31 +484,31 @@ theorem block_weight_le (w : ι → ℝ) (Λ : Finset ι) (γ₀ : ι) {A : Fins
     val_rootChild_mem_incompNbhd P hr hh hinc hc
   have hcB : c ∈ subtreeOf A r p c := self_mem_subtreeOf hcA hpc
   have hnn2 : ∀ c' ∈ subtreeOf A r p c, (0 : ℝ) ≤ ∑ δ ∈ incompNbhd P Λ γ₀,
-      |w δ| * treeSum P w Λ δ c' ((subtreeOf A r p c).erase c') :=
+      ‖w δ‖ * treeSum P w Λ δ c' ((subtreeOf A r p c).erase c') :=
     fun c' _ => Finset.sum_nonneg fun δ _ =>
-      mul_nonneg (abs_nonneg _) (treeSum_nonneg P w Λ δ c' _)
+      mul_nonneg (norm_nonneg _) (treeSum_nonneg P w Λ δ c' _)
   refine le_trans ?_ (Finset.single_le_sum hnn2 hcB)
   refine le_trans ?_ (Finset.single_le_sum
-    (f := fun δ => |w δ| * treeSum P w Λ δ c S)
-    (fun δ _ => mul_nonneg (abs_nonneg _) (treeSum_nonneg P w Λ δ c S)) hδ)
+    (f := fun δ => ‖w δ‖ * treeSum P w Λ δ c S)
+    (fun δ _ => mul_nonneg (norm_nonneg _) (treeSum_nonneg P w Λ δ c S)) hδ)
   rw [← Finset.mul_prod_erase _ _ hcB, ← hSdef]
-  exact mul_le_mul_of_nonneg_left htree (abs_nonneg _)
+  exact mul_le_mul_of_nonneg_left htree (norm_nonneg _)
 
 /-- **Die termweise Schranke**: das Gewicht einer einzelnen
 Baum-Belegungs-Paarung wird vom Produkt der Blockfaktoren über der von
 ihr erzeugten Partition dominiert. Das ist die multiplikative Hälfte der
 scharfen Kotecký-Preiss-Schranke; offen bleibt die Abzählung der Fasern. -/
-theorem tree_weight_le_prod_blocks (w : ι → ℝ) (Λ : Finset ι) (γ₀ : ι)
+theorem tree_weight_le_prod_blocks (w : ι → K) (Λ : Finset ι) (γ₀ : ι)
     {A : Finset J} {r : J} {p : J → J} {h : J → ι} (hp : p ∈ rootedTrees A r)
     (hr : r ∉ A) (hh : h ∈ pinnedTuples Λ γ₀ A)
     (hinc : TreeIncompatible P h A p) :
-    ∏ v ∈ A, |w (h v)|
+    ∏ v ∈ A, ‖w (h v)‖
       ≤ ∏ B ∈ (rootChildren A r p).image (subtreeOf A r p),
           ∑ c ∈ B, ∑ δ ∈ incompNbhd P Λ γ₀,
-            |w δ| * treeSum P w Λ δ c (B.erase c) := by
+            ‖w δ‖ * treeSum P w Λ δ c (B.erase c) := by
   rw [prod_eq_prod_blocks (subtreeOf_image_mem_partitionsOf hp hr)
-    (fun v => |w (h v)|)]
-  refine Finset.prod_le_prod (fun B _ => Finset.prod_nonneg fun v _ => abs_nonneg _)
+    (fun v => ‖w (h v)‖)]
+  refine Finset.prod_le_prod (fun B _ => Finset.prod_nonneg fun v _ => norm_nonneg _)
     fun B hB => ?_
   obtain ⟨c, hc, rfl⟩ := Finset.mem_image.mp hB
   exact block_weight_le P w Λ γ₀ hp hr hh hinc hc
@@ -516,7 +517,7 @@ theorem tree_weight_le_prod_blocks (w : ι → ℝ) (Λ : Finset ι) (γ₀ : ι
 /-- Kern der Induktion: aus der Peel-Ungleichung — Abspalten des Blocks,
 der einen festen Knoten enthält — folgt per Induktion über die
 Knotenzahl die Schranke durch die Partitionssumme der Blockfaktoren. -/
-theorem treeSum_le_sum_partitions_aux (w : ι → ℝ) (Λ : Finset ι) (γ₀ : ι)
+theorem treeSum_le_sum_partitions_aux (w : ι → K) (Λ : Finset ι) (γ₀ : ι)
     (hpeel : ∀ (r : J) (A : Finset J), r ∉ A → ∀ a₀ ∈ A,
       treeSum P w Λ γ₀ r A
         ≤ ∑ B₀ ∈ A.powerset.filter (fun B => a₀ ∈ B),
@@ -554,7 +555,7 @@ theorem treeSum_le_sum_partitions_aux (w : ι → ℝ) (Λ : Finset ι) (γ₀ :
 
 /-- **Die Wurzelzerlegung als Ungleichung**: die Baumsumme ist durch die
 Partitionssumme der Blockfaktoren beschränkt. -/
-theorem treeSum_le_sum_partitions (w : ι → ℝ) (Λ : Finset ι) (γ₀ : ι)
+theorem treeSum_le_sum_partitions (w : ι → K) (Λ : Finset ι) (γ₀ : ι)
     (hpeel : ∀ (r : J) (A : Finset J), r ∉ A → ∀ a₀ ∈ A,
       treeSum P w Λ γ₀ r A
         ≤ ∑ B₀ ∈ A.powerset.filter (fun B => a₀ ∈ B),

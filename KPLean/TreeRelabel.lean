@@ -22,6 +22,7 @@ open scoped Classical
 
 namespace ClusterExpansion
 
+variable {K : Type*} [RCLike K]
 variable {ι : Type*} [DecidableEq ι] (P : PolymerSystem ι)
 
 
@@ -127,7 +128,7 @@ Beweis transportiert beide Summationsebenen — Wurzelbäume und
 festgenagelte Belegungen — entlang einer Umnummerierung
 `Fin (|B|) → B`, die `0` auf `c` schickt. -/
 theorem treeSum_eq_treeCoeff {J : Type*} [DecidableEq J] [Fintype J]
-    (w : ι → ℝ) (Λ : Finset ι) (δ : ι) {B : Finset J} {c : J} (hc : c ∈ B) :
+    (w : ι → K) (Λ : Finset ι) (δ : ι) {B : Finset J} {c : J} (hc : c ∈ B) :
     treeSum P w Λ δ c (B.erase c) = treeCoeff P w Λ δ (B.card - 1) := by
   obtain ⟨m, hm⟩ : ∃ m, B.card = m + 1 :=
     ⟨B.card - 1, by have := Finset.card_pos.mpr ⟨c, hc⟩; omega⟩
@@ -261,13 +262,13 @@ theorem treeSum_eq_treeCoeff {J : Type*} [DecidableEq J] [Fintype J]
       · rw [if_pos (heA i hi), he'e]
     -- Die Summanden stimmen überein.
     · intro h _
-      change (∏ v ∈ B.erase c, |w (h v)|)
+      change (∏ v ∈ B.erase c, ‖w (h v)‖)
             * (if TreeIncompatible P h (B.erase c) p then 1 else 0)
-          = (∏ i ∈ Finset.univ.erase (0 : Fin (m + 1)), |w (h (e i))|)
+          = (∏ i ∈ Finset.univ.erase (0 : Fin (m + 1)), ‖w (h (e i))‖)
             * (if TreeIncompatible P (fun i => h (e i))
                 (Finset.univ.erase 0) (fun i => e' (p (e i))) then 1 else 0)
-      have hprod : ∏ v ∈ B.erase c, |w (h v)|
-          = ∏ i ∈ Finset.univ.erase (0 : Fin (m + 1)), |w (h (e i))| := by
+      have hprod : ∏ v ∈ B.erase c, ‖w (h v)‖
+          = ∏ i ∈ Finset.univ.erase (0 : Fin (m + 1)), ‖w (h (e i))‖ := by
         rw [← himg, Finset.prod_image fun a _ b _ hab => heinj hab]
       have hincomp : TreeIncompatible P h (B.erase c) p
           ↔ TreeIncompatible P (fun i => h (e i)) (Finset.univ.erase 0)

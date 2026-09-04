@@ -25,7 +25,7 @@ gefasert. Für ein festes Tripel zerfällt jedes Paar `(p, h)` in **Blockdaten**
 Zuordnung ist injektiv — aus den vier Teilen lässt sich `(p, h)` zurückgewinnen —,
 das Gewicht faktorisiert, und die Zielmenge ist ein Produkt zweier
 Baum-Belegungs-Mengen. Damit ist die Faser durch
-`|w δ| · treeSum(Block) · treeSum(Rest)` beschränkt (`fibre_sum_le`), und die
+`‖w δ‖ · treeSum(Block) · treeSum(Rest)` beschränkt (`fibre_sum_le`), und die
 Summation über alle Tripel liefert `treeSum_le_peel`.
 
 Hauptresultate: `treeSum_le_peel`, `treeSum_peel` und die unbedingte Fassung
@@ -146,6 +146,7 @@ theorem outerParent_mem_rootedTrees {A : Finset J} {r : J} {p : J → J}
 
 section Polymer
 
+variable {K : Type*} [RCLike K]
 variable {ι : Type*} (P : PolymerSystem ι)
 
 /-- Die Restdaten erben die Unverträglichkeit aller Kanten. -/
@@ -171,10 +172,10 @@ theorem treeIncompatible_outer {A : Finset J} {r : J} {p : J → J} {h : J → �
   exact hinc v (Finset.mem_sdiff.mp hv).1
 
 /-- Die Paarsumme über Bäume und Belegungen ist die Baumsumme. -/
-theorem sum_product_eq_treeSum (w : ι → ℝ) (Λ : Finset ι) (γ : ι) (r : J)
+theorem sum_product_eq_treeSum (w : ι → K) (Λ : Finset ι) (γ : ι) (r : J)
     (A : Finset J) :
     ∑ z ∈ rootedTrees A r ×ˢ pinnedTuples Λ γ A,
-        (∏ v ∈ A, |w (z.2 v)|) *
+        (∏ v ∈ A, ‖w (z.2 v)‖) *
           (if TreeIncompatible P z.2 A z.1 then 1 else 0)
       = treeSum P w Λ γ r A := by
   rw [Finset.sum_product]
@@ -186,22 +187,22 @@ injiziert in das Produkt aus Blockdaten und Restdaten. Aus dem Paar
 `(p, h)` werden der eingeschränkte Baum auf `B₀.erase c`, der Restbaum auf
 `A \ B₀` und die beiden eingeschränkten Belegungen; aus diesen vier Daten
 lässt sich `(p, h)` zurückgewinnen, also ist die Abbildung injektiv. -/
-theorem fibre_sum_le (w : ι → ℝ) (Λ : Finset ι) (γ₀ : ι) (r : J)
+theorem fibre_sum_le (w : ι → K) (Λ : Finset ι) (γ₀ : ι) (r : J)
     {A : Finset J} (hr : r ∉ A) {B₀ : Finset J} {c : J} {δ : ι}
     (F : Finset ((J → J) × (J → ι)))
     (hF : ∀ x ∈ F, x.1 ∈ rootedTrees A r ∧ x.2 ∈ pinnedTuples Λ γ₀ A ∧
       TreeIncompatible P x.2 A x.1 ∧ c ∈ rootChildren A r x.1 ∧
       subtreeOf A r x.1 c = B₀ ∧ x.2 c = δ) :
-    ∑ x ∈ F, ∏ v ∈ A, |w (x.2 v)|
-      ≤ |w δ| * (treeSum P w Λ δ c (B₀.erase c) *
+    ∑ x ∈ F, ∏ v ∈ A, ‖w (x.2 v)‖
+      ≤ ‖w δ‖ * (treeSum P w Λ δ c (B₀.erase c) *
           treeSum P w Λ γ₀ r (A \ B₀)) := by
   set Φ : (J → J) × (J → ι) → ((J → J) × (J → ι)) × ((J → J) × (J → ι)) :=
     fun x => ((restrictParent A r x.1 c, restrictOn (B₀.erase c) δ x.2),
       (outerParent A B₀ r x.1, restrictOn (A \ B₀) γ₀ x.2)) with hΦ
   set G : ((J → J) × (J → ι)) × ((J → J) × (J → ι)) → ℝ := fun z =>
-    |w δ| * (((∏ v ∈ B₀.erase c, |w (z.1.2 v)|) *
+    ‖w δ‖ * (((∏ v ∈ B₀.erase c, ‖w (z.1.2 v)‖) *
         (if TreeIncompatible P z.1.2 (B₀.erase c) z.1.1 then 1 else 0)) *
-      ((∏ v ∈ A \ B₀, |w (z.2.2 v)|) *
+      ((∏ v ∈ A \ B₀, ‖w (z.2.2 v)‖) *
         (if TreeIncompatible P z.2.2 (A \ B₀) z.2.1 then 1 else 0))) with hG
   -- Die Bilder liegen in der Zielmenge.
   have hmaps : ∀ x ∈ F, Φ x ∈
@@ -220,7 +221,7 @@ theorem fibre_sum_le (w : ι → ℝ) (Λ : Finset ι) (γ₀ : ι) (r : J)
       rwa [hB] at hmem
     · exact restrictOn_mem_pinnedTuples Finset.sdiff_subset hh
   -- Die Gewichte stimmen überein.
-  have hval : ∀ x ∈ F, ∏ v ∈ A, |w (x.2 v)| = G (Φ x) := by
+  have hval : ∀ x ∈ F, ∏ v ∈ A, ‖w (x.2 v)‖ = G (Φ x) := by
     intro x hx
     obtain ⟨hp, hh, hinc, hc, hB, hδ⟩ := hF x hx
     have hB₀sub : B₀ ⊆ A := hB ▸ subtreeOf_subset
@@ -234,12 +235,12 @@ theorem fibre_sum_le (w : ι → ℝ) (Λ : Finset ι) (γ₀ : ι) (r : J)
         (outerParent A B₀ r x.1) := by
       have hthis := treeIncompatible_outer P hp hr hh hinc c
       rwa [hB] at hthis
-    have e1 : ∏ v ∈ B₀.erase c, |w (restrictOn (B₀.erase c) δ x.2 v)|
-        = ∏ v ∈ B₀.erase c, |w (x.2 v)| :=
+    have e1 : ∏ v ∈ B₀.erase c, ‖w (restrictOn (B₀.erase c) δ x.2 v)‖
+        = ∏ v ∈ B₀.erase c, ‖w (x.2 v)‖ :=
       Finset.prod_congr rfl fun v hv => by
         rw [show restrictOn (B₀.erase c) δ x.2 v = x.2 v from if_pos hv]
-    have e2 : ∏ v ∈ A \ B₀, |w (restrictOn (A \ B₀) γ₀ x.2 v)|
-        = ∏ v ∈ A \ B₀, |w (x.2 v)| :=
+    have e2 : ∏ v ∈ A \ B₀, ‖w (restrictOn (A \ B₀) γ₀ x.2 v)‖
+        = ∏ v ∈ A \ B₀, ‖w (x.2 v)‖ :=
       Finset.prod_congr rfl fun v hv => by
         rw [show restrictOn (A \ B₀) γ₀ x.2 v = x.2 v from if_pos hv]
     rw [hG, hΦ]
@@ -309,17 +310,17 @@ theorem fibre_sum_le (w : ι → ℝ) (Λ : Finset ι) (γ₀ : ι) (r : J)
   have hGnn : ∀ z, 0 ≤ G z := by
     intro z
     rw [hG]
-    refine mul_nonneg (abs_nonneg _) (mul_nonneg ?_ ?_) <;>
-      refine mul_nonneg (Finset.prod_nonneg fun v _ => abs_nonneg _) ?_ <;>
+    refine mul_nonneg (norm_nonneg _) (mul_nonneg ?_ ?_) <;>
+      refine mul_nonneg (Finset.prod_nonneg fun v _ => norm_nonneg _) ?_ <;>
       · split <;> norm_num
-  calc ∑ x ∈ F, ∏ v ∈ A, |w (x.2 v)|
+  calc ∑ x ∈ F, ∏ v ∈ A, ‖w (x.2 v)‖
       = ∑ x ∈ F, G (Φ x) := Finset.sum_congr rfl hval
     _ = ∑ z ∈ F.image Φ, G z := (Finset.sum_image hinj).symm
     _ ≤ ∑ z ∈ (rootedTrees (B₀.erase c) c ×ˢ pinnedTuples Λ δ (B₀.erase c)) ×ˢ
           (rootedTrees (A \ B₀) r ×ˢ pinnedTuples Λ γ₀ (A \ B₀)), G z :=
         Finset.sum_le_sum_of_subset_of_nonneg
           (Finset.image_subset_iff.mpr hmaps) (fun z _ _ => hGnn z)
-    _ = |w δ| * (treeSum P w Λ δ c (B₀.erase c) *
+    _ = ‖w δ‖ * (treeSum P w Λ δ c (B₀.erase c) *
           treeSum P w Λ γ₀ r (A \ B₀)) := by
         rw [hG]
         simp only
@@ -335,14 +336,14 @@ Knoten `a₀` liegt, so wird die Baumsumme vom Produkt aus Blockfaktor und
 Baumsumme des Restes dominiert. Die Summe über die Wurzelbäume wird nach
 dem Tripel (Block von `a₀`, Blockwurzel, Belegungswert dort) gefasert;
 jede Faser wird von `fibre_sum_le` abgeschätzt. -/
-theorem treeSum_le_peel (w : ι → ℝ) (Λ : Finset ι) (γ₀ : ι) (r : J)
+theorem treeSum_le_peel (w : ι → K) (Λ : Finset ι) (γ₀ : ι) (r : J)
     {A : Finset J} (hr : r ∉ A) {a₀ : J} (ha₀ : a₀ ∈ A) :
     treeSum P w Λ γ₀ r A
       ≤ ∑ B₀ ∈ A.powerset.filter (fun B => a₀ ∈ B),
           blockFactor P w Λ γ₀ B₀ * treeSum P w Λ γ₀ r (A \ B₀) := by
   -- Nur die verträglichkeitstreuen Paare tragen bei.
   have h1 : ∀ x ∈ rootedTrees A r ×ˢ pinnedTuples Λ γ₀ A,
-      (∏ v ∈ A, |w (x.2 v)|) *
+      (∏ v ∈ A, ‖w (x.2 v)‖) *
         (if TreeIncompatible P x.2 A x.1 then 1 else 0) ≠ 0 →
       TreeIncompatible P x.2 A x.1 := by
     intro x _ hne
@@ -350,7 +351,7 @@ theorem treeSum_le_peel (w : ι → ℝ) (Λ : Finset ι) (γ₀ : ι) (r : J)
     exact hne (by rw [if_neg hcon, mul_zero])
   have hstart : treeSum P w Λ γ₀ r A
       = ∑ x ∈ (rootedTrees A r ×ˢ pinnedTuples Λ γ₀ A).filter
-          (fun x => TreeIncompatible P x.2 A x.1), ∏ v ∈ A, |w (x.2 v)| := by
+          (fun x => TreeIncompatible P x.2 A x.1), ∏ v ∈ A, ‖w (x.2 v)‖ := by
     rw [← sum_product_eq_treeSum P w Λ γ₀ r A, ← Finset.sum_filter_of_ne h1]
     exact Finset.sum_congr rfl fun x hx => by
       rw [if_pos (Finset.mem_filter.mp hx).2, mul_one]
@@ -371,7 +372,7 @@ theorem treeSum_le_peel (w : ι → ℝ) (Λ : Finset ι) (γ₀ : ι) (r : J)
   -- Die rechte Seite als Summe über dasselbe Tripel.
   have hRHS : ∀ B₀ ∈ A.powerset.filter (fun B => a₀ ∈ B),
       ∑ y ∈ A ×ˢ incompNbhd P Λ γ₀,
-          (if y.1 ∈ B₀ then |w y.2| *
+          (if y.1 ∈ B₀ then ‖w y.2‖ *
             (treeSum P w Λ y.2 y.1 (B₀.erase y.1) *
               treeSum P w Λ γ₀ r (A \ B₀)) else 0)
         = blockFactor P w Λ γ₀ B₀ * treeSum P w Λ γ₀ r (A \ B₀) := by
@@ -382,19 +383,19 @@ theorem treeSum_le_peel (w : ι → ℝ) (Λ : Finset ι) (γ₀ : ι) (r : J)
       simp only [Finset.mem_filter]
       exact ⟨fun h => h.2, fun h => ⟨hB₀sub h, h⟩⟩
     calc ∑ y ∈ A ×ˢ incompNbhd P Λ γ₀,
-          (if y.1 ∈ B₀ then |w y.2| *
+          (if y.1 ∈ B₀ then ‖w y.2‖ *
             (treeSum P w Λ y.2 y.1 (B₀.erase y.1) *
               treeSum P w Λ γ₀ r (A \ B₀)) else 0)
         = ∑ c ∈ A, ∑ δ ∈ incompNbhd P Λ γ₀,
-            (if c ∈ B₀ then |w δ| * (treeSum P w Λ δ c (B₀.erase c) *
+            (if c ∈ B₀ then ‖w δ‖ * (treeSum P w Λ δ c (B₀.erase c) *
               treeSum P w Λ γ₀ r (A \ B₀)) else 0) := by
           rw [Finset.sum_product]
       _ = ∑ c ∈ A, (if c ∈ B₀ then ∑ δ ∈ incompNbhd P Λ γ₀,
-            |w δ| * (treeSum P w Λ δ c (B₀.erase c) *
+            ‖w δ‖ * (treeSum P w Λ δ c (B₀.erase c) *
               treeSum P w Λ γ₀ r (A \ B₀)) else 0) :=
           Finset.sum_congr rfl fun c _ => by by_cases hc : c ∈ B₀ <;> simp [hc]
       _ = ∑ c ∈ B₀, ∑ δ ∈ incompNbhd P Λ γ₀,
-            |w δ| * (treeSum P w Λ δ c (B₀.erase c) *
+            ‖w δ‖ * (treeSum P w Λ δ c (B₀.erase c) *
               treeSum P w Λ γ₀ r (A \ B₀)) := by
           rw [← Finset.sum_filter, hfilt]
       _ = blockFactor P w Λ γ₀ B₀ * treeSum P w Λ γ₀ r (A \ B₀) := by
@@ -404,7 +405,7 @@ theorem treeSum_le_peel (w : ι → ℝ) (Λ : Finset ι) (γ₀ : ι) (r : J)
             rw [Finset.sum_mul]
             exact Finset.sum_congr rfl fun δ _ => (mul_assoc _ _ _).symm
   rw [hstart, ← Finset.sum_fiberwise_of_maps_to hmaps
-    (fun x => ∏ v ∈ A, |w (x.2 v)|), Finset.sum_product]
+    (fun x => ∏ v ∈ A, ‖w (x.2 v)‖), Finset.sum_product]
   refine Finset.sum_le_sum fun B₀ hB₀ => ?_
   rw [← hRHS B₀ hB₀]
   refine Finset.sum_le_sum fun y _ => ?_
@@ -442,7 +443,7 @@ theorem treeSum_le_peel (w : ι → ℝ) (Λ : Finset ι) (γ₀ : ι) (r : J)
 
 /-- Das Abschäl-Lemma in genau der Form, die
 `treeSum_le_sum_partitions` als Hypothese `hpeel` verlangt. -/
-theorem treeSum_peel (w : ι → ℝ) (Λ : Finset ι) (γ₀ : ι) :
+theorem treeSum_peel (w : ι → K) (Λ : Finset ι) (γ₀ : ι) :
     ∀ (r : J) (A : Finset J), r ∉ A → ∀ a₀ ∈ A,
       treeSum P w Λ γ₀ r A
         ≤ ∑ B₀ ∈ A.powerset.filter (fun B => a₀ ∈ B),
@@ -453,7 +454,7 @@ theorem treeSum_peel (w : ι → ℝ) (Λ : Finset ι) (γ₀ : ι) :
 Baumsumme über `A` wird von der Summe über alle Partitionen von `A` der
 Produkte der Blockfaktoren dominiert. Das Abschäl-Lemma entlastet die
 Hypothese von `treeSum_le_sum_partitions`. -/
-theorem treeSum_le_sum_partitions' (w : ι → ℝ) (Λ : Finset ι) (γ₀ : ι) (r : J)
+theorem treeSum_le_sum_partitions' (w : ι → K) (Λ : Finset ι) (γ₀ : ι) (r : J)
     {A : Finset J} (hr : r ∉ A) :
     treeSum P w Λ γ₀ r A
       ≤ ∑ C ∈ partitionsOf A, ∏ B ∈ C, blockFactor P w Λ γ₀ B :=

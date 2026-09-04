@@ -37,6 +37,7 @@ open scoped Classical
 
 namespace ClusterExpansion
 
+variable {K : Type*} [RCLike K]
 variable {ι J : Type*} [DecidableEq ι] [DecidableEq J] [Fintype J]
 
 /-! ## Wurzelbäume -/
@@ -127,23 +128,23 @@ def TreeIncompatible (h : J → ι) (A : Finset J) (p : J → J) : Prop :=
 `insert r A` und die Belegungen mit Wurzelwert `γ₀`, gewichtet mit den
 Beträgen der Gewichte und eingeschränkt auf unverträgliche Kanten. Das
 ist die Größe, die die scharfe Summierbarkeitsschranke kontrolliert. -/
-noncomputable def treeSum (w : ι → ℝ) (Λ : Finset ι) (γ₀ : ι) (r : J)
+noncomputable def treeSum (w : ι → K) (Λ : Finset ι) (γ₀ : ι) (r : J)
     (A : Finset J) : ℝ :=
   ∑ p ∈ rootedTrees A r, ∑ h ∈ pinnedTuples Λ γ₀ A,
-    (∏ v ∈ A, |w (h v)|) *
+    (∏ v ∈ A, ‖w (h v)‖) *
       (if TreeIncompatible P h A p then 1 else 0)
 
 omit [DecidableEq ι] in
-theorem treeSum_nonneg (w : ι → ℝ) (Λ : Finset ι) (γ₀ : ι) (r : J)
+theorem treeSum_nonneg (w : ι → K) (Λ : Finset ι) (γ₀ : ι) (r : J)
     (A : Finset J) : 0 ≤ treeSum P w Λ γ₀ r A := by
   unfold treeSum
   refine Finset.sum_nonneg fun p _ => Finset.sum_nonneg fun h _ => ?_
-  refine mul_nonneg (Finset.prod_nonneg fun v _ => abs_nonneg _) ?_
+  refine mul_nonneg (Finset.prod_nonneg fun v _ => norm_nonneg _) ?_
   split <;> norm_num
 
 omit [DecidableEq ι] in
 /-- Über der leeren Knotenmenge ist die Baumsumme `1`. -/
-theorem treeSum_empty (w : ι → ℝ) (Λ : Finset ι) (γ₀ : ι) (r : J) :
+theorem treeSum_empty (w : ι → K) (Λ : Finset ι) (γ₀ : ι) (r : J) :
     treeSum P w Λ γ₀ r (∅ : Finset J) = 1 := by
   unfold treeSum
   rw [rootedTrees_empty, Finset.sum_singleton, pinnedTuples_empty,
@@ -159,17 +160,17 @@ die Baumsumme über `Fin (n+1)` mit Wurzel `0`. -/
 
 /-- Der Baumkoeffizient der Ordnung `n`: die gewichtete Baumsumme über
 `n` Nichtwurzelknoten mit Wurzelwert `δ`. -/
-noncomputable def treeCoeff (w : ι → ℝ) (Λ : Finset ι) (δ : ι) (n : ℕ) : ℝ :=
+noncomputable def treeCoeff (w : ι → K) (Λ : Finset ι) (δ : ι) (n : ℕ) : ℝ :=
   treeSum P w Λ δ (0 : Fin (n + 1)) (Finset.univ.erase 0)
 
 omit [DecidableEq ι] [DecidableEq J] [Fintype J] in
-theorem treeCoeff_nonneg (w : ι → ℝ) (Λ : Finset ι) (δ : ι) (n : ℕ) :
+theorem treeCoeff_nonneg (w : ι → K) (Λ : Finset ι) (δ : ι) (n : ℕ) :
     0 ≤ treeCoeff P w Λ δ n :=
   treeSum_nonneg P w Λ δ _ _
 
 omit [DecidableEq ι] [DecidableEq J] [Fintype J] in
 /-- Ordnung `0`: nur die Wurzel, also der Wert `1`. -/
-theorem treeCoeff_zero (w : ι → ℝ) (Λ : Finset ι) (δ : ι) :
+theorem treeCoeff_zero (w : ι → K) (Λ : Finset ι) (δ : ι) :
     treeCoeff P w Λ δ 0 = 1 := by
   unfold treeCoeff
   have hempty : (Finset.univ.erase (0 : Fin 1)) = (∅ : Finset (Fin 1)) := by
@@ -198,35 +199,35 @@ im Volumen. -/
 
 /-- Der Beitrag der Ordnung `m ≥ 1` eines Nachbarn: Gewicht mal
 normiertem Baumkoeffizienten des Teilbaums. -/
-noncomputable def nbhdTerm (w : ι → ℝ) (Λ : Finset ι) (γ : ι) (m : ℕ) : ℝ :=
+noncomputable def nbhdTerm (w : ι → K) (Λ : Finset ι) (γ : ι) (m : ℕ) : ℝ :=
   ∑ δ ∈ incompNbhd P Λ γ,
-    |w δ| * (treeCoeff P w Λ δ (m - 1) / (Nat.factorial (m - 1) : ℝ))
+    ‖w δ‖ * (treeCoeff P w Λ δ (m - 1) / (Nat.factorial (m - 1) : ℝ))
 
 omit [DecidableEq ι] [DecidableEq J] [Fintype J] in
-theorem nbhdTerm_nonneg (w : ι → ℝ) (Λ : Finset ι) (γ : ι) (m : ℕ) :
+theorem nbhdTerm_nonneg (w : ι → K) (Λ : Finset ι) (γ : ι) (m : ℕ) :
     0 ≤ nbhdTerm P w Λ γ m := by
   unfold nbhdTerm
-  refine Finset.sum_nonneg fun δ _ => mul_nonneg (abs_nonneg _) ?_
+  refine Finset.sum_nonneg fun δ _ => mul_nonneg (norm_nonneg _) ?_
   exact div_nonneg (treeCoeff_nonneg P w Λ δ _) (by positivity)
 
 /-- Die abgeschnittene Baumreihe: die normierten Baumkoeffizienten bis
 zur Ordnung `N`. -/
-noncomputable def treeTrunc (w : ι → ℝ) (Λ : Finset ι) (γ : ι) (N : ℕ) : ℝ :=
+noncomputable def treeTrunc (w : ι → K) (Λ : Finset ι) (γ : ι) (N : ℕ) : ℝ :=
   ∑ n ∈ Finset.range (N + 1),
     treeCoeff P w Λ γ n / (Nat.factorial n : ℝ)
 
 omit [DecidableEq ι] [DecidableEq J] [Fintype J] in
-theorem treeTrunc_nonneg (w : ι → ℝ) (Λ : Finset ι) (γ : ι) (N : ℕ) :
+theorem treeTrunc_nonneg (w : ι → K) (Λ : Finset ι) (γ : ι) (N : ℕ) :
     0 ≤ treeTrunc P w Λ γ N :=
   Finset.sum_nonneg fun n _ =>
     div_nonneg (treeCoeff_nonneg P w Λ γ n) (by positivity)
 
 omit [DecidableEq ι] [DecidableEq J] [Fintype J] in
 /-- Die Nachbarterme summieren sich zur abgeschnittenen Reihe der
-Nachbarn: `∑_{m=1}^{N+1} nbhdTerm m = ∑_{δ ≁ γ} |w δ| · treeTrunc δ N`. -/
-theorem sum_nbhdTerm (w : ι → ℝ) (Λ : Finset ι) (γ : ι) (N : ℕ) :
+Nachbarn: `∑_{m=1}^{N+1} nbhdTerm m = ∑_{δ ≁ γ} ‖w δ‖ · treeTrunc δ N`. -/
+theorem sum_nbhdTerm (w : ι → K) (Λ : Finset ι) (γ : ι) (N : ℕ) :
     ∑ m ∈ Finset.Icc 1 (N + 1), nbhdTerm P w Λ γ m
-      = ∑ δ ∈ incompNbhd P Λ γ, |w δ| * treeTrunc P w Λ δ N := by
+      = ∑ δ ∈ incompNbhd P Λ γ, ‖w δ‖ * treeTrunc P w Λ δ N := by
   unfold nbhdTerm treeTrunc
   rw [Finset.sum_comm]
   refine Finset.sum_congr rfl fun δ _ => ?_
@@ -302,7 +303,7 @@ entwickelt die Ordnung `n` in Kompositionen, deren Teile über die
 Nachbarschaft laufen, und die Induktionsvoraussetzung ersetzt die
 Nachbarterme durch `exp (a δ)`, was die KP-Bedingung zu `a γ`
 zusammenzieht. -/
-theorem treeTrunc_le_exp (w : ι → ℝ) (a : ι → ℝ) (Λ : Finset ι)
+theorem treeTrunc_le_exp (w : ι → K) (a : ι → ℝ) (Λ : Finset ι)
     (hKP : KPCondition P w a Λ)
     (hRec : ∀ γ ∈ Λ, ∀ n : ℕ,
       treeCoeff P w Λ γ n / (Nat.factorial n : ℝ)
@@ -369,21 +370,21 @@ theorem treeTrunc_le_exp (w : ι → ℝ) (a : ι → ℝ) (Λ : Finset ι)
       rw [hS, sum_nbhdTerm]
       refine le_trans (Finset.sum_le_sum fun δ hδ => ?_) (hasum γ hγ)
       obtain ⟨hδΛ, -⟩ := (mem_incompNbhd P).mp hδ
-      exact mul_le_mul_of_nonneg_left (IH δ hδΛ) (abs_nonneg _)
+      exact mul_le_mul_of_nonneg_left (IH δ hδΛ) (norm_nonneg _)
     exact (hpow.trans hexpS).trans (Real.exp_le_exp.mpr hSle)
 
 /-- **Der Blockfaktor**: der Beitrag eines Blocks zur Wurzelzerlegung —
 Wahl der Blockwurzel `c`, Wahl des mit `γ₀` unverträglichen Wertes `δ`
 an dieser Wurzel, und die Baumsumme des Teilbaums. -/
-noncomputable def blockFactor (w : ι → ℝ) (Λ : Finset ι) (γ₀ : ι)
+noncomputable def blockFactor (w : ι → K) (Λ : Finset ι) (γ₀ : ι)
     (B : Finset J) : ℝ :=
   ∑ c ∈ B, ∑ δ ∈ incompNbhd P Λ γ₀,
-    |w δ| * treeSum P w Λ δ c (B.erase c)
+    ‖w δ‖ * treeSum P w Λ δ c (B.erase c)
 
 omit [DecidableEq ι] in
-theorem blockFactor_nonneg (w : ι → ℝ) (Λ : Finset ι) (γ₀ : ι)
+theorem blockFactor_nonneg (w : ι → K) (Λ : Finset ι) (γ₀ : ι)
     (B : Finset J) : 0 ≤ blockFactor P w Λ γ₀ B :=
   Finset.sum_nonneg fun c _ => Finset.sum_nonneg fun δ _ =>
-    mul_nonneg (abs_nonneg _) (treeSum_nonneg P w Λ δ c _)
+    mul_nonneg (norm_nonneg _) (treeSum_nonneg P w Λ δ c _)
 
 end ClusterExpansion

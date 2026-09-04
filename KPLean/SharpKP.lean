@@ -15,7 +15,7 @@ Multinomialzählung folgt die Rekursionsungleichung für die
 Baumkoeffizienten; die Kotecký-Preiss-Bedingung macht daraus per
 Induktion über die Abschneidehöhe die Schranke `exp (a γ)`. Zusammen mit
 der Baumgraphen-Schranke ergibt das die verankerte Summierbarkeit
-`|w γ₀| · exp (a γ₀)` — gleichmäßig im Volumen und ohne
+`‖w γ₀‖ · exp (a γ₀)` — gleichmäßig im Volumen und ohne
 Kleinheitsvoraussetzung.
 -/
 
@@ -27,6 +27,7 @@ open scoped Classical
 
 namespace ClusterExpansion
 
+variable {K : Type*} [RCLike K]
 variable {ι J : Type*} [DecidableEq ι] [DecidableEq J] [Fintype J]
 variable (P : PolymerSystem ι)
 
@@ -40,12 +41,12 @@ Rekursionsungleichung, die die Kotecký-Preiss-Induktion antreibt. -/
 /-- Das Blockfunktional der Rekursion: der Beitrag eines Blocks der
 Größe `m`, in dem jeder seiner `m` Knoten die Wurzel des Teilbaums sein
 kann. -/
-noncomputable def blockTerm (w : ι → ℝ) (Λ : Finset ι) (γ₀ : ι) (m : ℕ) : ℝ :=
-  (m : ℝ) * ∑ δ ∈ incompNbhd P Λ γ₀, |w δ| * treeCoeff P w Λ δ (m - 1)
+noncomputable def blockTerm (w : ι → K) (Λ : Finset ι) (γ₀ : ι) (m : ℕ) : ℝ :=
+  (m : ℝ) * ∑ δ ∈ incompNbhd P Λ γ₀, ‖w δ‖ * treeCoeff P w Λ δ (m - 1)
 
 omit [DecidableEq ι] [DecidableEq J] [Fintype J] in
 /-- Normiert ist das Blockfunktional genau der Nachbarterm. -/
-theorem blockTerm_div (w : ι → ℝ) (Λ : Finset ι) (γ₀ : ι) {m : ℕ}
+theorem blockTerm_div (w : ι → K) (Λ : Finset ι) (γ₀ : ι) {m : ℕ}
     (hm : m ≠ 0) :
     blockTerm P w Λ γ₀ m / (Nat.factorial m : ℝ) = nbhdTerm P w Λ γ₀ m := by
   obtain ⟨j, rfl⟩ : ∃ j, m = j + 1 := ⟨m - 1, by omega⟩
@@ -63,7 +64,7 @@ Zerlegung an der Wurzel und der Umbenennungsinvarianz folgt, dass der
 normierte Baumkoeffizient der Ordnung `n` durch die nach Blockzahl und
 Größenprofil sortierte Kompositionssumme der Nachbarterme beschränkt
 ist. -/
-theorem treeCoeff_div_le (w : ι → ℝ) (Λ : Finset ι) (γ₀ : ι) (n : ℕ)
+theorem treeCoeff_div_le (w : ι → K) (Λ : Finset ι) (γ₀ : ι) (n : ℕ)
  :
     treeCoeff P w Λ γ₀ n / (Nat.factorial n : ℝ)
       ≤ ∑ k ∈ Finset.range (n + 1), (Nat.factorial k : ℝ)⁻¹ *
@@ -81,9 +82,9 @@ theorem treeCoeff_div_le (w : ι → ℝ) (Λ : Finset ι) (γ₀ : ι) (n : ℕ
     refine Finset.prod_congr rfl fun B hB => ?_
     unfold blockFactor
     have hval : ∀ c ∈ B, ∑ δ ∈ incompNbhd P Λ γ₀,
-        |w δ| * treeSum P w Λ δ c (B.erase c)
+        ‖w δ‖ * treeSum P w Λ δ c (B.erase c)
           = ∑ δ ∈ incompNbhd P Λ γ₀,
-              |w δ| * treeCoeff P w Λ δ (B.card - 1) := by
+              ‖w δ‖ * treeCoeff P w Λ δ (B.card - 1) := by
       intro c hc
       exact Finset.sum_congr rfl fun δ _ => by
         rw [treeSum_eq_treeCoeff P w Λ δ hc]
@@ -133,12 +134,12 @@ theorem treeCoeff_div_le (w : ι → ℝ) (Λ : Finset ι) (γ₀ : ι) (n : ℕ
 omit [DecidableEq ι] [DecidableEq J] [Fintype J] in
 /-- **Scharfe Kotecký-Preiss-Summierbarkeit** (modulo Rekursion und
 Verknüpfung): unter der KP-Bedingung ist die bei `γ₀` verankerte
-Betragsreihe der Cluster-Entwicklung durch `|w γ₀| · exp (a γ₀)`
+Betragsreihe der Cluster-Entwicklung durch `‖w γ₀‖ · exp (a γ₀)`
 beschränkt — gleichmäßig im Volumen und ohne Kleinheitsvoraussetzung. -/
-theorem sum_range_pinned_le_of_kp (w : ι → ℝ) (a : ι → ℝ) (Λ : Finset ι)
+theorem sum_range_pinned_le_of_kp (w : ι → K) (a : ι → ℝ) (Λ : Finset ι)
     (γ₀ : ι) (hγ₀ : γ₀ ∈ Λ) (hKP : KPCondition P w a Λ) (N : ℕ) :
     ∑ n ∈ Finset.range N, pinnedOrderSum P w Λ γ₀ n / (Nat.factorial n : ℝ)
-      ≤ |w γ₀| * Real.exp (a γ₀) := by
+      ≤ ‖w γ₀‖ * Real.exp (a γ₀) := by
   have hRec : ∀ γ ∈ Λ, ∀ n : ℕ,
       treeCoeff P w Λ γ n / (Nat.factorial n : ℝ)
         ≤ ∑ k ∈ Finset.range (n + 1), (Nat.factorial k : ℝ)⁻¹ *
@@ -146,13 +147,13 @@ theorem sum_range_pinned_le_of_kp (w : ι → ℝ) (a : ι → ℝ) (Λ : Finset
     fun γ _ n => treeCoeff_div_le P w Λ γ n
   · have hstep : ∀ n ∈ Finset.range N,
         pinnedOrderSum P w Λ γ₀ n / (Nat.factorial n : ℝ)
-          ≤ |w γ₀| * (treeCoeff P w Λ γ₀ n / (Nat.factorial n : ℝ)) := by
+          ≤ ‖w γ₀‖ * (treeCoeff P w Λ γ₀ n / (Nat.factorial n : ℝ)) := by
       intro n _
       calc pinnedOrderSum P w Λ γ₀ n / (Nat.factorial n : ℝ)
-          ≤ (|w γ₀| * treeCoeff P w Λ γ₀ n) / (Nat.factorial n : ℝ) := by
+          ≤ (‖w γ₀‖ * treeCoeff P w Λ γ₀ n) / (Nat.factorial n : ℝ) := by
             gcongr
             exact pinnedOrderSum_le_treeCoeff P w Λ γ₀ n
-        _ = |w γ₀| * (treeCoeff P w Λ γ₀ n / (Nat.factorial n : ℝ)) := by
+        _ = ‖w γ₀‖ * (treeCoeff P w Λ γ₀ n / (Nat.factorial n : ℝ)) := by
             rw [mul_div_assoc]
     have htail : ∑ n ∈ Finset.range N,
         (treeCoeff P w Λ γ₀ n / (Nat.factorial n : ℝ))
@@ -166,21 +167,21 @@ theorem sum_range_pinned_le_of_kp (w : ι → ℝ) (a : ι → ℝ) (Λ : Finset
         exact div_nonneg (treeCoeff_nonneg P w Λ γ₀ n) (by positivity)
     calc ∑ n ∈ Finset.range N, pinnedOrderSum P w Λ γ₀ n / (Nat.factorial n : ℝ)
         ≤ ∑ n ∈ Finset.range N,
-            |w γ₀| * (treeCoeff P w Λ γ₀ n / (Nat.factorial n : ℝ)) :=
+            ‖w γ₀‖ * (treeCoeff P w Λ γ₀ n / (Nat.factorial n : ℝ)) :=
           Finset.sum_le_sum hstep
-      _ = |w γ₀| * ∑ n ∈ Finset.range N,
+      _ = ‖w γ₀‖ * ∑ n ∈ Finset.range N,
             (treeCoeff P w Λ γ₀ n / (Nat.factorial n : ℝ)) := by
           rw [Finset.mul_sum]
-      _ ≤ |w γ₀| * treeTrunc P w Λ γ₀ N :=
-          mul_le_mul_of_nonneg_left htail (abs_nonneg _)
-      _ ≤ |w γ₀| * Real.exp (a γ₀) :=
+      _ ≤ ‖w γ₀‖ * treeTrunc P w Λ γ₀ N :=
+          mul_le_mul_of_nonneg_left htail (norm_nonneg _)
+      _ ≤ ‖w γ₀‖ * Real.exp (a γ₀) :=
           mul_le_mul_of_nonneg_left
-            (treeTrunc_le_exp P w a Λ hKP hRec N γ₀ hγ₀) (abs_nonneg _)
+            (treeTrunc_le_exp P w a Λ hKP hRec N γ₀ hγ₀) (norm_nonneg _)
 
 omit [DecidableEq ι] [DecidableEq J] [Fintype J] in
 /-- Unter der Kotecký-Preiss-Bedingung ist die verankerte Betragsreihe
 summierbar. -/
-theorem summable_pinned_of_kp (w : ι → ℝ) (a : ι → ℝ) (Λ : Finset ι)
+theorem summable_pinned_of_kp (w : ι → K) (a : ι → ℝ) (Λ : Finset ι)
     (γ₀ : ι) (hγ₀ : γ₀ ∈ Λ) (hKP : KPCondition P w a Λ) :
     Summable fun n => pinnedOrderSum P w Λ γ₀ n / (Nat.factorial n : ℝ) :=
   summable_of_sum_range_le
@@ -190,12 +191,12 @@ theorem summable_pinned_of_kp (w : ι → ℝ) (a : ι → ℝ) (Λ : Finset ι)
 omit [DecidableEq ι] [DecidableEq J] [Fintype J] in
 /-- **Scharfe Kotecký-Preiss-Summierbarkeit**: unter der KP-Bedingung
 ist die bei `γ₀` verankerte Betragsreihe der Cluster-Entwicklung durch
-`|w γ₀| · exp (a γ₀)` beschränkt — gleichmäßig im Volumen und ohne
+`‖w γ₀‖ · exp (a γ₀)` beschränkt — gleichmäßig im Volumen und ohne
 Kleinheitsvoraussetzung. -/
-theorem tsum_pinned_le_of_kp (w : ι → ℝ) (a : ι → ℝ) (Λ : Finset ι)
+theorem tsum_pinned_le_of_kp (w : ι → K) (a : ι → ℝ) (Λ : Finset ι)
     (γ₀ : ι) (hγ₀ : γ₀ ∈ Λ) (hKP : KPCondition P w a Λ) :
     ∑' n, pinnedOrderSum P w Λ γ₀ n / (Nat.factorial n : ℝ)
-      ≤ |w γ₀| * Real.exp (a γ₀) :=
+      ≤ ‖w γ₀‖ * Real.exp (a γ₀) :=
   Real.tsum_le_of_sum_range_le
     (fun n => div_nonneg (pinnedOrderSum_nonneg P w Λ γ₀ n) (by positivity))
     (sum_range_pinned_le_of_kp P w a Λ γ₀ hγ₀ hKP)

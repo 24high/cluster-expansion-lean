@@ -12,7 +12,7 @@ Die Baumgraphen-Schranke, in die Sprache der Elternabbildungen übersetzt:
 die Baumzahl eines Trägers ist durch die Anzahl der Wurzelbäume mit
 Kanten im Träger beschränkt (`treeCount_le_card_rootedTrees`, per
 Injektion `T ↦ Penrose-Elternabbildung`), und damit ist der bei `γ₀`
-verankerte Ursell-Beitrag durch `|w γ₀|` mal dem Baumkoeffizienten
+verankerte Ursell-Beitrag durch `‖w γ₀‖` mal dem Baumkoeffizienten
 beschränkt (`pinnedOrderSum_le_treeCoeff`).
 -/
 
@@ -24,6 +24,7 @@ open scoped Classical
 
 namespace ClusterExpansion
 
+variable {K : Type*} [RCLike K]
 variable {ι : Type*} [DecidableEq ι] (P : PolymerSystem ι)
 
 
@@ -135,63 +136,63 @@ theorem treeCount_le_card_rootedTrees {n : ℕ}
 
 omit [DecidableEq ι] in
 /-- **Die Ursell-Betragssumme unter der Baumsumme**: der bei `γ₀`
-verankerte Betrags-Beitrag der Ordnung `n + 1` ist durch `|w γ₀|` mal
+verankerte Betrags-Beitrag der Ordnung `n + 1` ist durch `‖w γ₀‖` mal
 dem Baumkoeffizienten beschränkt.
 
 Drei Schritte: je Tupel ersetzt die Baumgraphen-Schranke
 `abs_ursellInt_le_treeCount` den Ursell-Betrag durch die Baumzahl des
 Unverträglichkeitsgraphen, `treeCount_le_card_rootedTrees` diese durch
 die Anzahl passender Wurzelbäume; das Gewichtsprodukt spaltet den Anker
-`|w γ₀|` ab, und nach Vertauschen von Tupel- und Baumsumme steht rechts
+`‖w γ₀‖` ab, und nach Vertauschen von Tupel- und Baumsumme steht rechts
 genau die Baumsumme. -/
-theorem pinnedOrderSum_le_treeCoeff (w : ι → ℝ) (Λ : Finset ι) (γ₀ : ι)
+theorem pinnedOrderSum_le_treeCoeff (w : ι → K) (Λ : Finset ι) (γ₀ : ι)
     (n : ℕ) :
-    pinnedOrderSum P w Λ γ₀ n ≤ |w γ₀| * treeCoeff P w Λ γ₀ n := by
+    pinnedOrderSum P w Λ γ₀ n ≤ ‖w γ₀‖ * treeCoeff P w Λ γ₀ n := by
   -- Je verankertem Tupel: Betrag durch die Wurzelbaum-Zahl ersetzen und
   -- als Indikatorsumme über die Wurzelbäume schreiben.
   have hterm : ∀ γ ∈ (Fintype.piFinset fun _ : Fin (n + 1) => Λ).filter
       (fun γ => γ 0 = γ₀),
-      |(ursellInt P γ : ℝ)| * ∏ i, |w (γ i)|
+      ‖(ursellInt P γ : K)‖ * ∏ i, ‖w (γ i)‖
         ≤ ∑ p ∈ rootedTrees (Finset.univ.erase (0 : Fin (n + 1))) 0,
-            |w γ₀| * ((∏ v ∈ Finset.univ.erase (0 : Fin (n + 1)), |w (γ v)|) *
+            ‖w γ₀‖ * ((∏ v ∈ Finset.univ.erase (0 : Fin (n + 1)), ‖w (γ v)‖) *
               (if TreeIncompatible P γ (Finset.univ.erase 0) p then 1 else 0)) := by
     intro γ hγ
     have hpin : γ 0 = γ₀ := (Finset.mem_filter.mp hγ).2
     -- Der Anker spaltet sich aus dem Gewichtsprodukt ab.
-    have hsplit : ∏ i, |w (γ i)|
-        = |w γ₀| * ∏ v ∈ Finset.univ.erase (0 : Fin (n + 1)), |w (γ v)| := by
+    have hsplit : ∏ i, ‖w (γ i)‖
+        = ‖w γ₀‖ * ∏ v ∈ Finset.univ.erase (0 : Fin (n + 1)), ‖w (γ v)‖ := by
       rw [← hpin]
-      exact (Finset.mul_prod_erase Finset.univ (fun i => |w (γ i)|)
+      exact (Finset.mul_prod_erase Finset.univ (fun i => ‖w (γ i)‖)
         (Finset.mem_univ 0)).symm
     -- Baumgraphen-Schranke, dann Wurzelbaum-Zählung.
-    have hcard : |(ursellInt P γ : ℝ)|
+    have hcard : ‖(ursellInt P γ : K)‖
         ≤ (((rootedTrees (Finset.univ.erase (0 : Fin (n + 1))) 0).filter
             (fun p => ∀ v ∈ Finset.univ.erase (0 : Fin (n + 1)),
               s(v, p v) ∈ clusterEdges P γ)).card : ℝ) := by
       have h2 := treeCount_le_card_rootedTrees (clusterEdges P γ)
         (clusterEdges_not_isDiag P γ)
-      calc |(ursellInt P γ : ℝ)| = ((|ursellInt P γ| : ℤ) : ℝ) := by
-            rw [Int.cast_abs]
+      calc ‖(ursellInt P γ : K)‖ = ((|ursellInt P γ| : ℤ) : ℝ) := by
+            rw [norm_intCast_eq_abs, Int.cast_abs]
         _ ≤ ((treeCount (clusterEdges P γ) : ℤ) : ℝ) := by
             exact_mod_cast abs_ursellInt_le_treeCount P γ
         _ ≤ _ := by exact_mod_cast h2
-    calc |(ursellInt P γ : ℝ)| * ∏ i, |w (γ i)|
+    calc ‖(ursellInt P γ : K)‖ * ∏ i, ‖w (γ i)‖
         ≤ (((rootedTrees (Finset.univ.erase (0 : Fin (n + 1))) 0).filter
               (fun p => ∀ v ∈ Finset.univ.erase (0 : Fin (n + 1)),
                 s(v, p v) ∈ clusterEdges P γ)).card : ℝ)
-            * (|w γ₀| * ∏ v ∈ Finset.univ.erase (0 : Fin (n + 1)), |w (γ v)|) := by
+            * (‖w γ₀‖ * ∏ v ∈ Finset.univ.erase (0 : Fin (n + 1)), ‖w (γ v)‖) := by
           rw [hsplit]
           exact mul_le_mul_of_nonneg_right hcard
-            (mul_nonneg (abs_nonneg _) (Finset.prod_nonneg fun v _ => abs_nonneg _))
+            (mul_nonneg (norm_nonneg _) (Finset.prod_nonneg fun v _ => norm_nonneg _))
       _ = ∑ _p ∈ (rootedTrees (Finset.univ.erase (0 : Fin (n + 1))) 0).filter
               (fun p => ∀ v ∈ Finset.univ.erase (0 : Fin (n + 1)),
                 s(v, p v) ∈ clusterEdges P γ),
-            |w γ₀| * ∏ v ∈ Finset.univ.erase (0 : Fin (n + 1)), |w (γ v)| := by
+            ‖w γ₀‖ * ∏ v ∈ Finset.univ.erase (0 : Fin (n + 1)), ‖w (γ v)‖ := by
           rw [Finset.sum_const, nsmul_eq_mul]
       -- Eine Kante `s(v, p v)` des Unverträglichkeitsgraphen heißt genau,
       -- dass `γ v` und `γ (p v)` unverträglich sind.
       _ ≤ ∑ p ∈ rootedTrees (Finset.univ.erase (0 : Fin (n + 1))) 0,
-            |w γ₀| * ((∏ v ∈ Finset.univ.erase (0 : Fin (n + 1)), |w (γ v)|) *
+            ‖w γ₀‖ * ((∏ v ∈ Finset.univ.erase (0 : Fin (n + 1)), ‖w (γ v)‖) *
               (if TreeIncompatible P γ (Finset.univ.erase 0) p then 1 else 0)) := by
           rw [Finset.sum_filter]
           refine Finset.sum_le_sum fun p _ => ?_
@@ -201,8 +202,8 @@ theorem pinnedOrderSum_le_treeCoeff (w : ι → ℝ) (Λ : Finset ι) (γ₀ : �
               fun v hv => ((mem_clusterEdges P).mp (hcl v hv)).2
             rw [if_pos hcl, if_pos hTI, mul_one]
           · rw [if_neg hcl]
-            refine mul_nonneg (abs_nonneg _) (mul_nonneg ?_ ?_)
-            · exact Finset.prod_nonneg fun v _ => abs_nonneg _
+            refine mul_nonneg (norm_nonneg _) (mul_nonneg ?_ ?_)
+            · exact Finset.prod_nonneg fun v _ => norm_nonneg _
             · split <;> norm_num
   -- Summieren, Anker ausklammern, Tupel- und Baumsumme vertauschen.
   unfold pinnedOrderSum treeCoeff treeSum
@@ -222,8 +223,8 @@ theorem pinnedOrderSum_le_treeCoeff (w : ι → ℝ) (Λ : Finset ι) (γ₀ : �
       exact hj (Finset.mem_erase.mpr ⟨hne, Finset.mem_univ j⟩)
     rw [hj0, hpin]
   · intro h _ _
-    refine mul_nonneg (abs_nonneg _) (mul_nonneg ?_ ?_)
-    · exact Finset.prod_nonneg fun v _ => abs_nonneg _
+    refine mul_nonneg (norm_nonneg _) (mul_nonneg ?_ ?_)
+    · exact Finset.prod_nonneg fun v _ => norm_nonneg _
     · split <;> norm_num
 
 end ClusterExpansion

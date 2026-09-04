@@ -134,15 +134,16 @@ theorem ursellInt_comp_perm {ι : Type*} (P : PolymerSystem ι) {n : ℕ}
 /-! ## Die Ordnungs-Differenzschranke -/
 
 
+variable {K : Type*} [RCLike K]
 variable {ι : Type*} (P : PolymerSystem ι)
 
 /-- Die an einer beliebigen Stelle `i` verankerte Ordnungssumme stimmt
 mit der an der ersten Stelle verankerten überein: das Vertauschen von
 `i` und `0` lässt Ursell-Betrag und Gewichtsprodukt unverändert. -/
-theorem sum_pinned_at (w : ι → ℝ) (Λ : Finset ι) (γ₀ : ι) (n : ℕ)
+theorem sum_pinned_at (w : ι → K) (Λ : Finset ι) (γ₀ : ι) (n : ℕ)
     (i : Fin (n + 1)) :
     ∑ γ ∈ (Fintype.piFinset fun _ : Fin (n + 1) => Λ).filter
-        (fun γ => γ i = γ₀), |(ursellInt P γ : ℝ)| * ∏ j, |w (γ j)|
+        (fun γ => γ i = γ₀), ‖(ursellInt P γ : K)‖ * ∏ j, ‖w (γ j)‖
       = pinnedOrderSum P w Λ γ₀ n := by
   unfold pinnedOrderSum
   have hswap : ∀ γ : Fin (n + 1) → ι, ∀ j,
@@ -171,16 +172,16 @@ theorem sum_pinned_at (w : ι → ℝ) (Λ : Finset ι) (γ₀ : ι) (n : ℕ)
     rw [ursellInt_comp_perm P γ (Equiv.swap i 0)]
     congr 1
     simp only [Function.comp_apply]
-    exact (Equiv.prod_comp (Equiv.swap i 0) fun j => |w (γ j)|).symm
+    exact (Equiv.prod_comp (Equiv.swap i 0) fun j => ‖w (γ j)‖).symm
 
 /-- **Die Ordnungs-Differenzschranke**: der Beitrag der Ordnung `n + 1`
 ändert sich beim Entfernen von `γ₀` um höchstens `n + 1` mal den bei
 `γ₀` verankerten Beitrag — denn ein Tupel, das `γ₀` verwendet, tut das
 an einer der `n + 1` Stellen, und die Symmetrie der Ursell-Funktion
 macht alle Stellen gleichwertig. -/
-theorem abs_clusterOrderSum_sub_le (w : ι → ℝ) (Λ : Finset ι) (γ₀ : ι)
+theorem abs_clusterOrderSum_sub_le (w : ι → K) (Λ : Finset ι) (γ₀ : ι)
     (n : ℕ) :
-    |clusterOrderSum P w Λ n - clusterOrderSum P w (Λ.erase γ₀) n|
+    ‖clusterOrderSum P w Λ n - clusterOrderSum P w (Λ.erase γ₀) n‖
       ≤ ((n : ℝ) + 1) * pinnedOrderSum P w Λ γ₀ n := by
   set T := Fintype.piFinset fun _ : Fin (n + 1) => Λ with hT
   set S := Fintype.piFinset fun _ : Fin (n + 1) => Λ.erase γ₀ with hS
@@ -190,7 +191,7 @@ theorem abs_clusterOrderSum_sub_le (w : ι → ℝ) (Λ : Finset ι) (γ₀ : ι
     exact Fintype.mem_piFinset.mpr fun j => Finset.mem_of_mem_erase (hγ j)
   -- Die Differenz ist die Summe über die Tupel, die `γ₀` verwenden.
   have hdiff : clusterOrderSum P w Λ n - clusterOrderSum P w (Λ.erase γ₀) n
-      = ∑ γ ∈ T \ S, (ursellInt P γ : ℝ) * ∏ j, w (γ j) := by
+      = ∑ γ ∈ T \ S, (ursellInt P γ : K) * ∏ j, w (γ j) := by
     unfold clusterOrderSum
     exact (eq_sub_of_add_eq (Finset.sum_sdiff hsub)).symm
   -- Ein solches Tupel trägt `γ₀` an mindestens einer Stelle.
@@ -202,29 +203,29 @@ theorem abs_clusterOrderSum_sub_le (w : ι → ℝ) (Λ : Finset ι) (γ₀ : ι
     exact hnotS (Fintype.mem_piFinset.mpr fun j =>
       Finset.mem_erase.mpr ⟨hcon j, Fintype.mem_piFinset.mp hmemT j⟩)
   have hnn : ∀ (γ : Fin (n + 1) → ι) (i : Fin (n + 1)),
-      0 ≤ (if γ i = γ₀ then |(ursellInt P γ : ℝ)| * ∏ j, |w (γ j)| else 0) := by
+      0 ≤ (if γ i = γ₀ then ‖(ursellInt P γ : K)‖ * ∏ j, ‖w (γ j)‖ else 0) := by
     intro γ i
     split
-    · exact mul_nonneg (abs_nonneg _) (Finset.prod_nonneg fun j _ => abs_nonneg _)
+    · exact mul_nonneg (norm_nonneg _) (Finset.prod_nonneg fun j _ => norm_nonneg _)
     · exact le_rfl
   rw [hdiff]
-  calc |∑ γ ∈ T \ S, (ursellInt P γ : ℝ) * ∏ j, w (γ j)|
-      ≤ ∑ γ ∈ T \ S, |(ursellInt P γ : ℝ)| * ∏ j, |w (γ j)| := by
-        refine (Finset.abs_sum_le_sum_abs _ _).trans (le_of_eq ?_)
-        exact Finset.sum_congr rfl fun γ _ => by rw [abs_mul, Finset.abs_prod]
+  calc ‖∑ γ ∈ T \ S, (ursellInt P γ : K) * ∏ j, w (γ j)‖
+      ≤ ∑ γ ∈ T \ S, ‖(ursellInt P γ : K)‖ * ∏ j, ‖w (γ j)‖ := by
+        refine (norm_sum_le _ _).trans (le_of_eq ?_)
+        exact Finset.sum_congr rfl fun γ _ => by rw [norm_mul, norm_prod]
     _ ≤ ∑ γ ∈ T \ S, ∑ i : Fin (n + 1),
-          (if γ i = γ₀ then |(ursellInt P γ : ℝ)| * ∏ j, |w (γ j)| else 0) := by
+          (if γ i = γ₀ then ‖(ursellInt P γ : K)‖ * ∏ j, ‖w (γ j)‖ else 0) := by
         refine Finset.sum_le_sum fun γ hγ => ?_
         obtain ⟨i, hi⟩ := hex γ hγ
         refine le_trans (le_of_eq ?_)
           (Finset.single_le_sum (fun k _ => hnn γ k) (Finset.mem_univ i))
         rw [if_pos hi]
     _ ≤ ∑ γ ∈ T, ∑ i : Fin (n + 1),
-          (if γ i = γ₀ then |(ursellInt P γ : ℝ)| * ∏ j, |w (γ j)| else 0) := by
+          (if γ i = γ₀ then ‖(ursellInt P γ : K)‖ * ∏ j, ‖w (γ j)‖ else 0) := by
         refine Finset.sum_le_sum_of_subset_of_nonneg Finset.sdiff_subset ?_
         exact fun γ _ _ => Finset.sum_nonneg fun i _ => hnn γ i
     _ = ∑ i : Fin (n + 1), ∑ γ ∈ T,
-          (if γ i = γ₀ then |(ursellInt P γ : ℝ)| * ∏ j, |w (γ j)| else 0) :=
+          (if γ i = γ₀ then ‖(ursellInt P γ : K)‖ * ∏ j, ‖w (γ j)‖ else 0) :=
         Finset.sum_comm
     _ = ∑ _i : Fin (n + 1), pinnedOrderSum P w Λ γ₀ n := by
         refine Finset.sum_congr rfl fun i _ => ?_
