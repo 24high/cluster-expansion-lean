@@ -35,9 +35,9 @@ Fernández–Procacci — together with the recursion they all rest on, and
 the cluster series itself: Ursell functions, the Penrose tree–graph
 bound, the Mayer expansion with its finite cluster recursion, the
 exponential formula identifying `log Z` with the cluster series, the
-sharp Kotecký–Preiss summability estimate, and the locality of `log Z`
-under removal of a single polymer. Weights may be real or complex
-throughout.
+sharp Kotecký–Preiss summability estimate, the locality of `log Z` under
+removal of a single polymer, and the existence of the thermodynamic
+limit. Weights may be real or complex throughout.
 
 ## Main results
 
@@ -250,7 +250,26 @@ literally the `K = ℝ` case.
   independently of `Λ` (`abs_clusterSeries_sub_erase_le_of_kp`,
   `abs_log_Z_sub_erase_le_of_kp`). This is the two-sided sharpening of
   the ratio bound `Z_ratio_bound_of_kp`, and the form in which
-  truncation errors are controlled in renormalisation group arguments.
+  truncation errors are controlled in renormalisation group arguments;
+
+- **the thermodynamic limit** (`KPLean/ThermodynamicLimit.lean`): summing
+  locality over the polymers that are added gives the volume-difference
+  bound
+
+  `‖clusterSeries Λ' − clusterSeries Λ‖ ≤ Σ_{γ ∈ Λ' \ Λ} ‖w γ‖ · exp (a γ)`
+
+  for `Λ ⊆ Λ'` (`norm_clusterSeries_sub_le_of_gkp`), which depends on
+  neither volume. Under the **global** Kotecký–Preiss condition
+  (`GlobalKPCondition`: the same inequality uniformly over all finite
+  volumes, hence `KPCondition` in each of them) and summability of
+  `Σ_γ ‖w γ‖ · exp (a γ)` over the whole index type, the net
+  `Λ ↦ clusterSeries Λ` is Cauchy along `Finset.atTop` and therefore
+  converges (`exists_tendsto_clusterSeries_of_gkp`); for real weights
+  this is the convergence of `log Z Λ` (`exists_tendsto_log_Z_of_gkp`)
+  — the free energy exists. The limit inherits the volume-linear bound
+  (`norm_limit_le_of_gkp`) and comes with the tail estimate
+  `‖L − clusterSeries Λ‖ ≤ Σ'_γ − Σ_{γ ∈ Λ}` (`norm_limit_sub_le_of_gkp`),
+  which is what one uses to trade a finite volume for the limit.
 
 The hierarchy is strict: a single self-incompatible polymer of weight
 `1/2` satisfies the Dobrushin condition with `μ = 1`, while
@@ -289,6 +308,7 @@ The toolchain (`lean-toolchain`) and the mathlib revision
 | `KPLean/KPExponential.lean` | convergence of the cluster series under the KP condition, and `log Z = clusterSeries` there |
 | `KPLean/UrsellSymmetry.lean` | invariance of the Ursell sum under relabelling; symmetry of the Ursell function |
 | `KPLean/Locality.lean` | the volume-independent effect of removing one polymer on `log Z` |
+| `KPLean/ThermodynamicLimit.lean` | the global KP condition, the volume-difference bound, convergence of `log Z` and bounds on the limit |
 | `paper/kp-formalisation.tex` | LaTeX note describing the formalisation |
 
 ## Background
@@ -332,8 +352,7 @@ intended.
 ## Roadmap
 
 Every milestone the roadmap set out is formalised, up to and including
-locality and the carry-over of the analytic layer to complex weights.
-See
+locality, complex weights and the thermodynamic limit. See
 [`ROADMAP.md`](ROADMAP.md) for the full list with the relevant theorem
 names, and for the natural continuations.
 

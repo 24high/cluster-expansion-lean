@@ -182,6 +182,22 @@ formalised, with no `sorry`s at any completed step.
       here: the proof needs `‖(m : K)‖ = |m|` for integer casts —
       the Ursell function is integer-valued — and that fails in, say,
       a `p`-adic field.
+- [x] **The thermodynamic limit**: summing the locality bound over the
+      polymers that are added gives the **volume-difference bound**
+      `‖clusterSeries Λ' − clusterSeries Λ‖ ≤ Σ_{γ ∈ Λ' \ Λ} ‖w γ‖ · exp (a γ)`
+      for `Λ ⊆ Λ'` (`norm_clusterSeries_sub_le_of_gkp`), which depends
+      on neither volume. Under the **global** Kotecký–Preiss condition
+      (`GlobalKPCondition` — the same inequality, uniformly over all
+      finite volumes, hence `KPCondition` in each of them) together with
+      summability of `Σ_γ ‖w γ‖ · exp (a γ)` over the whole index type,
+      the net `Λ ↦ clusterSeries Λ` is Cauchy along `Finset.atTop` and
+      therefore converges (`cauchySeq_clusterSeries_of_gkp`,
+      `exists_tendsto_clusterSeries_of_gkp`); for real weights that is
+      the convergence of `log Z Λ` (`exists_tendsto_log_Z_of_gkp`) — the
+      free energy exists. The limit inherits the volume-linear bound
+      (`norm_limit_le_of_gkp`) and, in the form needed to trade a finite
+      volume for the limit in an estimate, the tail bound
+      `‖L − clusterSeries Λ‖ ≤ Σ'_γ − Σ_{γ ∈ Λ}` (`norm_limit_sub_le_of_gkp`).
 
 ## Next
 
@@ -190,16 +206,16 @@ formalise is complete and `sorry`-free: the three criteria, the
 tree–graph bound, the Mayer expansion, the cluster factorisation, the
 exponential formula, the sharp Kotecký–Preiss estimate, the
 identification of `log Z` with the cluster series under that same
-condition, and locality.
+condition, locality, and the thermodynamic limit.
 
 Everything is stated over `ℝ` and `ℂ` alike, so contour activities are
 covered.
 
-Natural continuations, in rough order of size: the thermodynamic limit
-of the free energy, for which locality supplies the equicontinuity;
-analyticity of `log Z` in the weights, for which the complex layer is
-now in place; and, further out, the Balaban-style renormalisation group
-estimates this infrastructure was built for.
+Natural continuations, in rough order of size: analyticity of `log Z`
+in the weights, for which the complex layer is now in place; the
+translation-invariant setting, where the free energy *density* and its
+limit make sense; and, further out, the Balaban-style renormalisation
+group estimates this infrastructure was built for.
 
 ## Beyond
 

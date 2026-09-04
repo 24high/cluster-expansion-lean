@@ -67,6 +67,11 @@ series and its identification with $\log Z$. From the symmetry of the
 Ursell function we obtain locality: under that same condition, removing
 one polymer from the volume changes $\log Z$ by at most
 $\lvert w(\gamma_0)\rvert e^{a(\gamma_0)}$, independently of the volume.
+Summing that locality bound over the polymers by which two volumes
+differ, and asking the Kotecký--Preiss condition uniformly, we obtain the
+thermodynamic limit: the free energy converges as the volume exhausts
+the polymer set, with an explicit tail bound for the error made in a
+finite volume.
 Weights are complex throughout --- the criteria hold over an arbitrary
 normed field, the analytic layer over $\mathbb R$ and $\mathbb C$ alike,
 where the exponential formula takes the form $Z = \exp(\cdot)$ with the
@@ -142,10 +147,12 @@ convergence of the series and its identification with $\log Z$
 and the locality it yields: removing one polymer from the volume changes
 $\log Z$ by an amount independent of the volume
 (Theorem~\ref{thm:local}, Section~\ref{sec:local}). Twelfth, the whole
-development over complex weights (Section~\ref{sec:complex}). The
-development is about 8250 lines of Lean in fourteen files, compiles
-against current \textsf{mathlib}, and contains no \texttt{sorry}
-placeholders.
+development over complex weights (Section~\ref{sec:complex}).
+Thirteenth, the thermodynamic limit: the free energy converges as the
+volume exhausts the polymer set (Theorem~\ref{thm:limit},
+Section~\ref{sec:limit}). The development is about 8500 lines of Lean in
+fifteen files, compiles against current \textsf{mathlib}, and contains
+no \texttt{sorry} placeholders.
 Section~\ref{sec:kp} documents a claim made in an earlier version of this
 note that the formalisation subsequently refuted.
 
@@ -914,6 +921,71 @@ stay real: they carry order arguments --- positivity, monotonicity,
 submultiplicativity of the independence polynomial --- for which a
 normed field has no room. They are used only to establish the real
 criterion, so nothing downstream is weakened.
+
+\section{The thermodynamic limit}\label{sec:limit}
+
+Theorem~\ref{thm:local} controls the removal of one polymer. Summing it
+over the polymers by which two volumes differ --- peeling them off one at
+a time, the Kotecký--Preiss condition passing to each intermediate
+volume --- gives a bound that mentions neither volume except through
+their difference.
+
+\begin{theorem}[\texttt{norm\_clusterSeries\_sub\_le\_of\_gkp}]\label{thm:vol}
+Let $\Lambda \subseteq \Lambda'$ be finite volumes both satisfying the
+hypothesis of Theorem~\ref{thm:kp}. Then
+\[
+  \Bigl\lVert
+    \sum_{n \ge 0} c_n(\Lambda') - \sum_{n \ge 0} c_n(\Lambda)
+  \Bigr\rVert
+  \le \sum_{\gamma \in \Lambda' \setminus \Lambda}
+        \lVert w(\gamma) \rVert\, e^{a(\gamma)} .
+\]
+\end{theorem}
+
+To let the volume exhaust the whole polymer set we ask the
+Kotecký--Preiss condition uniformly, which is the natural hypothesis
+anyway: the \emph{global} condition (\texttt{GlobalKPCondition}) requires
+$\sum_{\delta \in \Lambda,\, \delta \not\sim \gamma}
+\lVert w(\delta)\rVert e^{a(\delta)} \le a(\gamma)$ for every $\gamma$
+and every finite $\Lambda$, and so gives the ordinary condition in each
+volume (\texttt{GlobalKPCondition.toKP}). The finite sets of polymers,
+ordered by inclusion, form a directed set; convergence is convergence
+along the corresponding filter \texttt{atTop}.
+
+\begin{theorem}[\texttt{exists\_tendsto\_clusterSeries\_of\_gkp},
+\texttt{exists\_tendsto\_log\_Z\_of\_gkp}]\label{thm:limit}
+Assume the global Kotecký--Preiss condition and that
+$\gamma \mapsto \lVert w(\gamma)\rVert e^{a(\gamma)}$ is summable over
+the whole index type. Then the net
+$\Lambda \mapsto \sum_{n \ge 0} c_n(\Lambda)$ is Cauchy along
+\texttt{atTop} and converges to some $L$; for real weights,
+$\log Z(\Lambda) \to L$.
+\end{theorem}
+
+The Cauchy property is immediate from Theorem~\ref{thm:vol}: given
+$\varepsilon > 0$, summability supplies a finite $\Lambda_0$ with
+$\sum_{t} \lVert w \rVert e^{a} < \varepsilon$ for every finite $t$
+disjoint from $\Lambda_0$, and for $\Lambda \supseteq \Lambda_0$ the set
+$\Lambda \setminus \Lambda_0$ is such a $t$. Completeness of the weight
+field --- guaranteed by \texttt{RCLike} --- then yields the limit.
+
+Two bounds come with it. The limit inherits the volume-linear estimate,
+$\lVert L \rVert \le \sum_{\gamma} \lVert w(\gamma)\rVert e^{a(\gamma)}$
+(\texttt{norm\_limit\_le\_of\_gkp}), and the error made by working in a
+finite volume is the tail of that same sum,
+\[
+  \lVert L - \textstyle\sum_{n \ge 0} c_n(\Lambda) \rVert
+  \le \sum_{\gamma} \lVert w(\gamma)\rVert e^{a(\gamma)}
+    - \sum_{\gamma \in \Lambda} \lVert w(\gamma)\rVert e^{a(\gamma)}
+\]
+(\texttt{norm\_limit\_sub\_le\_of\_gkp}), which is the form in which a
+finite volume is traded for the limit inside an estimate.
+
+This is the thermodynamic limit in the abstract polymer setting: the
+free energy exists, and the cluster expansion survives the passage to
+it. It is not yet the free energy \emph{density} of a translation
+invariant model, which needs a notion of volume that the abstract
+setting does not carry; that is the natural next layer.
 
 \section{A corrected claim}\label{sec:kp}
 
