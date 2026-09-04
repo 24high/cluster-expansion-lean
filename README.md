@@ -200,7 +200,23 @@ All in `KPLean/ClusterExpansion.lean`, namespace `ClusterExpansion`:
   (`treeSum_le_peel`), uses relabelling invariance
   (`treeSum_eq_treeCoeff`) and the multinomial count carried over from
   the exponential formula, and closes by induction on the truncation
-  height (`treeTrunc_le_exp`).
+  height (`treeTrunc_le_exp`);
+
+- **the exponential formula under that same condition**
+  (`KPLean/KPExponential.lean`): summing the sharp anchored bound over
+  the anchors shows the cluster series converges absolutely under the
+  Kotecký–Preiss condition, with constant `Σ_{γ ∈ Λ} |w γ| exp (a γ)`
+  (`summable_abs_clusterCoeff_of_kp`) — the same volume-linear quantity
+  that already bounded `|log |Z||`. Since smallness entered the
+  exponential formula only through convergence, this gives
+
+  `Z Λ = exp (clusterSeries)`, `log Z Λ = clusterSeries`, `Z Λ > 0`
+
+  (`exp_clusterSeries_eq_Z_of_kp`, `log_Z_eq_clusterSeries_of_kp`,
+  `Z_pos_of_kp`) under the Kotecký–Preiss condition alone. So the very
+  condition under which the classical criteria give `Z ≠ 0` also makes
+  the cluster series the exact expansion of `log Z`, and sharpens
+  nonvanishing to positivity.
 
 The hierarchy is strict: a single self-incompatible polymer of weight
 `1/2` satisfies the Dobrushin condition with `μ = 1`, while
@@ -236,6 +252,7 @@ The toolchain (`lean-toolchain`) and the mathlib revision
 | `KPLean/TreeRelabel.lean` | relabelling invariance of the tree sum |
 | `KPLean/TreeLink.lean` | the tree–graph bound in parent-map form |
 | `KPLean/SharpKP.lean` | the recursion inequality, the Kotecký–Preiss induction, the sharp estimate |
+| `KPLean/KPExponential.lean` | convergence of the cluster series under the KP condition, and `log Z = clusterSeries` there |
 | `paper/kp-formalisation.tex` | LaTeX note describing the formalisation |
 
 ## Background

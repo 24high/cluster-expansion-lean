@@ -124,20 +124,34 @@ formalised, with no `sorry`s at any completed step.
       (`treeCoeff_div_le`), and induction on the truncation height
       (`treeTrunc_le_exp`).
 
+- [x] **The exponential formula under the Kotecký–Preiss condition**:
+      `log Z Λ = clusterSeries P w Λ` and `Z Λ > 0` under the KP
+      condition alone (`log_Z_eq_clusterSeries_of_kp`, `Z_pos_of_kp`,
+      `exp_clusterSeries_eq_Z_of_kp`), with no smallness hypothesis. No
+      analytic continuation was needed: smallness entered the proof of
+      the exponential formula at exactly two points, both of which want
+      nothing but absolute convergence of the series, so the hypotheses
+      were weakened rather than the proof rerun. The sharp anchored
+      bound, summed over the anchors, supplies that convergence with
+      constant `Σ_{γ ∈ Λ} |w γ| · exp (a γ)` — the same volume-linear
+      quantity `abs_log_abs_Z_le_of_kp` already bounds `|log |Z||` by
+      (`summable_abs_clusterCoeff_of_kp`). This also sharpens
+      nonvanishing (`Z_ne_zero_of_kp`) to positivity.
+
 ## Next
 
 Nothing scheduled. The convergence machinery the roadmap set out to
-formalise — the three criteria, the tree–graph bound, the Mayer
-expansion, the exponential formula, and the sharp Kotecký–Preiss
-estimate — is complete and `sorry`-free.
+formalise is complete and `sorry`-free: the three criteria, the
+tree–graph bound, the Mayer expansion, the cluster factorisation, the
+exponential formula, the sharp Kotecký–Preiss estimate, and the
+identification of `log Z` with the cluster series under that same
+condition.
 
-Natural continuations, in rough order of size: the exponential formula
-currently identifies `log Z` with the cluster series in the small-weight
-regime, and the sharp estimate now controls the same series under the
-weaker KP condition — closing that gap (`log Z = clusterSeries` under KP
-itself) would need an analytic continuation argument rather than new
-combinatorics. Further out, the complex-weight case and the
-thermodynamic limit of the free energy.
+Natural continuations, in rough order of size: complex weights (the
+criteria are stated for arbitrary commutative rings, but the analytic
+layer is real); the thermodynamic limit of the free energy; and,
+further out, the Balaban-style renormalisation group estimates this
+infrastructure was built for.
 
 ## Beyond
 
