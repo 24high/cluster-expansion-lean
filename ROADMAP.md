@@ -198,6 +198,44 @@ formalised, with no `sorry`s at any completed step.
       (`norm_limit_le_of_gkp`) and, in the form needed to trade a finite
       volume for the limit in an estimate, the tail bound
       `‖L − clusterSeries Λ‖ ≤ Σ'_γ − Σ_{γ ∈ Λ}` (`norm_limit_sub_le_of_gkp`).
+- [x] **The fugacity expansion and analyticity of the pressure**: an
+      order-`n` cluster has `n + 1` polymers, so scaling all weights by a
+      fugacity `z` scales the order-`n` term by `z^(n+1)`
+      (`clusterOrderSum_scale`) — the cluster series is a genuine power
+      series in `z` whose coefficients do not depend on `z`
+      (`fugacityCoeff`). The Kotecký–Preiss condition survives scaling by
+      `‖z‖ ≤ 1` (`KPCondition.scale`), so everything proved so far holds
+      on the whole closed unit disc, and the power series has radius of
+      convergence `≥ 1` (`one_le_radius_fugacitySeries`) — **uniformly in
+      the volume**. Hence `z ↦ clusterSeries (z·w) Λ` is analytic on the
+      open disc (`hasFPowerSeriesOnBall_clusterSeries`,
+      `analyticOnNhd_clusterSeries`), and for real weights so is
+      `log Z` (`analyticOnNhd_log_Z`).
+- [x] **Analyticity of the free energy in the thermodynamic limit**: the
+      volume-difference bound is uniform in `z` on the disc
+      (`norm_clusterSeries_scale_sub_le_of_gkp`), so the convergence to
+      the limit is uniform there (`tendstoUniformlyOn_clusterSeries`).
+      By the Weierstrass convergence theorem the limit is holomorphic,
+      hence analytic: `AnalyticOnNhd ℂ (clusterLimit P w) (eball 0 1)`
+      (`analyticOnNhd_clusterLimit`). In the Kotecký–Preiss regime the
+      pressure is an analytic function of the activity — no phase
+      transition. This is the payoff of every volume-independent bound
+      proved along the way.
+- [x] **Worked example, against vacuity** (`KPLean/Examples.lean`).
+      Theorems about an unsatisfiable hypothesis are true and worthless,
+      so the hypotheses are exhibited: in the *free* polymer system,
+      where only a polymer is incompatible with itself, `Z` is
+      `∏ (1 + w γ)` (`Z_freeSystem`, an end-to-end test of the
+      definition of `Z`), the Kotecký–Preiss condition reduces to
+      `‖w γ‖ · e ≤ 1` (`globalKP_freeSystem`), and `w n = e⁻¹ · 2⁻ⁿ`
+      on `ℕ` satisfies it summably. Every headline theorem is then
+      applied to that system.
+
+      Writing the example exposed a real defect: the downstream theorems
+      had `Classical.propDecidable` baked into their statements, so none
+      of them could be applied to a concrete polymer type, which has its
+      own `DecidableEq` instance. Fixed by carrying `[DecidableEq ι]` as
+      a section variable through the whole chain.
 
 ## Next
 
@@ -206,16 +244,17 @@ formalise is complete and `sorry`-free: the three criteria, the
 tree–graph bound, the Mayer expansion, the cluster factorisation, the
 exponential formula, the sharp Kotecký–Preiss estimate, the
 identification of `log Z` with the cluster series under that same
-condition, locality, and the thermodynamic limit.
+condition, locality, the thermodynamic limit, and analyticity of the
+free energy in the fugacity.
 
 Everything is stated over `ℝ` and `ℂ` alike, so contour activities are
 covered.
 
-Natural continuations, in rough order of size: analyticity of `log Z`
-in the weights, for which the complex layer is now in place; the
-translation-invariant setting, where the free energy *density* and its
-limit make sense; and, further out, the Balaban-style renormalisation
-group estimates this infrastructure was built for.
+Natural continuations, in rough order of size: the translation-invariant
+setting, where the free energy *density* and its limit make sense;
+derivatives of the pressure — the correlation functions — for which the
+power series is now available; and, further out, the Balaban-style
+renormalisation group estimates this infrastructure was built for.
 
 ## Beyond
 

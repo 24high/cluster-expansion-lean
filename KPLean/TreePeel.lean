@@ -147,8 +147,9 @@ theorem outerParent_mem_rootedTrees {A : Finset J} {r : J} {p : J → J}
 section Polymer
 
 variable {K : Type*} [RCLike K]
-variable {ι : Type*} (P : PolymerSystem ι)
+variable {ι : Type*} [DecidableEq ι] (P : PolymerSystem ι)
 
+omit [DecidableEq ι] in
 /-- Die Restdaten erben die Unverträglichkeit aller Kanten. -/
 theorem treeIncompatible_outer {A : Finset J} {r : J} {p : J → J} {h : J → ι}
     {Λ : Finset ι} {γ₀ : ι} (hp : p ∈ rootedTrees A r) (hr : r ∉ A)
@@ -171,6 +172,7 @@ theorem treeIncompatible_outer {A : Finset J} {r : J} {p : J → J} {h : J → �
   rw [hqv, hgv, hgp]
   exact hinc v (Finset.mem_sdiff.mp hv).1
 
+omit [DecidableEq ι] in
 /-- Die Paarsumme über Bäume und Belegungen ist die Baumsumme. -/
 theorem sum_product_eq_treeSum (w : ι → K) (Λ : Finset ι) (γ : ι) (r : J)
     (A : Finset J) :
@@ -181,6 +183,7 @@ theorem sum_product_eq_treeSum (w : ι → K) (Λ : Finset ι) (γ : ι) (r : J)
   rw [Finset.sum_product]
   rfl
 
+omit [DecidableEq ι] in
 /-- **Die Faserabschätzung**: eine Faser der Wurzelzerlegung — fester Block
 `B₀` mit Blockwurzel `c` und festem Belegungswert `δ` an dieser Wurzel —
 injiziert in das Produkt aus Blockdaten und Restdaten. Aus dem Paar
@@ -331,6 +334,7 @@ theorem fibre_sum_le (w : ι → K) (Λ : Finset ι) (γ₀ : ι) (r : J)
 
 /-! ## Das Abschäl-Lemma -/
 
+omit [DecidableEq ι] in
 /-- **Das Abschäl-Lemma**: schält man den Block ab, in dem ein fester
 Knoten `a₀` liegt, so wird die Baumsumme vom Produkt aus Blockfaktor und
 Baumsumme des Restes dominiert. Die Summe über die Wurzelbäume wird nach
@@ -441,6 +445,7 @@ theorem treeSum_le_peel (w : ι → K) (Λ : Finset ι) (γ₀ : ι) (r : J)
 
 /-! ## Die scharfe Wurzelzerlegungsschranke -/
 
+omit [DecidableEq ι] in
 /-- Das Abschäl-Lemma in genau der Form, die
 `treeSum_le_sum_partitions` als Hypothese `hpeel` verlangt. -/
 theorem treeSum_peel (w : ι → K) (Λ : Finset ι) (γ₀ : ι) :
@@ -450,6 +455,7 @@ theorem treeSum_peel (w : ι → K) (Λ : Finset ι) (γ₀ : ι) :
             blockFactor P w Λ γ₀ B₀ * treeSum P w Λ γ₀ r (A \ B₀) :=
   fun r _ hr _ ha₀ => treeSum_le_peel P w Λ γ₀ r hr ha₀
 
+omit [DecidableEq ι] in
 /-- **Die scharfe Wurzelzerlegungsschranke ohne Zusatzannahme**: die
 Baumsumme über `A` wird von der Summe über alle Partitionen von `A` der
 Produkte der Blockfaktoren dominiert. Das Abschäl-Lemma entlastet die

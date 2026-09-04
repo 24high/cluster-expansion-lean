@@ -131,7 +131,7 @@ theorem treeCoeff_div_le (w : ι → K) (Λ : Finset ι) (γ₀ : ι) (n : ℕ)
 
 /-! ## Die scharfe Summierbarkeitsschranke -/
 
-omit [DecidableEq ι] [DecidableEq J] [Fintype J] in
+omit [DecidableEq J] [Fintype J] in
 /-- **Scharfe Kotecký-Preiss-Summierbarkeit** (modulo Rekursion und
 Verknüpfung): unter der KP-Bedingung ist die bei `γ₀` verankerte
 Betragsreihe der Cluster-Entwicklung durch `‖w γ₀‖ · exp (a γ₀)`
@@ -178,7 +178,7 @@ theorem sum_range_pinned_le_of_kp (w : ι → K) (a : ι → ℝ) (Λ : Finset �
           mul_le_mul_of_nonneg_left
             (treeTrunc_le_exp P w a Λ hKP hRec N γ₀ hγ₀) (norm_nonneg _)
 
-omit [DecidableEq ι] [DecidableEq J] [Fintype J] in
+omit [DecidableEq J] [Fintype J] in
 /-- Unter der Kotecký-Preiss-Bedingung ist die verankerte Betragsreihe
 summierbar. -/
 theorem summable_pinned_of_kp (w : ι → K) (a : ι → ℝ) (Λ : Finset ι)
@@ -188,7 +188,7 @@ theorem summable_pinned_of_kp (w : ι → K) (a : ι → ℝ) (Λ : Finset ι)
     (fun n => div_nonneg (pinnedOrderSum_nonneg P w Λ γ₀ n) (by positivity))
     (sum_range_pinned_le_of_kp P w a Λ γ₀ hγ₀ hKP)
 
-omit [DecidableEq ι] [DecidableEq J] [Fintype J] in
+omit [DecidableEq J] [Fintype J] in
 /-- **Scharfe Kotecký-Preiss-Summierbarkeit**: unter der KP-Bedingung
 ist die bei `γ₀` verankerte Betragsreihe der Cluster-Entwicklung durch
 `‖w γ₀‖ · exp (a γ₀)` beschränkt — gleichmäßig im Volumen und ohne

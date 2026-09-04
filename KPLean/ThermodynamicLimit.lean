@@ -39,7 +39,7 @@ open scoped Classical
 namespace ClusterExpansion
 
 variable {K : Type*} [RCLike K]
-variable {ι : Type*} (P : PolymerSystem ι)
+variable {ι : Type*} [DecidableEq ι] (P : PolymerSystem ι)
 
 /-! ## Die globale Kotecký-Preiss-Bedingung -/
 
@@ -51,6 +51,7 @@ def GlobalKPCondition (w : ι → K) (a : ι → ℝ) : Prop :=
   ∀ γ, ∀ Λ : Finset ι,
     ∑ δ ∈ Λ.filter (fun δ => P.incomp γ δ = true), ‖w δ‖ * Real.exp (a δ) ≤ a γ
 
+omit [DecidableEq ι] in
 /-- Die globale Bedingung liefert die gewöhnliche in jedem Volumen. -/
 theorem GlobalKPCondition.toKP {w : ι → K} {a : ι → ℝ}
     (h : GlobalKPCondition P w a) (Λ : Finset ι) : KPCondition P w a Λ :=
@@ -142,6 +143,7 @@ theorem norm_clusterSeries_sub_le_of_gkp' (w : ι → K) (a : ι → ℝ)
 
 /-! ## Konvergenz -/
 
+omit [DecidableEq ι] in
 /-- Unter der globalen Kotecký-Preiss-Bedingung und Summierbarkeit der
 Gewichtsschranke ist die Cluster-Reihe ein Cauchy-Netz in den Volumina. -/
 theorem cauchySeq_clusterSeries_of_gkp (w : ι → K) (a : ι → ℝ)
@@ -163,6 +165,7 @@ theorem cauchySeq_clusterSeries_of_gkp (w : ι → K) (a : ι → ℝ)
   exact lt_of_le_of_lt (norm_clusterSeries_sub_le_of_gkp P w a hKP hsub)
     (habs ▸ hlt)
 
+omit [DecidableEq ι] in
 /-- **Der thermodynamische Limes der Cluster-Reihe**: unter der globalen
 Kotecký-Preiss-Bedingung und Summierbarkeit der Gewichtsschranke
 konvergiert `clusterSeries Λ`, wenn das Volumen den ganzen Indextyp
@@ -188,6 +191,7 @@ theorem exists_tendsto_log_Z_of_gkp (w : ι → ℝ) (a : ι → ℝ)
 
 /-! ## Schranken am Limes -/
 
+omit [DecidableEq ι] in
 /-- Der Limes erbt die volumenlineare Schranke: er ist durch die
 Gesamtgewichtssumme beschränkt. -/
 theorem norm_limit_le_of_gkp (w : ι → K) (a : ι → ℝ)
@@ -201,6 +205,7 @@ theorem norm_limit_le_of_gkp (w : ι → K) (a : ι → ℝ)
   refine le_trans (abs_clusterSeries_le_of_kp P w a Λ (hKP.toKP P Λ)) ?_
   exact hsum.sum_le_tsum Λ (fun γ _ => hnn γ)
 
+omit [DecidableEq ι] in
 /-- **Lokalität am Limes**: der Abstand des Limes zur endlichen
 Cluster-Reihe ist durch das Gewicht außerhalb des Volumens beschränkt.
 Das ist die Fehlerschranke, mit der man in einer Renormierungsgruppen-

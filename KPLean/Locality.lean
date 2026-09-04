@@ -33,8 +33,9 @@ open scoped Classical
 namespace ClusterExpansion
 
 variable {K : Type*} [RCLike K]
-variable {ι : Type*} (P : PolymerSystem ι)
+variable {ι : Type*} [DecidableEq ι] (P : PolymerSystem ι)
 
+omit [DecidableEq ι] in
 /-- Die Kotecký-Preiss-Bedingung vererbt sich auf Teilmengen: die
 Nachbarschaftssumme läuft über weniger nichtnegative Terme. -/
 theorem KPCondition.mono {w : ι → K} {a : ι → ℝ} {Λ' Λ : Finset ι}

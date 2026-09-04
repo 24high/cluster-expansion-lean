@@ -76,6 +76,14 @@ Weights are complex throughout --- the criteria hold over an arbitrary
 normed field, the analytic layer over $\mathbb R$ and $\mathbb C$ alike,
 where the exponential formula takes the form $Z = \exp(\cdot)$ with the
 exponential of a Banach algebra.
+Scaling the weights by a fugacity $z$ makes the cluster series a power
+series in $z$ of radius at least one, uniformly in the volume; with the
+uniform volume-difference bound this yields, by the Weierstrass
+convergence theorem, that the free energy is analytic in the fugacity
+both in finite volume and in the thermodynamic limit --- no phase
+transition in the Kotecký--Preiss regime. A worked example exhibits
+weights satisfying every hypothesis, so that none of the results is
+vacuous.
 An earlier version of this note claimed that the sum form was not
 obtainable from the product form; the formalisation of the comparison
 argument corrected this, and we document both the error and its repair.
@@ -150,9 +158,13 @@ $\log Z$ by an amount independent of the volume
 development over complex weights (Section~\ref{sec:complex}).
 Thirteenth, the thermodynamic limit: the free energy converges as the
 volume exhausts the polymer set (Theorem~\ref{thm:limit},
-Section~\ref{sec:limit}). The development is about 8500 lines of Lean in
-fifteen files, compiles against current \textsf{mathlib}, and contains
-no \texttt{sorry} placeholders.
+Section~\ref{sec:limit}). Fourteenth, the fugacity expansion and the
+analyticity of the pressure, in finite volume and in the limit
+(Theorems~\ref{thm:analytic} and~\ref{thm:limitanalytic},
+Section~\ref{sec:fugacity}); and a worked example showing that none of
+this is vacuous (Section~\ref{sec:examples}). The development is about
+9100 lines of Lean in eighteen files, compiles against current
+\textsf{mathlib}, and contains no \texttt{sorry} placeholders.
 Section~\ref{sec:kp} documents a claim made in an earlier version of this
 note that the formalisation subsequently refuted.
 
@@ -986,6 +998,94 @@ free energy exists, and the cluster expansion survives the passage to
 it. It is not yet the free energy \emph{density} of a translation
 invariant model, which needs a notion of volume that the abstract
 setting does not carry; that is the natural next layer.
+
+\section{The fugacity expansion and analyticity}\label{sec:fugacity}
+
+An order-$n$ cluster consists of $n+1$ polymers, so scaling every weight
+by a fugacity $z$ scales the order-$n$ contribution by $z^{n+1}$:
+\[
+  c_n(z w) = z^{\,n+1} c_n(w)
+\]
+(\texttt{clusterOrderSum\_scale}, \texttt{clusterCoeff\_scale}). The
+cluster series is therefore a genuine power series in $z$ whose
+coefficients do not depend on $z$. Writing $a_0 = 0$ and
+$a_{n+1} = c_n$ (\texttt{fugacityCoeff}),
+\[
+  \sum_{n \ge 0} c_n(z w) = \sum_{n \ge 0} a_n z^{n} .
+\]
+
+The Kotecký--Preiss condition survives scaling down: replacing $w$ by
+$zw$ with $\lVert z \rVert \le 1$ only shrinks the neighbourhood sums
+(\texttt{KPCondition.scale}). So everything proved so far holds on the
+whole closed unit disc of the fugacity, and the coefficient bound of
+Theorem~\ref{thm:kpexp} says the power series converges absolutely
+there.
+
+\begin{theorem}[\texttt{one\_le\_radius\_fugacitySeries},
+\texttt{analyticOnNhd\_clusterSeries}]\label{thm:analytic}
+Under the hypothesis of Theorem~\ref{thm:kp}, the fugacity series has
+radius of convergence at least $1$, represents
+$z \mapsto \sum_{n} c_n(zw)$ on the open unit disc, and that function is
+analytic there. For real weights, so is $\log Z$
+(\texttt{analyticOnNhd\_log\_Z}).
+\end{theorem}
+
+In a fixed finite volume this is not deep --- $Z$ is a polynomial in $z$
+--- but the radius bound is the same for \emph{every} volume, and that
+is what survives the limit. Two things are uniform: the radius, and the
+volume-difference bound of Theorem~\ref{thm:vol}, whose right-hand side
+no longer mentions $z$ once $\lVert z\rVert \le 1$
+(\texttt{norm\_clusterSeries\_scale\_sub\_le\_of\_gkp}). Hence the
+convergence to the thermodynamic limit is uniform on the disc
+(\texttt{tendstoUniformlyOn\_clusterSeries}), and Weierstrass applies.
+
+\begin{theorem}[\texttt{analyticOnNhd\_clusterLimit}]\label{thm:limitanalytic}
+Assume the global Kotecký--Preiss condition and summability of
+$\lVert w \rVert e^{a}$, and let $L(z)$ be the thermodynamic limit of
+Theorem~\ref{thm:limit} at fugacity $z$. Then $L$ is analytic on the open
+unit disc.
+\end{theorem}
+
+That is the classical statement that in the Kotecký--Preiss regime the
+pressure is an analytic function of the activity, so that no phase
+transition occurs there. It is also where every volume-independent
+estimate of this development is spent at once: locality gives the
+volume-difference bound, the sharp estimate makes it uniform, homogeneity
+makes it a power series, and the Weierstrass theorem turns uniform
+convergence into analyticity. The formal proof is the composition
+`\texttt{analyticOnNhd\_clusterSeries}' $\circ$
+`\texttt{tendstoUniformlyOn\_clusterSeries}' $\circ$
+`\texttt{TendstoLocallyUniformlyOn.differentiableOn}'.
+
+\section{Against vacuity}\label{sec:examples}
+
+Theorems about an unsatisfiable hypothesis are true and worthless. The
+file \texttt{KPLean/Examples.lean} exhibits the hypotheses.
+
+The example is the \emph{free} polymer system: a polymer is
+incompatible only with itself, which is the minimal admissible relation.
+Every subset is then independent, so the partition function should be
+$\prod_{\gamma \in \Lambda} (1 + w(\gamma))$ --- and it is
+(\texttt{Z\_freeSystem}), which is an end-to-end test of the definition
+of $Z$ against the value one computes by hand. The Kotecký--Preiss
+condition reduces to $\lVert w(\gamma)\rVert e \le 1$
+(\texttt{globalKP\_freeSystem}), and on $\mathbb N$ the weights
+$w(n) = e^{-1} 2^{-n}$ satisfy it with a summable bound. Each headline
+theorem is then applied to that system.
+
+Writing the file exposed a genuine defect. The theorems downstream of
+the cluster series had been elaborated with \texttt{Classical.propDecidable}
+supplying the \texttt{DecidableEq} instance that $Z$ requires. Their
+statements therefore mentioned a $Z$ that no concrete polymer type could
+match, since a concrete type carries its own instance --- the theorems
+were unusable exactly where they were meant to be used. The repair was
+to carry \texttt{[DecidableEq $\iota$]} as a section variable through
+the whole chain. We record it because a formalisation can be complete,
+\texttt{sorry}-free and still not usable, and only an actual use finds
+out. That is a different failure mode from the one in
+Section~\ref{sec:kp}, where a false claim could not be formalised at
+all; here everything was provable, and the statements were merely the
+wrong ones.
 
 \section{A corrected claim}\label{sec:kp}
 

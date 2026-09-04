@@ -45,7 +45,7 @@ open scoped Classical
 namespace ClusterExpansion
 
 variable {K : Type*} [RCLike K]
-variable {ι : Type*} (P : PolymerSystem ι)
+variable {ι : Type*} [DecidableEq ι] (P : PolymerSystem ι)
 
 /-- Die Norm eines ganzzahligen Skalars ist sein Betrag. Über `ℝ` und
 `ℂ` — und nur dort — trägt die Norm die archimedische Information, die
@@ -71,6 +71,7 @@ noncomputable def clusterCoeff (w : ι → K) (Λ : Finset ι) (n : ℕ) : K :=
 noncomputable def clusterSeries (w : ι → K) (Λ : Finset ι) : K :=
   ∑' n, clusterCoeff P w Λ n
 
+omit [DecidableEq ι] in
 /-- Ordnung `1` ist die Summe der Gewichte: `φᵀ(γ) = 1` für einzelne
 Polymere. -/
 theorem clusterOrderSum_zero (w : ι → K) (Λ : Finset ι) :
@@ -92,6 +93,7 @@ theorem clusterOrderSum_zero (w : ι → K) (Λ : Finset ι) :
 
 /-! ## Die geometrische Schranke -/
 
+omit [DecidableEq ι] in
 /-- Betragsschranke für den Beitrag der Ordnung `n + 1`:
 Wurzelbaum-Schranke je Tupel, Gewichtssumme über die Tupel. -/
 theorem abs_clusterOrderSum_le (w : ι → K) (Λ : Finset ι) (n : ℕ) :
@@ -147,6 +149,7 @@ private theorem pow_div_factorial_le (n : ℕ) :
     exact Nat.le_succ n
   exact hmono.trans (pow_div_factorial_le' n)
 
+omit [DecidableEq ι] in
 /-- **Geometrische Schranke für die Reihenglieder**:
 `|clusterCoeff n| ≤ (e · ∑_{γ ∈ Λ} |w γ|) ^ (n+1)`. -/
 theorem abs_clusterCoeff_le (w : ι → K) (Λ : Finset ι) (n : ℕ) :
@@ -173,6 +176,7 @@ theorem abs_clusterCoeff_le (w : ι → K) (Λ : Finset ι) (n : ℕ) :
 
 /-! ## Absolute Konvergenz im Kleinheitsregime -/
 
+omit [DecidableEq ι] in
 /-- **Absolute Summierbarkeit der Cluster-Reihe** unter der
 Kleinheitsbedingung `e · ∑_{γ ∈ Λ} |w γ| < 1`: die Glieder sind durch
 eine geometrische Reihe majorisiert. -/
@@ -191,12 +195,14 @@ theorem summable_abs_clusterCoeff (w : ι → K) (Λ : Finset ι)
           * (Real.exp 1 * ∑ x ∈ Λ, ‖w x‖) ^ n := by
         rw [pow_succ']
 
+omit [DecidableEq ι] in
 /-- Die Cluster-Reihe konvergiert im Kleinheitsregime. -/
 theorem summable_clusterCoeff (w : ι → K) (Λ : Finset ι)
     (h : Real.exp 1 * ∑ x ∈ Λ, ‖w x‖ < 1) :
     Summable fun n => clusterCoeff P w Λ n :=
   Summable.of_norm (summable_abs_clusterCoeff P w Λ h)
 
+omit [DecidableEq ι] in
 /-- **Geometrische Schranke für die Cluster-Reihe** im
 Kleinheitsregime: mit `r = e · ∑_{γ ∈ Λ} |w γ| < 1` gilt
 `|clusterSeries| ≤ r / (1 - r)`. -/

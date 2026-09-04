@@ -370,8 +370,9 @@ theorem sum_partitionsOf_peel (A : Finset J) {a₀ : J} (ha₀ : a₀ ∈ A)
 section Polymer
 
 variable {K : Type*} [RCLike K]
-variable {ι : Type*} (P : PolymerSystem ι)
+variable {ι : Type*} [DecidableEq ι] (P : PolymerSystem ι)
 
+omit [DecidableEq ι] in
 /-- **Fasern nach der Wurzelzerlegung**: die Baumsumme sortiert ihre
 Wurzelbäume nach der Partition, die sie an der Wurzel erzeugen. -/
 theorem treeSum_eq_sum_fiber (w : ι → K) (Λ : Finset ι) (γ₀ : ι) (r : J)
@@ -386,6 +387,7 @@ theorem treeSum_eq_sum_fiber (w : ι → K) (Λ : Finset ι) (γ₀ : ι) (r : J
   exact (Finset.sum_fiberwise_of_maps_to
     (fun _ hp => subtreeOf_image_mem_partitionsOf hp hr) _).symm
 
+omit [DecidableEq ι] in
 /-- **Die Kante zur Wurzel**: der Wert der Belegung an einem Kind der
 Wurzel ist ein mit `γ₀` unverträgliches Polymer aus `Λ` — genau die
 Bedingung, über die die Kotecký-Preiss-Schranke summiert. -/
@@ -401,6 +403,7 @@ theorem val_rootChild_mem_incompNbhd {Λ : Finset ι} {γ₀ : ι} {A : Finset J
   rw [P.symm]
   exact hedge
 
+omit [DecidableEq ι] in
 /-- Die auf einen Block eingeschränkte Belegung ist eine festgenagelte
 Belegung mit frei wählbarem Wurzelwert. -/
 theorem restrictOn_mem_pinnedTuples_pin {Λ : Finset ι} {γ₀ : ι}
@@ -412,6 +415,7 @@ theorem restrictOn_mem_pinnedTuples_pin {Λ : Finset ι} {γ₀ : ι}
     exact hin j (hS hj)
   · rw [restrictOn, if_neg hj]
 
+omit [DecidableEq ι] in
 /-- **Der Teilbaum erbt die Unverträglichkeit**: eingeschränkte
 Elternabbildung und eingeschränkte Belegung erfüllen die
 Kantenbedingung wieder. Die Kante eines Knotens, dessen Elternknoten die
@@ -438,6 +442,7 @@ theorem treeIncompatible_restrict {A : Finset J} {r : J} {p : J → J}
   rw [hqv, hgv, hgp]
   exact hinc v (subtreeOf_subset hvB)
 
+omit [DecidableEq ι] in
 /-- **Der Blockbeitrag eines einzelnen Baumes**: das Gewicht eines Blocks
 unter einer festen Belegung wird vom zugehörigen Faktor der rechten Seite
 dominiert — der Blockfaktor enthält den Summanden mit dem Wurzelkind `c`,
@@ -494,6 +499,7 @@ theorem block_weight_le (w : ι → K) (Λ : Finset ι) (γ₀ : ι) {A : Finset
   rw [← Finset.mul_prod_erase _ _ hcB, ← hSdef]
   exact mul_le_mul_of_nonneg_left htree (norm_nonneg _)
 
+omit [DecidableEq ι] in
 /-- **Die termweise Schranke**: das Gewicht einer einzelnen
 Baum-Belegungs-Paarung wird vom Produkt der Blockfaktoren über der von
 ihr erzeugten Partition dominiert. Das ist die multiplikative Hälfte der
@@ -514,6 +520,7 @@ theorem tree_weight_le_prod_blocks (w : ι → K) (Λ : Finset ι) (γ₀ : ι)
   exact block_weight_le P w Λ γ₀ hp hr hh hinc hc
 
 
+omit [DecidableEq ι] in
 /-- Kern der Induktion: aus der Peel-Ungleichung — Abspalten des Blocks,
 der einen festen Knoten enthält — folgt per Induktion über die
 Knotenzahl die Schranke durch die Partitionssumme der Blockfaktoren. -/
@@ -553,6 +560,7 @@ theorem treeSum_le_sum_partitions_aux (w : ι → K) (Λ : Finset ι) (γ₀ : �
     exact mul_le_mul_of_nonneg_left (IH (A \ B₀) hcard' r hr')
       (blockFactor_nonneg P w Λ γ₀ B₀)
 
+omit [DecidableEq ι] in
 /-- **Die Wurzelzerlegung als Ungleichung**: die Baumsumme ist durch die
 Partitionssumme der Blockfaktoren beschränkt. -/
 theorem treeSum_le_sum_partitions (w : ι → K) (Λ : Finset ι) (γ₀ : ι)

@@ -135,7 +135,7 @@ theorem ursellInt_comp_perm {ι : Type*} (P : PolymerSystem ι) {n : ℕ}
 
 
 variable {K : Type*} [RCLike K]
-variable {ι : Type*} (P : PolymerSystem ι)
+variable {ι : Type*} [DecidableEq ι] (P : PolymerSystem ι)
 
 /-- Die an einer beliebigen Stelle `i` verankerte Ordnungssumme stimmt
 mit der an der ersten Stelle verankerten überein: das Vertauschen von

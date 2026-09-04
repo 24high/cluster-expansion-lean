@@ -33,7 +33,7 @@ open scoped Classical
 namespace ClusterExpansion
 
 variable {K : Type*} [RCLike K]
-variable {ι : Type*} (P : PolymerSystem ι)
+variable {ι : Type*} [DecidableEq ι] (P : PolymerSystem ι)
 
 /-- Der Beitrag einer Ordnung, nach dem Wert der ersten Koordinate
 zerlegt: jedes Tupel ist bei genau einem Polymer verankert. -/
@@ -60,6 +60,7 @@ private theorem sum_div_eq {α : Type*} (s : Finset α) (f : α → ℝ) (c : �
   rw [div_eq_mul_inv, Finset.sum_mul]
   exact Finset.sum_congr rfl fun x _ => (div_eq_mul_inv _ _).symm
 
+omit [DecidableEq ι] in
 /-- **Absolute Konvergenz der Cluster-Reihe unter der
 Kotecký-Preiss-Bedingung**: die scharfe verankerte Schranke summiert
 sich über die Anker zu `∑_{γ ∈ Λ} |w γ| · exp (a γ)`, und das ist
@@ -96,6 +97,7 @@ theorem sum_range_abs_clusterCoeff_le_of_kp (w : ι → K) (a : ι → ℝ)
         Finset.sum_le_sum fun γ₀ hγ₀ =>
           sum_range_pinned_le_of_kp P w a Λ γ₀ hγ₀ hKP N
 
+omit [DecidableEq ι] in
 /-- **Absolute Konvergenz der Cluster-Reihe unter der
 Kotecký-Preiss-Bedingung**. -/
 theorem summable_abs_clusterCoeff_of_kp (w : ι → K) (a : ι → ℝ)
@@ -104,6 +106,7 @@ theorem summable_abs_clusterCoeff_of_kp (w : ι → K) (a : ι → ℝ)
   summable_of_sum_range_le (fun _ => norm_nonneg _)
     (sum_range_abs_clusterCoeff_le_of_kp P w a Λ hKP)
 
+omit [DecidableEq ι] in
 /-- **Volumenlineare Schranke an die Cluster-Reihe** unter der
 Kotecký-Preiss-Bedingung. -/
 theorem abs_clusterSeries_le_of_kp (w : ι → K) (a : ι → ℝ) (Λ : Finset ι)

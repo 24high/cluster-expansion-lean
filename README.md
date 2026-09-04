@@ -36,8 +36,9 @@ the cluster series itself: Ursell functions, the Penrose tree–graph
 bound, the Mayer expansion with its finite cluster recursion, the
 exponential formula identifying `log Z` with the cluster series, the
 sharp Kotecký–Preiss summability estimate, the locality of `log Z` under
-removal of a single polymer, and the existence of the thermodynamic
-limit. Weights may be real or complex throughout.
+removal of a single polymer, the existence of the thermodynamic limit,
+and the analyticity of the free energy in the fugacity. Weights may be
+real or complex throughout.
 
 ## Main results
 
@@ -269,7 +270,39 @@ literally the `K = ℝ` case.
   — the free energy exists. The limit inherits the volume-linear bound
   (`norm_limit_le_of_gkp`) and comes with the tail estimate
   `‖L − clusterSeries Λ‖ ≤ Σ'_γ − Σ_{γ ∈ Λ}` (`norm_limit_sub_le_of_gkp`),
-  which is what one uses to trade a finite volume for the limit.
+  which is what one uses to trade a finite volume for the limit;
+
+- **the fugacity expansion and analyticity of the pressure**
+  (`KPLean/Fugacity.lean`): an order-`n` cluster has `n + 1` polymers, so
+  scaling all weights by a fugacity `z` scales the order-`n` term by
+  `z^(n+1)` (`clusterOrderSum_scale`). The cluster series is therefore a
+  genuine power series in `z` with `z`-free coefficients
+  (`fugacityCoeff`); the Kotecký–Preiss condition survives scaling by
+  `‖z‖ ≤ 1` (`KPCondition.scale`), so everything above holds on the whole
+  closed unit disc, and the series has radius of convergence `≥ 1`
+  (`one_le_radius_fugacitySeries`) — **uniformly in the volume**. Hence
+  `z ↦ clusterSeries (z·w) Λ` is analytic on the open disc
+  (`hasFPowerSeriesOnBall_clusterSeries`, `analyticOnNhd_clusterSeries`),
+  and for real weights so is `log Z` (`analyticOnNhd_log_Z`);
+
+- **analyticity of the free energy in the thermodynamic limit**
+  (`KPLean/LimitAnalyticity.lean`): the volume-difference bound is
+  uniform in `z` on the disc, so the convergence to the limit is uniform
+  there (`tendstoUniformlyOn_clusterSeries`). By the Weierstrass
+  convergence theorem the limit is holomorphic, hence analytic:
+
+  `AnalyticOnNhd ℂ (clusterLimit P w) (eball 0 1)`
+
+  (`analyticOnNhd_clusterLimit`). In the Kotecký–Preiss regime the
+  pressure is an analytic function of the activity — no phase
+  transition. This is what every volume-independent bound above was for.
+
+None of this is vacuous: `KPLean/Examples.lean` exhibits a polymer
+system and weights satisfying every hypothesis, and applies each
+headline theorem to them. It also checks the definition of `Z` against
+the value one computes by hand — in the *free* system, where only a
+polymer is incompatible with itself, `Z Λ = ∏_{γ ∈ Λ} (1 + w γ)`
+(`Z_freeSystem`).
 
 The hierarchy is strict: a single self-incompatible polymer of weight
 `1/2` satisfies the Dobrushin condition with `μ = 1`, while
@@ -309,6 +342,9 @@ The toolchain (`lean-toolchain`) and the mathlib revision
 | `KPLean/UrsellSymmetry.lean` | invariance of the Ursell sum under relabelling; symmetry of the Ursell function |
 | `KPLean/Locality.lean` | the volume-independent effect of removing one polymer on `log Z` |
 | `KPLean/ThermodynamicLimit.lean` | the global KP condition, the volume-difference bound, convergence of `log Z` and bounds on the limit |
+| `KPLean/Fugacity.lean` | homogeneity in the fugacity, the power series, radius `≥ 1`, analyticity in finite volume |
+| `KPLean/LimitAnalyticity.lean` | uniform convergence on the disc; analyticity of the free energy in the thermodynamic limit |
+| `KPLean/Examples.lean` | the free polymer system, `Z = ∏ (1 + w)`, and a worked instance of every headline theorem |
 | `paper/kp-formalisation.tex` | LaTeX note describing the formalisation |
 
 ## Background
@@ -352,7 +388,8 @@ intended.
 ## Roadmap
 
 Every milestone the roadmap set out is formalised, up to and including
-locality, complex weights and the thermodynamic limit. See
+locality, complex weights, the thermodynamic limit and analyticity of
+the free energy. See
 [`ROADMAP.md`](ROADMAP.md) for the full list with the relevant theorem
 names, and for the natural continuations.
 

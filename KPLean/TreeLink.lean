@@ -134,7 +134,6 @@ theorem treeCount_le_card_rootedTrees {n : ℕ}
 
 /-! ## Ursell-Betragssumme unter der Baumsumme -/
 
-omit [DecidableEq ι] in
 /-- **Die Ursell-Betragssumme unter der Baumsumme**: der bei `γ₀`
 verankerte Betrags-Beitrag der Ordnung `n + 1` ist durch `‖w γ₀‖` mal
 dem Baumkoeffizienten beschränkt.
