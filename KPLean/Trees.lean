@@ -372,6 +372,106 @@ theorem treeTrunc_le_exp (w : ι → ℝ) (a : ι → ℝ) (Λ : Finset ι)
       exact mul_le_mul_of_nonneg_left (IH δ hδΛ) (abs_nonneg _)
     exact (hpow.trans hexpS).trans (Real.exp_le_exp.mpr hSle)
 
+/-! ## Die Rekursionsungleichung
+
+Zerlegung an der Wurzel und Umbenennungsinvarianz zusammen mit der
+Multinomialzählung `sum_partitionsOf_card` ergeben die
+Rekursionsungleichung, die die Kotecký-Preiss-Induktion antreibt. -/
+
+
+/-- Das Blockfunktional der Rekursion: der Beitrag eines Blocks der
+Größe `m`, in dem jeder seiner `m` Knoten die Wurzel des Teilbaums sein
+kann. -/
+noncomputable def blockTerm (w : ι → ℝ) (Λ : Finset ι) (γ₀ : ι) (m : ℕ) : ℝ :=
+  (m : ℝ) * ∑ δ ∈ incompNbhd P Λ γ₀, |w δ| * treeCoeff P w Λ δ (m - 1)
+
+omit [DecidableEq ι] [DecidableEq J] [Fintype J] in
+/-- Normiert ist das Blockfunktional genau der Nachbarterm. -/
+theorem blockTerm_div (w : ι → ℝ) (Λ : Finset ι) (γ₀ : ι) {m : ℕ}
+    (hm : m ≠ 0) :
+    blockTerm P w Λ γ₀ m / (Nat.factorial m : ℝ) = nbhdTerm P w Λ γ₀ m := by
+  obtain ⟨j, rfl⟩ : ∃ j, m = j + 1 := ⟨m - 1, by omega⟩
+  unfold blockTerm nbhdTerm
+  rw [Nat.factorial_succ, Nat.add_sub_cancel]
+  push_cast
+  have hj1 : ((j : ℝ) + 1) ≠ 0 := by positivity
+  rw [mul_div_mul_left _ _ hj1, div_eq_mul_inv, Finset.sum_mul]
+  refine Finset.sum_congr rfl fun δ _ => ?_
+  rw [div_eq_mul_inv, mul_assoc]
+
+omit [DecidableEq ι] [DecidableEq J] [Fintype J] in
+/-- **Die Rekursionsungleichung** für die Baumkoeffizienten: aus der
+Zerlegung an der Wurzel und der Umbenennungsinvarianz folgt, dass der
+normierte Baumkoeffizient der Ordnung `n` durch die nach Blockzahl und
+Größenprofil sortierte Kompositionssumme der Nachbarterme beschränkt
+ist. -/
+theorem treeCoeff_div_le (w : ι → ℝ) (Λ : Finset ι) (γ₀ : ι) (n : ℕ)
+    (hDecomp : treeSum P w Λ γ₀ (0 : Fin (n + 1)) (Finset.univ.erase 0)
+      ≤ ∑ C ∈ partitionsOf (Finset.univ.erase (0 : Fin (n + 1))), ∏ B ∈ C,
+          ∑ c ∈ B, ∑ δ ∈ incompNbhd P Λ γ₀,
+            |w δ| * treeSum P w Λ δ c (B.erase c))
+    (hRelabel : ∀ {J : Type} [DecidableEq J] [Fintype J] (δ : ι)
+      (B : Finset J) (c : J), c ∈ B →
+      treeSum P w Λ δ c (B.erase c) = treeCoeff P w Λ δ (B.card - 1)) :
+    treeCoeff P w Λ γ₀ n / (Nat.factorial n : ℝ)
+      ≤ ∑ k ∈ Finset.range (n + 1), (Nat.factorial k : ℝ)⁻¹ *
+          ∑ c ∈ compositionsF n k, ∏ j, nbhdTerm P w Λ γ₀ (c j) := by
+  have hcard : (Finset.univ.erase (0 : Fin (n + 1))).card = n := by
+    rw [Finset.card_erase_of_mem (Finset.mem_univ _), Finset.card_univ,
+      Fintype.card_fin]
+    omega
+  -- Blockweise: die innere Doppelsumme ist das Blockfunktional.
+  have hblock : ∀ (C : Finset (Finset (Fin (n + 1)))),
+      (∀ B ∈ C, B.Nonempty) →
+      ∏ B ∈ C, (∑ c ∈ B, ∑ δ ∈ incompNbhd P Λ γ₀,
+          |w δ| * treeSum P w Λ δ c (B.erase c))
+        = ∏ B ∈ C, blockTerm P w Λ γ₀ B.card := by
+    intro C hne
+    refine Finset.prod_congr rfl fun B hB => ?_
+    have hval : ∀ c ∈ B, ∑ δ ∈ incompNbhd P Λ γ₀,
+        |w δ| * treeSum P w Λ δ c (B.erase c)
+          = ∑ δ ∈ incompNbhd P Λ γ₀,
+              |w δ| * treeCoeff P w Λ δ (B.card - 1) := by
+      intro c hc
+      exact Finset.sum_congr rfl fun δ _ => by rw [hRelabel δ B c hc]
+    rw [Finset.sum_congr rfl hval, Finset.sum_const, nsmul_eq_mul]
+    rfl
+  -- Die Multinomialzählung anwenden.
+  have hstep : treeCoeff P w Λ γ₀ n
+      ≤ ∑ k ∈ Finset.range (n + 1), (Nat.factorial k : ℝ)⁻¹ *
+          ∑ c ∈ compositionsF n k,
+            ((Nat.factorial n : ℝ) / ∏ j, (Nat.factorial (c j) : ℝ)) *
+              ∏ j, blockTerm P w Λ γ₀ (c j) := by
+    unfold treeCoeff
+    refine hDecomp.trans (le_of_eq ?_)
+    have hcongr : ∑ C ∈ partitionsOf (Finset.univ.erase (0 : Fin (n + 1))),
+        ∏ B ∈ C, (∑ c ∈ B, ∑ δ ∈ incompNbhd P Λ γ₀,
+            |w δ| * treeSum P w Λ δ c (B.erase c))
+        = ∑ C ∈ partitionsOf (Finset.univ.erase (0 : Fin (n + 1))),
+            ∏ B ∈ C, blockTerm P w Λ γ₀ B.card := by
+      refine Finset.sum_congr rfl fun C hC => ?_
+      obtain ⟨-, hICC, -⟩ := mem_partitionsOf.mp hC
+      exact hblock C hICC.1
+    rw [hcongr, sum_partitionsOf_card, hcard]
+  -- Durch `n!` teilen und die Fakultäten in die Produkte ziehen.
+  rw [div_le_iff₀ (by positivity : (0 : ℝ) < (Nat.factorial n : ℝ))]
+  refine hstep.trans (le_of_eq ?_)
+  rw [Finset.sum_mul]
+  refine Finset.sum_congr rfl fun k _ => ?_
+  rw [mul_assoc, Finset.sum_mul]
+  congr 1
+  refine Finset.sum_congr rfl fun c hc => ?_
+  obtain ⟨hpos, -⟩ := mem_compositionsF.mp hc
+  have hfacne : (∏ j, (Nat.factorial (c j) : ℝ)) ≠ 0 :=
+    Finset.prod_ne_zero_iff.mpr fun j _ =>
+      Nat.cast_ne_zero.mpr (Nat.factorial_ne_zero _)
+  have hterm : ∏ j, nbhdTerm P w Λ γ₀ (c j)
+      = (∏ j, blockTerm P w Λ γ₀ (c j)) / ∏ j, (Nat.factorial (c j) : ℝ) := by
+    rw [← Finset.prod_div_distrib]
+    exact Finset.prod_congr rfl fun j _ => (blockTerm_div P w Λ γ₀ (hpos j)).symm
+  rw [hterm]
+  field_simp
+
 /-! ## Die scharfe Summierbarkeitsschranke -/
 
 omit [DecidableEq ι] [DecidableEq J] [Fintype J] in
