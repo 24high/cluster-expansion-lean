@@ -60,7 +60,10 @@ bound proportional to the weight of the anchoring polymer, uniformly in
 the volume; and it is then identified with $\log Z$ itself — the
 exponential formula $Z = \exp(\text{cluster series})$ in that regime,
 whose combinatorial core, the multinomial count of set partitions by
-block sizes, is proved from scratch.
+block sizes, is proved from scratch. A sharp summability estimate then
+removes the smallness hypothesis, so that the Kotecký--Preiss condition
+alone yields nonvanishing, positivity, absolute convergence of the
+series and its identification with $\log Z$.
 An earlier version of this note claimed that the sum form was not
 obtainable from the product form; the formalisation of the comparison
 argument corrected this, and we document both the error and its repair.
@@ -124,8 +127,12 @@ $\log Z$ in the same regime and so upgrades the volume-linear bounds of
 Theorem~\ref{thm:log} to an exact expansion. Ninth, the sharp
 Kotecký--Preiss summability estimate (Theorem~\ref{thm:sharp}), which
 replaces the smallness hypothesis by the Kotecký--Preiss condition
-itself (Section~\ref{sec:sharp}). The development is about 7500 lines of Lean in
-eleven files, compiles against current \textsf{mathlib}, and contains no
+itself (Section~\ref{sec:sharp}). Tenth, the removal of the smallness
+hypothesis from the exponential formula (Theorem~\ref{thm:kpexp}), so
+that a single condition carries nonvanishing, positivity, the
+convergence of the series and its identification with $\log Z$
+(Section~\ref{sec:kpexp}). The development is about 7700 lines of Lean in
+twelve files, compiles against current \textsf{mathlib}, and contains no
 \texttt{sorry} placeholders.
 Section~\ref{sec:kp} documents a claim made in an earlier version of this
 note that the formalisation subsequently refuted.
@@ -222,7 +229,8 @@ the exponential formula in \texttt{Exponential.lean}, and the sharp
 Kotecký--Preiss estimate across \texttt{Trees.lean},
 \texttt{TreeDecomp.lean}, \texttt{TreePeel.lean},
 \texttt{TreeRelabel.lean}, \texttt{TreeLink.lean} and
-\texttt{SharpKP.lean}. We record the design decisions that shaped
+\texttt{SharpKP.lean}, with the removal of the smallness hypothesis in
+\texttt{KPExponential.lean}. We record the design decisions that shaped
 the core.
 
 \subsection{Decidability by construction}
@@ -768,6 +776,37 @@ replaces the neighbour terms by $e^{a(\delta)}$, and the Kotecký--Preiss
 condition contracts $S$ to $a(\gamma_0)$
 (\texttt{treeTrunc\_le\_exp}).
 \end{proof}
+
+\section{Removing the smallness hypothesis}\label{sec:kpexp}
+
+Theorem~\ref{thm:exp} identifies the series with $\log Z$ when the total
+weight is small; Theorem~\ref{thm:sharp} controls the same series under
+the weaker Kotecký--Preiss condition. The two meet.
+
+\begin{theorem}[\texttt{log\_Z\_eq\_clusterSeries\_of\_kp},
+\texttt{Z\_pos\_of\_kp}]\label{thm:kpexp}
+Under the hypothesis of Theorem~\ref{thm:kp},
+\[
+  Z(\Lambda) = \exp\Bigl(\sum_{n \ge 0} c_n\Bigr) > 0,
+  \qquad
+  \log Z(\Lambda) = \sum_{n \ge 0} c_n .
+\]
+\end{theorem}
+
+No analytic continuation is involved. Smallness entered the proof of
+Theorem~\ref{thm:exp} at exactly two points --- the expansion of $\exp$
+into compositions, and the resummation of the shifted coefficient
+sequence --- and both want nothing beyond absolute convergence of the
+series, so the hypotheses are weakened in place rather than the argument
+rerun. Absolute convergence under the Kotecký--Preiss condition follows
+from Theorem~\ref{thm:sharp} by fibring each order over the value of its
+first coordinate --- every tuple is anchored at exactly one polymer ---
+and summing the anchored bound over the anchors
+(\texttt{summable\_abs\_clusterCoeff\_of\_kp}); the resulting constant,
+$\sum_{\gamma \in \Lambda} \lvert w(\gamma)\rvert e^{a(\gamma)}$, is the
+same volume-linear quantity that Theorem~\ref{thm:log} already bounds
+$\lvert \log \lvert Z\rvert \rvert$ by. As a by-product the
+nonvanishing of Theorem~\ref{thm:kp} sharpens to positivity.
 
 \section{A corrected claim}\label{sec:kp}
 
