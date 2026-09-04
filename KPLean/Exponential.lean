@@ -291,6 +291,74 @@ theorem card_le_of_mem_compositionsF {m k : ℕ} {c : Fin k → ℕ}
     _ ≤ ∑ i, c i := Finset.sum_le_sum fun i _ => Nat.one_le_iff_ne_zero.mpr (hpos i)
     _ = m := hsum
 
+omit [DecidableEq ι] [Fintype J] in
+/-- Die Blockgrößen einer Partition addieren sich zur Kardinalität der
+Grundmenge. -/
+theorem sum_card_of_mem_partitionsOf {A : Finset J} {C : Finset (Finset J)}
+    (hC : C ∈ partitionsOf A) : ∑ B ∈ C, B.card = A.card := by
+  obtain ⟨-, hICC, hsup⟩ := mem_partitionsOf.mp hC
+  rw [← hsup, sup_id_eq_biUnion]
+  exact (Finset.card_biUnion fun x hx y hy hxy => hICC.2 x hx y hy hxy).symm
+
+omit [DecidableEq ι] [Fintype J] in
+/-- Eine Partition von `A` hat höchstens `|A|` Blöcke: die Blöcke sind
+nichtleer, ihre Größen addieren sich zu `|A|`. -/
+theorem card_le_of_mem_partitionsOf {A : Finset J} {C : Finset (Finset J)}
+    (hC : C ∈ partitionsOf A) : C.card ≤ A.card := by
+  obtain ⟨-, hICC, -⟩ := mem_partitionsOf.mp hC
+  calc C.card = ∑ _B ∈ C, 1 := by rw [Finset.sum_const, smul_eq_mul, mul_one]
+    _ ≤ ∑ B ∈ C, B.card :=
+        Finset.sum_le_sum fun B hB => Finset.card_pos.mpr (hICC.1 B hB)
+    _ = A.card := sum_card_of_mem_partitionsOf hC
+
+/-! ## Geordnete Partitionen -/
+
+/-- Geordnete Partitionen: `k`-Tupel paarweise disjunkter, nichtleerer
+Blöcke mit Vereinigung `A`. -/
+noncomputable def orderedPartitionsF (A : Finset J) (k : ℕ) :
+    Finset (Fin k → Finset J) :=
+  (Fintype.piFinset fun _ : Fin k => A.powerset).filter
+    (fun T => (∀ i, (T i).Nonempty) ∧ (∀ i j, i ≠ j → Disjoint (T i) (T j)) ∧
+      Finset.univ.sup T = A)
+
+omit [DecidableEq ι] [Fintype J] in
+theorem mem_orderedPartitionsF {A : Finset J} {k : ℕ} {T : Fin k → Finset J} :
+    T ∈ orderedPartitionsF A k
+      ↔ (∀ i, (T i).Nonempty) ∧ (∀ i j, i ≠ j → Disjoint (T i) (T j)) ∧
+          Finset.univ.sup T = A := by
+  unfold orderedPartitionsF
+  rw [Finset.mem_filter, Fintype.mem_piFinset]
+  constructor
+  · rintro ⟨-, hne, hdisj, hsup⟩
+    exact ⟨hne, hdisj, hsup⟩
+  · rintro ⟨hne, hdisj, hsup⟩
+    refine ⟨fun i => Finset.mem_powerset.mpr ?_, hne, hdisj, hsup⟩
+    rw [← hsup]
+    exact Finset.le_sup (Finset.mem_univ i)
+
+omit [DecidableEq ι] [Fintype J] in
+/-- Die Blockgrößen einer geordneten Partition addieren sich zur
+Kardinalität der Grundmenge. -/
+theorem sum_card_of_mem_orderedPartitionsF {A : Finset J} {k : ℕ}
+    {T : Fin k → Finset J} (hT : T ∈ orderedPartitionsF A k) :
+    ∑ i, (T i).card = A.card := by
+  obtain ⟨-, hdisj, hsup⟩ := mem_orderedPartitionsF.mp hT
+  have hbi : Finset.univ.sup T = Finset.univ.biUnion T :=
+    Finset.sup_eq_biUnion Finset.univ T
+  rw [← hsup, hbi]
+  exact (Finset.card_biUnion fun x _ y _ hxy => hdisj x y hxy).symm
+
+omit [DecidableEq ι] [Fintype J] in
+/-- Die Blockgrößen einer geordneten Partition bilden eine Komposition
+von `|A|`. -/
+theorem card_mem_compositionsF {A : Finset J} {k : ℕ}
+    {T : Fin k → Finset J} (hT : T ∈ orderedPartitionsF A k) :
+    (fun i => (T i).card) ∈ compositionsF A.card k := by
+  obtain ⟨hne, -, -⟩ := mem_orderedPartitionsF.mp hT
+  exact mem_compositionsF.mpr
+    ⟨fun i => (Finset.card_pos.mpr (hne i)).ne',
+     sum_card_of_mem_orderedPartitionsF hT⟩
+
 /-! ## Die Partitionsidentität des Unabhängigkeits-Indikators -/
 
 omit [DecidableEq ι] [Fintype J] in
