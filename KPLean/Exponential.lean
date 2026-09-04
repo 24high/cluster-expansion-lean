@@ -1539,18 +1539,24 @@ theorem abs_seriesSeq_le (w : ι → ℝ) (Λ : Finset ι) (j : ℕ) :
     exact abs_clusterCoeff_le P w Λ n
 
 omit [DecidableEq ι] [DecidableEq J] [Fintype J] in
+/-- Absolute Summierbarkeit der Reihenglieder überträgt sich auf die
+verschobene Folge: das nullte Glied ist null. -/
+theorem summable_abs_seriesSeq (w : ι → ℝ) (Λ : Finset ι)
+    (h : Summable fun n => |clusterCoeff P w Λ n|) :
+    Summable fun j => |seriesSeq P w Λ j| := by
+  refine (summable_nat_add_iff 1).mp (h.congr fun n => ?_)
+  rw [seriesSeq_succ]
+
+omit [DecidableEq ι] [DecidableEq J] [Fintype J] in
 theorem summable_seriesSeq (w : ι → ℝ) (Λ : Finset ι)
-    (h : Real.exp 1 * ∑ x ∈ Λ, |w x| < 1) :
-    Summable fun j => seriesSeq P w Λ j := by
-  have hr0 : (0 : ℝ) ≤ Real.exp 1 * ∑ x ∈ Λ, |w x| :=
-    mul_nonneg (Real.exp_pos 1).le (Finset.sum_nonneg fun x _ => abs_nonneg _)
-  exact Summable.of_abs (Summable.of_nonneg_of_le (fun j => abs_nonneg _)
-    (fun j => abs_seriesSeq_le P w Λ j) (summable_geometric_of_lt_one hr0 h))
+    (h : Summable fun n => |clusterCoeff P w Λ n|) :
+    Summable fun j => seriesSeq P w Λ j :=
+  Summable.of_abs (summable_abs_seriesSeq P w Λ h)
 
 omit [DecidableEq ι] [DecidableEq J] [Fintype J] in
 /-- Die verschobene Folge summiert sich zur Cluster-Reihe. -/
 theorem tsum_seriesSeq (w : ι → ℝ) (Λ : Finset ι)
-    (h : Real.exp 1 * ∑ x ∈ Λ, |w x| < 1) :
+    (h : Summable fun n => |clusterCoeff P w Λ n|) :
     ∑' j, seriesSeq P w Λ j = clusterSeries P w Λ := by
   rw [(summable_seriesSeq P w Λ h).tsum_eq_zero_add, seriesSeq_zero, zero_add]
   unfold clusterSeries
@@ -1686,14 +1692,11 @@ theorem tsum_compositions_abs (u : ℕ → ℝ) (hu0 : u 0 = 0)
 /-- **Der analytische Exponentialschritt**: `exp` einer absolut
 konvergenten Reihe ist die nach dem Gesamtgewicht `m` umgruppierte
 Kompositionssumme. -/
-theorem exp_tsum_eq (v : ℕ → ℝ) (hv0 : v 0 = 0) {r : ℝ} (hr0 : 0 ≤ r)
-    (hr1 : r < 1) (hbound : ∀ j, |v j| ≤ r ^ j) :
+theorem exp_tsum_eq (v : ℕ → ℝ) (hv0 : v 0 = 0)
+    (habs : Summable fun j => |v j|) :
     Real.exp (∑' j, v j)
       = ∑' m, ∑ k ∈ Finset.range (m + 1), (Nat.factorial k : ℝ)⁻¹ *
           ∑ c ∈ compositionsF m k, ∏ i, v (c i) := by
-  have habs : Summable fun j => |v j| :=
-    Summable.of_nonneg_of_le (fun j => abs_nonneg _) hbound
-      (summable_geometric_of_lt_one hr0 hr1)
   have hfac : ∀ k : ℕ, (0 : ℝ) ≤ (Nat.factorial k : ℝ)⁻¹ := fun k =>
     inv_nonneg.mpr (Nat.cast_nonneg _)
   -- Summierbarkeit der Betrags-Majorante über dem Produktgitter.
@@ -1787,17 +1790,15 @@ die Schichtzählung (`Z_eq_sum_tupleZ`) summiert die Schichten zu `Z`.
 Die Reihe bricht bei `|Λ|` ab, weil es keine größeren unabhängigen
 Mengen gibt. -/
 theorem exp_clusterSeries_eq_Z (w : ι → ℝ) (Λ : Finset ι)
-    (hsmall : Real.exp 1 * ∑ x ∈ Λ, |w x| < 1) :
+    (hconv : Summable fun n => |clusterCoeff P w Λ n|) :
     Real.exp (clusterSeries P w Λ) = Z P w Λ := by
   rcases Λ.eq_empty_or_nonempty with rfl | hne
   · rw [clusterSeries_empty, Real.exp_zero, Z_empty]
   obtain ⟨γstar, -⟩ := hne
-  have hr0 : (0 : ℝ) ≤ Real.exp 1 * ∑ x ∈ Λ, |w x| :=
-    mul_nonneg (Real.exp_pos 1).le (Finset.sum_nonneg fun x _ => abs_nonneg _)
   -- Schritt 1: `exp` der Reihe als umgruppierte Kompositionssumme.
-  have hexp := exp_tsum_eq (seriesSeq P w Λ) (seriesSeq_zero P w Λ) hr0 hsmall
-    (abs_seriesSeq_le P w Λ)
-  rw [tsum_seriesSeq P w Λ hsmall] at hexp
+  have hexp := exp_tsum_eq (seriesSeq P w Λ) (seriesSeq_zero P w Λ)
+    (summable_abs_seriesSeq P w Λ hconv)
+  rw [tsum_seriesSeq P w Λ hconv] at hexp
   -- Schritt 2: das `m`-te Glied ist `tupleZ (univ : Fin m) / m!`.
   have hterm : ∀ m : ℕ,
       (∑ k ∈ Finset.range (m + 1), (Nat.factorial k : ℝ)⁻¹ *
@@ -1857,10 +1858,10 @@ omit [DecidableEq J] [Fintype J] in
 /-- Im Kleinheitsregime ist die Zustandssumme strikt positiv — sie ist
 ein Exponential. Insbesondere ist sie nichtnull, ohne Umweg über die
 Konvergenzkriterien. -/
-theorem Z_pos_of_small (w : ι → ℝ) (Λ : Finset ι)
-    (hsmall : Real.exp 1 * ∑ x ∈ Λ, |w x| < 1) :
+theorem Z_pos_of_summable (w : ι → ℝ) (Λ : Finset ι)
+    (hconv : Summable fun n => |clusterCoeff P w Λ n|) :
     0 < Z P w Λ := by
-  rw [← exp_clusterSeries_eq_Z P w Λ hsmall]
+  rw [← exp_clusterSeries_eq_Z P w Λ hconv]
   exact Real.exp_pos _
 
 omit [DecidableEq J] [Fintype J] in
@@ -1869,8 +1870,30 @@ Logarithmus der Zustandssumme mit der Cluster-Reihe überein. Zusammen
 mit `abs_clusterSeries_le` liefert das die volumenlineare Kontrolle von
 `log Z` direkt aus der Reihe. -/
 theorem log_Z_eq_clusterSeries (w : ι → ℝ) (Λ : Finset ι)
-    (hsmall : Real.exp 1 * ∑ x ∈ Λ, |w x| < 1) :
+    (hconv : Summable fun n => |clusterCoeff P w Λ n|) :
     Real.log (Z P w Λ) = clusterSeries P w Λ := by
-  rw [← exp_clusterSeries_eq_Z P w Λ hsmall, Real.log_exp]
+  rw [← exp_clusterSeries_eq_Z P w Λ hconv, Real.log_exp]
+
+omit [DecidableEq J] [Fintype J] in
+/-- **Die Exponentialformel im Kleinheitsregime**: für
+`e · ∑_Λ |w| < 1` ist `Z` das Exponential der Cluster-Reihe. -/
+theorem exp_clusterSeries_eq_Z_of_small (w : ι → ℝ) (Λ : Finset ι)
+    (hsmall : Real.exp 1 * ∑ x ∈ Λ, |w x| < 1) :
+    Real.exp (clusterSeries P w Λ) = Z P w Λ :=
+  exp_clusterSeries_eq_Z P w Λ (summable_abs_clusterCoeff P w Λ hsmall)
+
+omit [DecidableEq J] [Fintype J] in
+/-- Im Kleinheitsregime ist die Zustandssumme strikt positiv. -/
+theorem Z_pos_of_small (w : ι → ℝ) (Λ : Finset ι)
+    (hsmall : Real.exp 1 * ∑ x ∈ Λ, |w x| < 1) :
+    0 < Z P w Λ :=
+  Z_pos_of_summable P w Λ (summable_abs_clusterCoeff P w Λ hsmall)
+
+omit [DecidableEq J] [Fintype J] in
+/-- **`log Z` ist die Cluster-Reihe** im Kleinheitsregime. -/
+theorem log_Z_eq_clusterSeries_of_small (w : ι → ℝ) (Λ : Finset ι)
+    (hsmall : Real.exp 1 * ∑ x ∈ Λ, |w x| < 1) :
+    Real.log (Z P w Λ) = clusterSeries P w Λ :=
+  log_Z_eq_clusterSeries P w Λ (summable_abs_clusterCoeff P w Λ hsmall)
 
 end ClusterExpansion

@@ -14,3 +14,4 @@ import KPLean.TreeRelabel
 import KPLean.TreeLink
 import KPLean.TreePeel
 import KPLean.SharpKP
+import KPLean.KPExponential
