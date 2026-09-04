@@ -214,11 +214,15 @@ Nonvanishing follows by applying the ratio bound at any single polymer.
 
 \section{The formalisation}
 
-The development lives in four files inside a Lean~4 project depending on
-\textsf{mathlib}: the criteria core in \texttt{ClusterExpansion.lean}, the
-Penrose scheme in \texttt{Ursell.lean}, the Mayer layer in
-\texttt{Mayer.lean}, and the analytic layer in
-\texttt{ClusterSeries.lean}. We record the design decisions that shaped
+The development lives in eleven files inside a Lean~4 project depending
+on \textsf{mathlib}: the criteria core in \texttt{ClusterExpansion.lean},
+the Penrose scheme in \texttt{Ursell.lean}, the Mayer layer in
+\texttt{Mayer.lean}, the analytic layer in \texttt{ClusterSeries.lean},
+the exponential formula in \texttt{Exponential.lean}, and the sharp
+Kotecký--Preiss estimate across \texttt{Trees.lean},
+\texttt{TreeDecomp.lean}, \texttt{TreePeel.lean},
+\texttt{TreeRelabel.lean}, \texttt{TreeLink.lean} and
+\texttt{SharpKP.lean}. We record the design decisions that shaped
 the core.
 
 \subsection{Decidability by construction}
