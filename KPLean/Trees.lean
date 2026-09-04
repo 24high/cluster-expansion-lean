@@ -151,4 +151,41 @@ theorem treeSum_empty (w : ι → ℝ) (Λ : Finset ι) (γ₀ : ι) (r : J) :
   intro v hv
   exact absurd hv (Finset.notMem_empty v)
 
+/-! ## Der kanonische Baumkoeffizient
+
+Alle Baumsummen mit `n` Nichtwurzelknoten stimmen überein — die
+Knotenmenge geht nur über ihre Kardinalität ein. Als Normalform dient
+die Baumsumme über `Fin (n+1)` mit Wurzel `0`. -/
+
+/-- Der Baumkoeffizient der Ordnung `n`: die gewichtete Baumsumme über
+`n` Nichtwurzelknoten mit Wurzelwert `δ`. -/
+noncomputable def treeCoeff (w : ι → ℝ) (Λ : Finset ι) (δ : ι) (n : ℕ) : ℝ :=
+  treeSum P w Λ δ (0 : Fin (n + 1)) (Finset.univ.erase 0)
+
+omit [DecidableEq ι] [DecidableEq J] [Fintype J] in
+theorem treeCoeff_nonneg (w : ι → ℝ) (Λ : Finset ι) (δ : ι) (n : ℕ) :
+    0 ≤ treeCoeff P w Λ δ n :=
+  treeSum_nonneg P w Λ δ _ _
+
+omit [DecidableEq ι] [DecidableEq J] [Fintype J] in
+/-- Ordnung `0`: nur die Wurzel, also der Wert `1`. -/
+theorem treeCoeff_zero (w : ι → ℝ) (Λ : Finset ι) (δ : ι) :
+    treeCoeff P w Λ δ 0 = 1 := by
+  unfold treeCoeff
+  have hempty : (Finset.univ.erase (0 : Fin 1)) = (∅ : Finset (Fin 1)) := by
+    rw [Finset.eq_empty_iff_forall_notMem]
+    intro v hv
+    exact (Finset.mem_erase.mp hv).1 (Subsingleton.elim v 0)
+  rw [hempty, treeSum_empty]
+
+/-- Die mit `γ₀` unverträglichen Polymere von `Λ` — die Nachbarschaft,
+über die die Kotecký-Preiss-Bedingung summiert. -/
+noncomputable def incompNbhd (Λ : Finset ι) (γ₀ : ι) : Finset ι :=
+  Λ.filter (fun δ => P.incomp γ₀ δ = true)
+
+omit [DecidableEq ι] [DecidableEq J] [Fintype J] in
+theorem mem_incompNbhd {Λ : Finset ι} {γ₀ δ : ι} :
+    δ ∈ incompNbhd P Λ γ₀ ↔ δ ∈ Λ ∧ P.incomp γ₀ δ = true :=
+  Finset.mem_filter
+
 end ClusterExpansion
