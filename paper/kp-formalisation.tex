@@ -17,7 +17,7 @@
 \title[Machine-checked convergence criteria]{Machine-checked convergence
 criteria for abstract polymer systems}
 \author{Dennis Michael Heine}
-\date{September 3, 2026. \emph{Preliminary draft.}}
+\date{September 4, 2026. \emph{Preliminary draft.}}
 
 \begin{document}
 
@@ -52,13 +52,15 @@ Z(\Lambda \setminus B)$ — the exponential structure of the expansion —
 over arbitrary commutative rings, together with its closed iterate, the
 cluster factorisation of $Z$ over collections of pairwise disjoint
 clusters — the finite exponential formula in set form. On the analytic
-side, the cluster series of $\log Z$ is defined as a genuine infinite
-sum over orders and proved absolutely convergent in the small-weight
-regime
+side, the cluster series is defined as a genuine infinite sum over
+orders, proved absolutely convergent in the small-weight regime
 $e \sum_{\Lambda} \lvert w \rvert < 1$, with geometric term bounds via a
 root-tree count extracted from the Penrose scheme, and with an anchored
 bound proportional to the weight of the anchoring polymer, uniformly in
-the volume.
+the volume; and it is then identified with $\log Z$ itself — the
+exponential formula $Z = \exp(\text{cluster series})$ in that regime,
+whose combinatorial core, the multinomial count of set partitions by
+block sizes, is proved from scratch.
 An earlier version of this note claimed that the sum form was not
 obtainable from the product form; the formalisation of the comparison
 argument corrected this, and we document both the error and its repair.
@@ -116,9 +118,12 @@ and the finite cluster recursion — the exponential structure of the
 expansion — over arbitrary commutative rings
 (Section~\ref{sec:mayer}). Seventh, the cluster series of $\log Z$ as an
 analytic object, with absolute convergence and anchored bounds in the
-small-weight regime (Section~\ref{sec:series}). The development is about
-3600 lines of Lean in four files, compiles against current
-\textsf{mathlib}, and contains no \texttt{sorry} placeholders.
+small-weight regime (Section~\ref{sec:series}). Eighth, the exponential
+formula (Theorem~\ref{thm:exp}), which identifies that series with
+$\log Z$ in the same regime and so upgrades the volume-linear bounds of
+Theorem~\ref{thm:log} to an exact expansion. The development is about 5400 lines of Lean in
+five files, compiles against current \textsf{mathlib}, and contains no
+\texttt{sorry} placeholders.
 Section~\ref{sec:kp} documents a claim made in an earlier version of this
 note that the formalisation subsequently refuted.
 
@@ -533,14 +538,10 @@ A companion \emph{bridge lemma} (\texttt{ursellInt\_eq\_ursellSetSum})
 identifies the tuple-level Ursell function of an injective tuple with
 the set-level sign sum $\varphi$ of its image, via the sign-preserving
 relabelling bijection $G \mapsto \mathrm{Sym}^2(\gamma)(G)$ of
-summation ranges. What remains for the full expansion of $\log Z$ is
-the symmetrisation of Theorem~\ref{thm:fact} over labelled tuples
-(with repeats) and the log/exp
-identification, together with the sharp Kotecký--Preiss summability
-estimate over clusters, for which Theorem~\ref{thm:penrose} supplies
-the tree--graph input. The first analytic step, the series itself and
-its convergence in the small-weight regime, is formalised in
-Section~\ref{sec:series}.
+summation ranges. Together with the symmetrisation over labelled
+tuples these two feed the exponential formula of
+Section~\ref{sec:exp}; the series itself and its convergence in the
+small-weight regime are the subject of Section~\ref{sec:series}.
 
 \section{The cluster series and its convergence in the small-weight
 regime}\label{sec:series}
@@ -611,11 +612,88 @@ reindexing of tuples (\texttt{pinnedOrderSum\_le},
 
 Theorem~\ref{thm:series} is the crude form of the summability estimate
 over clusters: it requires smallness of the total weight rather than
-the Kotecký--Preiss condition. The sharp form — replacing the root-tree count $(n+1)^n$ by
-counts of labelled trees with prescribed degrees, as in
-\cite{KP86,Uel04} — and the exponential formula identifying
-\texttt{clusterSeries} with $\log Z$ remain open and are tracked in the
-repository roadmap.
+the Kotecký--Preiss condition. The sharp form — replacing the root-tree
+count $(n+1)^n$ by counts of labelled trees with prescribed degrees, as
+in \cite{KP86,Uel04}, with Theorem~\ref{thm:penrose} as the per-cluster
+input — remains open; Section~\ref{sec:exp} identifies what the series
+computes.
+
+\section{The exponential formula}\label{sec:exp}
+
+The series of Section~\ref{sec:series} is in fact $\log Z$
+(\texttt{KPLean/Exponential.lean}).
+
+\begin{theorem}[\texttt{exp\_clusterSeries\_eq\_Z},
+\texttt{log\_Z\_eq\_clusterSeries}, \texttt{Z\_pos\_of\_small}]
+\label{thm:exp}
+If $e \sum_{\gamma \in \Lambda} \lvert w(\gamma)\rvert < 1$, then
+\[
+  Z(\Lambda) = \exp\Bigl(\sum_{n \ge 0} c_n\Bigr),
+  \qquad\text{hence}\qquad
+  \log Z(\Lambda) = \sum_{n \ge 0} c_n,
+\]
+and in particular $Z(\Lambda) > 0$.
+\end{theorem}
+
+\begin{proof}[Proof as formalised]
+Fix a polymer $\gamma_\star \in \Lambda$ and, for a finite index set
+$J$, pull the polymer system back along an assignment $h : J \to \iota$
+(\texttt{PolymerSystem.pull}). Over the assignments valued in $\Lambda$
+on a block $K$ and pinned to $\gamma_\star$ outside
+(\texttt{pinnedTuples}) define the tuple sums $\mathrm{tupleZ}(K)$ and
+$\mathrm{tupleU}(K)$, weighted by the independence indicator resp.\ the
+set-level Ursell sum. Four identities link them to $Z$ and to the
+series. First, the indicator is a partition sum,
+$[\,S \text{ independent}\,] = \sum_{C \vdash S} \prod_{B \in C}
+\varphi(B)$
+(\texttt{indep\_indicator\_eq\_sum\_partitions}), proved by comparing
+degree-$\lvert S\rvert$ coefficients in Theorem~\ref{thm:fact} over
+$\mathbb{Z}[X]$ with the constant weight $X$ and lifting along
+$\mathbb{Z} \to R$. Second, pinned assignment sums factor over disjoint
+blocks (\texttt{combineOn}/\texttt{restrictOn} bijections), so
+$\mathrm{tupleZ}(K) = \sum_{C \vdash K} \prod_{B \in C}
+\mathrm{tupleU}(B)$ (\texttt{tupleZ\_eq\_sum\_partitions}). Third, along
+the order isomorphism $\mathrm{Fin}\,\lvert B\rvert \simeq B$ the bridge
+lemma gives $\mathrm{tupleU}(B) = c_{\lvert B\rvert - 1}
+\cdot \lvert B\rvert!$ in the unnormalised form
+(\texttt{tupleU\_eq\_clusterOrderSum}). Fourth, independence of the
+pulled-back system on all of $\mathrm{Fin}\,m$ means injectivity
+together with independence of the image, and the fibre over an
+independent $m$-set consists of the embeddings
+$\mathrm{Fin}\,m \hookrightarrow S$, hence has $m!$ elements; so
+$\mathrm{tupleZ}(\mathrm{Fin}\,m)$ is $m!$ times the $m$-th layer of
+$Z$ and $Z(\Lambda) = \sum_m \mathrm{tupleZ}(\mathrm{Fin}\,m)/m!$
+(\texttt{tupleZ\_univ\_eq}, \texttt{Z\_eq\_sum\_tupleZ}).
+
+On the analytic side, powers of an absolutely convergent series expand
+as tuple sums; tuples with a vanishing component drop out, and the rest
+regroups by total weight into compositions, giving
+$\exp(\sum_j v_j) = \sum_m \sum_{k} (k!)^{-1}
+\sum_{c \vDash_k m} \prod_i v_{c_i}$ (\texttt{exp\_tsum\_eq}), with
+Fubini justified by the majorant $\exp(\sum_j \lvert v_j\rvert)$. The
+bridge between the two sides is the multinomial count: ordered
+partitions of an $m$-set with size profile $c$ number $m!/\prod_i c_i!$
+(\texttt{sum\_orderedPartitionsF\_eq\_compositions}, by induction on the
+number of blocks — split off the first block, group it by size, and use
+$\binom{m}{d}(m-d)! = m!/d!$), and unordered ones a further $k!$ fewer,
+since the fibre of $T \mapsto \operatorname{im} T$ consists of the
+embeddings $\mathrm{Fin}\,k \hookrightarrow C$
+(\texttt{sum\_orderedPartitionsF\_eq}); together
+\texttt{sum\_partitionsOf\_card}. Applying it to
+$\mathrm{tupleZ}(\mathrm{Fin}\,m)$ identifies the $m$-th coefficient of
+$\exp$ of the series with $\mathrm{tupleZ}(\mathrm{Fin}\,m)/m!$; the
+sum over $m$ terminates at $\lvert \Lambda\rvert$ because there are no
+larger independent sets, and equals $Z(\Lambda)$.
+\end{proof}
+
+We note that \textsf{mathlib} does not supply the multinomial count:
+\texttt{Multiset.bell} is \emph{defined} multinomially, and the
+statement that it counts partitions is an explicit \texttt{TODO} in the
+file that introduces it. The same holds, more consequentially, for the
+sharp Kotecký--Preiss estimate: counting labelled trees with prescribed
+degrees needs the Prüfer correspondence and Cayley's formula, neither of
+which is in \textsf{mathlib}, so that milestone is a project of its own
+rather than a finishing touch.
 
 \section{A corrected claim}\label{sec:kp}
 
