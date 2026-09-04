@@ -188,4 +188,188 @@ theorem mem_incompNbhd {Λ : Finset ι} {γ₀ δ : ι} :
     δ ∈ incompNbhd P Λ γ₀ ↔ δ ∈ Λ ∧ P.incomp γ₀ δ = true :=
   Finset.mem_filter
 
+/-! ## Die Kotecký-Preiss-Induktion
+
+Aus der Rekursionsungleichung für die Baumkoeffizienten folgt unter der
+Kotecký-Preiss-Bedingung die Schranke `exp (a γ)` für jede
+abgeschnittene Baumreihe — gleichmäßig in der Abschneidehöhe und damit
+im Volumen. -/
+
+
+/-- Der Beitrag der Ordnung `m ≥ 1` eines Nachbarn: Gewicht mal
+normiertem Baumkoeffizienten des Teilbaums. -/
+noncomputable def nbhdTerm (w : ι → ℝ) (Λ : Finset ι) (γ : ι) (m : ℕ) : ℝ :=
+  ∑ δ ∈ incompNbhd P Λ γ,
+    |w δ| * (treeCoeff P w Λ δ (m - 1) / (Nat.factorial (m - 1) : ℝ))
+
+omit [DecidableEq ι] [DecidableEq J] [Fintype J] in
+theorem nbhdTerm_nonneg (w : ι → ℝ) (Λ : Finset ι) (γ : ι) (m : ℕ) :
+    0 ≤ nbhdTerm P w Λ γ m := by
+  unfold nbhdTerm
+  refine Finset.sum_nonneg fun δ _ => mul_nonneg (abs_nonneg _) ?_
+  exact div_nonneg (treeCoeff_nonneg P w Λ δ _) (by positivity)
+
+/-- Die abgeschnittene Baumreihe: die normierten Baumkoeffizienten bis
+zur Ordnung `N`. -/
+noncomputable def treeTrunc (w : ι → ℝ) (Λ : Finset ι) (γ : ι) (N : ℕ) : ℝ :=
+  ∑ n ∈ Finset.range (N + 1),
+    treeCoeff P w Λ γ n / (Nat.factorial n : ℝ)
+
+omit [DecidableEq ι] [DecidableEq J] [Fintype J] in
+theorem treeTrunc_nonneg (w : ι → ℝ) (Λ : Finset ι) (γ : ι) (N : ℕ) :
+    0 ≤ treeTrunc P w Λ γ N :=
+  Finset.sum_nonneg fun n _ =>
+    div_nonneg (treeCoeff_nonneg P w Λ γ n) (by positivity)
+
+omit [DecidableEq ι] [DecidableEq J] [Fintype J] in
+/-- Die Nachbarterme summieren sich zur abgeschnittenen Reihe der
+Nachbarn: `∑_{m=1}^{N+1} nbhdTerm m = ∑_{δ ≁ γ} |w δ| · treeTrunc δ N`. -/
+theorem sum_nbhdTerm (w : ι → ℝ) (Λ : Finset ι) (γ : ι) (N : ℕ) :
+    ∑ m ∈ Finset.Icc 1 (N + 1), nbhdTerm P w Λ γ m
+      = ∑ δ ∈ incompNbhd P Λ γ, |w δ| * treeTrunc P w Λ δ N := by
+  unfold nbhdTerm treeTrunc
+  rw [Finset.sum_comm]
+  refine Finset.sum_congr rfl fun δ _ => ?_
+  rw [Finset.mul_sum]
+  refine Finset.sum_nbij' (fun m => m - 1) (fun n => n + 1) ?_ ?_ ?_ ?_ ?_
+  · intro m hm
+    obtain ⟨h1, h2⟩ := Finset.mem_Icc.mp hm
+    exact Finset.mem_range.mpr (by omega)
+  · intro n hn
+    have := Finset.mem_range.mp hn
+    exact Finset.mem_Icc.mpr (by omega)
+  · intro m hm
+    obtain ⟨h1, -⟩ := Finset.mem_Icc.mp hm
+    omega
+  · intro n _
+    omega
+  · intro m _
+    rfl
+
+/-- Die Kompositionen aller Gesamtgewichte bis `N` liegen in den Tupeln
+mit Einträgen aus `[1, N]`. -/
+private theorem sum_compositions_le_pow (N k : ℕ) (x : ℕ → ℝ)
+    (hx : ∀ m, 0 ≤ x m) :
+    ∑ n ∈ Finset.range (N + 1), ∑ c ∈ compositionsF n k, ∏ j, x (c j)
+      ≤ (∑ m ∈ Finset.Icc 1 N, x m) ^ k := by
+  set D : Finset (Fin k → ℕ) :=
+    (Fintype.piFinset fun _ : Fin k => Finset.Icc 1 N).filter
+      (fun c => ∑ j, c j ≤ N) with hD
+  have hmaps : ∀ c ∈ D, (∑ j, c j) ∈ Finset.range (N + 1) := by
+    intro c hc
+    exact Finset.mem_range.mpr
+      (Nat.lt_succ_of_le (Finset.mem_filter.mp hc).2)
+  have hfib : ∀ n ∈ Finset.range (N + 1),
+      D.filter (fun c => ∑ j, c j = n) = compositionsF n k := by
+    intro n hn
+    have hnN := Nat.lt_succ_iff.mp (Finset.mem_range.mp hn)
+    ext c
+    rw [Finset.mem_filter, hD, Finset.mem_filter, Fintype.mem_piFinset,
+      mem_compositionsF]
+    constructor
+    · rintro ⟨⟨hpi, -⟩, hsum⟩
+      refine ⟨fun j => ?_, hsum⟩
+      have := Finset.mem_Icc.mp (hpi j)
+      omega
+    · rintro ⟨hne, hsum⟩
+      have hle : ∀ j, c j ≤ n := by
+        intro j
+        have := Finset.single_le_sum (f := c) (fun i _ => Nat.zero_le (c i))
+          (Finset.mem_univ j)
+        omega
+      refine ⟨⟨fun j => Finset.mem_Icc.mpr ⟨?_, ?_⟩, by omega⟩, hsum⟩
+      · exact Nat.one_le_iff_ne_zero.mpr (hne j)
+      · exact (hle j).trans hnN
+  have hstep : ∑ n ∈ Finset.range (N + 1), ∑ c ∈ compositionsF n k, ∏ j, x (c j)
+      = ∑ c ∈ D, ∏ j, x (c j) := by
+    rw [← Finset.sum_fiberwise_of_maps_to hmaps (fun c => ∏ j, x (c j))]
+    exact Finset.sum_congr rfl fun n hn => by rw [hfib n hn]
+  rw [hstep]
+  have hpow : (∑ m ∈ Finset.Icc 1 N, x m) ^ k
+      = ∑ c ∈ Fintype.piFinset fun _ : Fin k => Finset.Icc 1 N, ∏ j, x (c j) := by
+    have h := Finset.prod_univ_sum
+      (fun _ : Fin k => Finset.Icc 1 N) (fun _ m => x m)
+    rw [← h, Finset.prod_const, Finset.card_univ, Fintype.card_fin]
+  rw [hpow]
+  refine Finset.sum_le_sum_of_subset_of_nonneg (Finset.filter_subset _ _) ?_
+  exact fun c _ _ => Finset.prod_nonneg fun j _ => hx (c j)
+
+omit [DecidableEq ι] [DecidableEq J] [Fintype J] in
+/-- **Die Kotecký-Preiss-Induktion**: unter der KP-Bedingung ist jede
+abgeschnittene Baumreihe durch `exp (a γ)` beschränkt. Der Beweis ist
+eine Induktion über die Abschneidehöhe: die Rekursionsungleichung
+entwickelt die Ordnung `n` in Kompositionen, deren Teile über die
+Nachbarschaft laufen, und die Induktionsvoraussetzung ersetzt die
+Nachbarterme durch `exp (a δ)`, was die KP-Bedingung zu `a γ`
+zusammenzieht. -/
+theorem treeTrunc_le_exp (w : ι → ℝ) (a : ι → ℝ) (Λ : Finset ι)
+    (hKP : KPCondition P w a Λ)
+    (hRec : ∀ γ ∈ Λ, ∀ n : ℕ,
+      treeCoeff P w Λ γ n / (Nat.factorial n : ℝ)
+        ≤ ∑ k ∈ Finset.range (n + 1), (Nat.factorial k : ℝ)⁻¹ *
+            ∑ c ∈ compositionsF n k, ∏ j, nbhdTerm P w Λ γ (c j)) :
+    ∀ N : ℕ, ∀ γ ∈ Λ, treeTrunc P w Λ γ N ≤ Real.exp (a γ) := by
+  obtain ⟨hapos, hasum⟩ := hKP
+  intro N
+  induction N with
+  | zero =>
+    intro γ hγ
+    unfold treeTrunc
+    rw [Finset.range_one, Finset.sum_singleton, treeCoeff_zero,
+      Nat.factorial_zero, Nat.cast_one, div_one]
+    exact Real.one_le_exp (hapos γ hγ)
+  | succ N IH =>
+    intro γ hγ
+    -- Abschätzung jeder Ordnung durch die Kompositionssumme.
+    have hterm : ∀ n ∈ Finset.range (N + 2),
+        treeCoeff P w Λ γ n / (Nat.factorial n : ℝ)
+          ≤ ∑ k ∈ Finset.range (N + 2), (Nat.factorial k : ℝ)⁻¹ *
+              ∑ c ∈ compositionsF n k, ∏ j, nbhdTerm P w Λ γ (c j) := by
+      intro n hn
+      refine (hRec γ hγ n).trans ?_
+      refine Finset.sum_le_sum_of_subset_of_nonneg ?_ ?_
+      · have hnN := Nat.lt_succ_iff.mp (Finset.mem_range.mp hn)
+        intro x hx
+        rw [Finset.mem_range] at hx ⊢
+        omega
+      · intro k _ _
+        refine mul_nonneg (by positivity) (Finset.sum_nonneg fun c _ => ?_)
+        exact Finset.prod_nonneg fun j _ => nbhdTerm_nonneg P w Λ γ _
+    -- Summieren über die Ordnungen und Vertauschen mit der Kompositionszahl.
+    have hsum : treeTrunc P w Λ γ (N + 1)
+        ≤ ∑ k ∈ Finset.range (N + 2), (Nat.factorial k : ℝ)⁻¹ *
+            ∑ n ∈ Finset.range (N + 2),
+              ∑ c ∈ compositionsF n k, ∏ j, nbhdTerm P w Λ γ (c j) := by
+      unfold treeTrunc
+      refine (Finset.sum_le_sum hterm).trans ?_
+      rw [Finset.sum_comm]
+      refine le_of_eq (Finset.sum_congr rfl fun k _ => ?_)
+      rw [Finset.mul_sum]
+    -- Die innere Doppelsumme durch die Potenz der Nachbarsumme abschätzen.
+    set S : ℝ := ∑ m ∈ Finset.Icc 1 (N + 1), nbhdTerm P w Λ γ m with hS
+    have hSnn : 0 ≤ S :=
+      Finset.sum_nonneg fun m _ => nbhdTerm_nonneg P w Λ γ m
+    have hinner : ∀ k, ∑ n ∈ Finset.range (N + 2),
+        ∑ c ∈ compositionsF n k, ∏ j, nbhdTerm P w Λ γ (c j) ≤ S ^ k :=
+      fun k => sum_compositions_le_pow (N + 1) k _
+        (fun m => nbhdTerm_nonneg P w Λ γ m)
+    have hpow : treeTrunc P w Λ γ (N + 1)
+        ≤ ∑ k ∈ Finset.range (N + 2), (Nat.factorial k : ℝ)⁻¹ * S ^ k := by
+      refine hsum.trans (Finset.sum_le_sum fun k _ => ?_)
+      exact mul_le_mul_of_nonneg_left (hinner k) (by positivity)
+    -- Die Partialsumme der Exponentialreihe.
+    have hexpS : ∑ k ∈ Finset.range (N + 2), (Nat.factorial k : ℝ)⁻¹ * S ^ k
+        ≤ Real.exp S := by
+      have h := Real.sum_le_exp_of_nonneg hSnn (N + 2)
+      refine le_trans (le_of_eq ?_) h
+      exact Finset.sum_congr rfl fun k _ => by
+        rw [div_eq_inv_mul]
+    -- Die Induktionsvoraussetzung und die KP-Bedingung.
+    have hSle : S ≤ a γ := by
+      rw [hS, sum_nbhdTerm]
+      refine le_trans (Finset.sum_le_sum fun δ hδ => ?_) (hasum γ hγ)
+      obtain ⟨hδΛ, -⟩ := (mem_incompNbhd P).mp hδ
+      exact mul_le_mul_of_nonneg_left (IH δ hδΛ) (abs_nonneg _)
+    exact (hpow.trans hexpS).trans (Real.exp_le_exp.mpr hSle)
+
 end ClusterExpansion
