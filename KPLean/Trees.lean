@@ -372,4 +372,18 @@ theorem treeTrunc_le_exp (w : ι → ℝ) (a : ι → ℝ) (Λ : Finset ι)
       exact mul_le_mul_of_nonneg_left (IH δ hδΛ) (abs_nonneg _)
     exact (hpow.trans hexpS).trans (Real.exp_le_exp.mpr hSle)
 
+/-- **Der Blockfaktor**: der Beitrag eines Blocks zur Wurzelzerlegung —
+Wahl der Blockwurzel `c`, Wahl des mit `γ₀` unverträglichen Wertes `δ`
+an dieser Wurzel, und die Baumsumme des Teilbaums. -/
+noncomputable def blockFactor (w : ι → ℝ) (Λ : Finset ι) (γ₀ : ι)
+    (B : Finset J) : ℝ :=
+  ∑ c ∈ B, ∑ δ ∈ incompNbhd P Λ γ₀,
+    |w δ| * treeSum P w Λ δ c (B.erase c)
+
+omit [DecidableEq ι] in
+theorem blockFactor_nonneg (w : ι → ℝ) (Λ : Finset ι) (γ₀ : ι)
+    (B : Finset J) : 0 ≤ blockFactor P w Λ γ₀ B :=
+  Finset.sum_nonneg fun c _ => Finset.sum_nonneg fun δ _ =>
+    mul_nonneg (abs_nonneg _) (treeSum_nonneg P w Λ δ c _)
+
 end ClusterExpansion
