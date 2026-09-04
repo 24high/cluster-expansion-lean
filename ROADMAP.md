@@ -88,16 +88,25 @@ formalised, with no `sorry`s at any completed step.
       (`exp_tsum_eq`) expanding `exp` of an absolutely convergent series
       into compositions grouped by total weight.
 
+- [x] **The multinomial count of partitions**, proved from scratch
+      (Mathlib does not have it: `Multiset.bell` is defined
+      multinomially and the statement that it counts partitions is an
+      explicit TODO there). Ordered partitions with size profile `c`
+      number `|A|!/∏ cᵢ!` (`sum_orderedPartitionsF_eq_compositions`, by
+      induction on the number of blocks), and unordered ones a further
+      `k!` fewer (`sum_orderedPartitionsF_eq`, by fibring over the image
+      and counting embeddings `Fin k ↪ C`); together
+      `sum_partitionsOf_card`.
+- [x] **The exponential formula**:
+      `log Z Λ = clusterSeries P w Λ` in the small-weight regime
+      `e · Σ_{γ ∈ Λ} |w γ| < 1` (`exp_clusterSeries_eq_Z`,
+      `log_Z_eq_clusterSeries`), with `Z Λ > 0` as a by-product
+      (`Z_pos_of_small`). The convergent cluster series of `log Z` is
+      thereby identified with `log Z` itself, and the geometric bound
+      `abs_clusterSeries_le` becomes a bound on `log Z`.
+
 ## Next
 
-- [ ] **The exponential formula**: `log Z Λ = clusterSeries P w Λ` in
-      the convergence regime. All the blocks above are proved and the
-      assembly is verified; what is still missing is the **multinomial
-      count** — that ordered set partitions of an `m`-set with size
-      profile `c` number `m!/∏ cᵢ!`, and unordered ones a further `k!`
-      fewer. Mathlib does not supply this: `Multiset.bell` is defined
-      multinomially and the statement that it counts partitions is an
-      explicit TODO there.
 - [ ] **The sharp Kotecký–Preiss summability estimate** over clusters:
       replace the root-tree count `(n+1)ⁿ` by counts of labelled trees
       with prescribed degrees, so that the anchored series is controlled

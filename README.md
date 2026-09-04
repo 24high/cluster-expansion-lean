@@ -149,9 +149,16 @@ All in `KPLean/ClusterExpansion.lean`, namespace `ClusterExpansion`:
   anchor weight and uniformly in the volume (`tsum_pinned_le`) — the
   crude form of the Kotecký–Preiss summability over clusters;
 
-- **the building blocks of the exponential formula**
-  (`KPLean/Exponential.lean`), on the way to `log Z = clusterSeries`:
-  the polymer system pulled back along an assignment
+- **the exponential formula** (`KPLean/Exponential.lean`): in the
+  small-weight regime `e · Σ_{γ ∈ Λ} |w γ| < 1`,
+
+  `Z Λ = exp (clusterSeries P w Λ)`, hence `log |Z Λ| = clusterSeries`
+
+  (`exp_clusterSeries_eq_Z`, `log_Z_eq_clusterSeries`), with
+  `Z Λ > 0` as a by-product (`Z_pos_of_small`). The convergent series
+  of the previous item is thereby identified with `log Z` itself, so
+  `abs_clusterSeries_le` becomes a bound on `log Z`. The proof runs
+  through the polymer system pulled back along an assignment
   (`PolymerSystem.pull`) with the tuple sums `tupleZ`, `tupleU` built on
   it, and four identities linking them to `Z` and to the series —
 
@@ -167,7 +174,12 @@ All in `KPLean/ClusterExpansion.lean`, namespace `ClusterExpansion`:
   (`tupleZ_univ_eq`, `Z_eq_sum_tupleZ`, counting the fibres of
   assignments by embeddings) — together with the analytic step
   `exp_tsum_eq`, which expands `exp` of an absolutely convergent series
-  into compositions grouped by total weight.
+  into compositions grouped by total weight, and the **multinomial
+  count** `sum_partitionsOf_card`: ordered partitions with size profile
+  `c` number `|A|!/Π cᵢ!` and unordered ones a further `k!` fewer. That
+  count is proved from scratch — Mathlib's `Multiset.bell` is *defined*
+  multinomially, and the statement that it counts partitions is an
+  explicit TODO there.
 
 The hierarchy is strict: a single self-incompatible polymer of weight
 `1/2` satisfies the Dobrushin condition with `μ = 1`, while
@@ -239,16 +251,13 @@ intended.
 
 ## Roadmap
 
-Everything through the Mayer expansion, the cluster factorisation, the
-convergence of the cluster series and the building blocks of the
-exponential formula is formalised. What remains for
-`log Z = clusterSeries` is the multinomial count of ordered set
-partitions by size profile — Mathlib's `Multiset.bell` is defined
-multinomially and the proof that it counts partitions is an explicit
-TODO there. Beyond that, the sharp Kotecký–Preiss estimate via
-prescribed-degree tree counts needs the Prüfer correspondence, which
-Mathlib also lacks. See [`ROADMAP.md`](ROADMAP.md) for the full list
-with the relevant theorem names.
+Everything through the exponential formula `log Z = clusterSeries` is
+formalised. The remaining milestone is the sharp Kotecký–Preiss
+summability estimate, which would replace the small-weight hypothesis
+by the Kotecký–Preiss condition; it needs counts of labelled trees with
+prescribed degrees, hence the Prüfer correspondence and Cayley's
+formula, neither of which is in Mathlib. See [`ROADMAP.md`](ROADMAP.md)
+for the full list with the relevant theorem names.
 
 Contributions and corrections are welcome; please open an issue.
 

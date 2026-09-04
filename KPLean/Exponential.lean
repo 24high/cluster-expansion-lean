@@ -40,7 +40,24 @@ Darauf die Beweiskette:
   `Z = ∑_m tupleZ_m / m!`;
 * `exp_tsum_eq`: der **analytische Exponentialschritt** — `exp` einer
   absolut konvergenten Reihe als nach Gesamtgewicht umgruppierte
-  Kompositionssumme.
+  Kompositionssumme;
+* `sum_orderedPartitionsF_eq`, `sum_orderedPartitionsF_eq_compositions`,
+  `sum_partitionsOf_card`: die **Multinomialzählung** — geordnete
+  Partitionen mit Größenprofil `c` gibt es `|A|!/∏ cᵢ!` viele, ungeordnete
+  um den Faktor `k!` weniger.
+
+Hauptresultat: `exp_clusterSeries_eq_Z` und `log_Z_eq_clusterSeries` —
+im Kleinheitsregime `e · ∑_Λ |w| < 1` ist `Z` das Exponential der
+Cluster-Reihe, also `log Z Λ = clusterSeries P w Λ`; insbesondere ist
+`Z > 0` (`Z_pos_of_small`).
+
+Kein `sorry` in dieser Datei. Bewusst offen (nur genannt, nichts
+Unbewiesenes behauptet): die scharfe Kotecký-Preiss-Summierbarkeit über
+Baumzahlen mit vorgeschriebenen Graden, die das Kleinheitsregime durch
+die KP-Bedingung ersetzen würde.
+
+Referenzen: Kotecký-Preiss (Comm. Math. Phys. 103, 1986); Ueltschi
+(Moscow Math. J. 4, 2004); Friedli-Velenik, Kap. 5.
 -/
 
 open Finset
@@ -498,6 +515,375 @@ theorem sum_orderedPartitionsF_eq (A : Finset J) (k : ℕ) (f : ℕ → ℝ) :
       (fun i _ j _ hij => injective_of_mem_orderedPartitionsF hTmem hij)]
   rw [Finset.sum_congr rfl hval, Finset.sum_const,
     card_fiber_orderedPartitionsF hCmem hCcard, nsmul_eq_mul]
+
+/-! ## Das Größenprofil geordneter Partitionen -/
+
+omit [DecidableEq ι] [Fintype J] in
+/-- Die Vereinigung eines mit `Fin.cons` vorangestellten Blocks. -/
+theorem sup_univ_cons (B₀ : Finset J) {k : ℕ} (T : Fin k → Finset J) :
+    Finset.univ.sup (Fin.cons B₀ T : Fin (k + 1) → Finset J)
+      = B₀ ∪ Finset.univ.sup T := by
+  refine le_antisymm (Finset.sup_le fun i _ => ?_) (Finset.union_subset ?_ ?_)
+  · rcases Fin.eq_zero_or_eq_succ i with rfl | ⟨j, rfl⟩
+    · rw [Fin.cons_zero]
+      exact Finset.subset_union_left
+    · rw [Fin.cons_succ]
+      exact (Finset.le_sup (f := T) (Finset.mem_univ j)).trans
+        Finset.subset_union_right
+  · have h := Finset.le_sup (f := (Fin.cons B₀ T : Fin (k + 1) → Finset J))
+      (Finset.mem_univ (0 : Fin (k + 1)))
+    rwa [Fin.cons_zero] at h
+  · refine Finset.sup_le fun j _ => ?_
+    have h := Finset.le_sup (f := (Fin.cons B₀ T : Fin (k + 1) → Finset J))
+      (Finset.mem_univ j.succ)
+    rwa [Fin.cons_succ] at h
+
+omit [DecidableEq ι] [Fintype J] in
+/-- Zugehörigkeit eines vorangestellten Blocks zu den geordneten
+Partitionen: `Fin.cons B₀ T'` partitioniert `A` genau dann, wenn `B₀`
+ein nichtleerer Teil von `A` ist und `T'` den Rest `A \ B₀`
+partitioniert. -/
+theorem mem_cons_orderedPartitionsF {A : Finset J} {k : ℕ} {B₀ : Finset J}
+    {T' : Fin k → Finset J} :
+    (Fin.cons B₀ T' : Fin (k + 1) → Finset J) ∈ orderedPartitionsF A (k + 1)
+      ↔ B₀.Nonempty ∧ B₀ ⊆ A ∧ T' ∈ orderedPartitionsF (A \ B₀) k := by
+  rw [mem_orderedPartitionsF, mem_orderedPartitionsF, sup_univ_cons]
+  constructor
+  · rintro ⟨hne, hdisj, hsup⟩
+    have hB₀ne : B₀.Nonempty := by
+      have h := hne 0
+      rwa [Fin.cons_zero] at h
+    have hT'ne : ∀ i, (T' i).Nonempty := by
+      intro i
+      have h := hne i.succ
+      rwa [Fin.cons_succ] at h
+    have hT'disj : ∀ i j, i ≠ j → Disjoint (T' i) (T' j) := by
+      intro i j hij
+      have h := hdisj i.succ j.succ fun hs => hij (Fin.succ_injective k hs)
+      rwa [Fin.cons_succ, Fin.cons_succ] at h
+    have hd0 : Disjoint B₀ (Finset.univ.sup T') := by
+      rw [Finset.disjoint_sup_right]
+      intro i _
+      have h := hdisj 0 i.succ (Ne.symm (Fin.succ_ne_zero i))
+      rwa [Fin.cons_zero, Fin.cons_succ] at h
+    refine ⟨hB₀ne, ?_, hT'ne, hT'disj, ?_⟩
+    · rw [← hsup]
+      exact Finset.subset_union_left
+    · rw [← hsup]
+      exact (Finset.union_sdiff_cancel_left hd0).symm
+  · rintro ⟨hB₀ne, hB₀sub, hT'ne, hT'disj, hT'sup⟩
+    have hsubdiff : ∀ i, T' i ⊆ A \ B₀ := by
+      intro i
+      rw [← hT'sup]
+      exact Finset.le_sup (Finset.mem_univ i)
+    have hB₀T' : ∀ i, Disjoint B₀ (T' i) := by
+      intro i
+      refine Finset.disjoint_left.mpr fun x hxB hxT => ?_
+      exact (Finset.mem_sdiff.mp (hsubdiff i hxT)).2 hxB
+    refine ⟨fun i => ?_, fun i j hij => ?_, ?_⟩
+    · rcases Fin.eq_zero_or_eq_succ i with rfl | ⟨j, rfl⟩
+      · rwa [Fin.cons_zero]
+      · rw [Fin.cons_succ]
+        exact hT'ne j
+    · rcases Fin.eq_zero_or_eq_succ i with rfl | ⟨ii, rfl⟩ <;>
+        rcases Fin.eq_zero_or_eq_succ j with rfl | ⟨jj, rfl⟩
+      · exact absurd rfl hij
+      · rw [Fin.cons_zero, Fin.cons_succ]
+        exact hB₀T' jj
+      · rw [Fin.cons_zero, Fin.cons_succ]
+        exact (hB₀T' ii).symm
+      · rw [Fin.cons_succ, Fin.cons_succ]
+        exact hT'disj ii jj fun h => hij (congrArg Fin.succ h)
+    · rw [hT'sup]
+      exact Finset.union_sdiff_of_subset hB₀sub
+
+omit [DecidableEq ι] [Fintype J] in
+/-- **Zerlegung geordneter Partitionen nach dem ersten Block**: die
+Summe über `orderedPartitionsF A (k+1)` zerfällt in die Doppelsumme über
+den nichtleeren ersten Block `B₀ ⊆ A` und die geordneten Partitionen des
+Rests `A \ B₀`. -/
+theorem sum_orderedPartitionsF_succ (A : Finset J) (k : ℕ)
+    (g : (Fin (k + 1) → Finset J) → ℝ) :
+    ∑ T ∈ orderedPartitionsF A (k + 1), g T
+      = ∑ B₀ ∈ A.powerset.filter (fun B => B.Nonempty),
+          ∑ T' ∈ orderedPartitionsF (A \ B₀) k, g (Fin.cons B₀ T') := by
+  refine Eq.trans ?_ (Finset.sum_sigma'
+    (A.powerset.filter (fun B => B.Nonempty))
+    (fun B₀ => orderedPartitionsF (A \ B₀) k)
+    (fun B₀ T' => g (Fin.cons B₀ T'))).symm
+  refine Finset.sum_nbij'
+    (fun T => (⟨T 0, Fin.tail T⟩ : (_ : Finset J) × (Fin k → Finset J)))
+    (fun x => Fin.cons x.1 x.2) ?_ ?_ ?_ ?_ ?_
+  · intro T hT
+    have hT' : (Fin.cons (T 0) (Fin.tail T) : Fin (k + 1) → Finset J)
+        ∈ orderedPartitionsF A (k + 1) := by
+      rw [Fin.cons_self_tail]
+      exact hT
+    obtain ⟨hne, hsub, hmem⟩ := mem_cons_orderedPartitionsF.mp hT'
+    exact Finset.mem_sigma.mpr
+      ⟨Finset.mem_filter.mpr ⟨Finset.mem_powerset.mpr hsub, hne⟩, hmem⟩
+  · rintro ⟨B₀, T'⟩ hx
+    obtain ⟨hB₀, hT'⟩ := Finset.mem_sigma.mp hx
+    obtain ⟨hpow, hne⟩ := Finset.mem_filter.mp hB₀
+    exact mem_cons_orderedPartitionsF.mpr
+      ⟨hne, Finset.mem_powerset.mp hpow, hT'⟩
+  · intro T _
+    exact Fin.cons_self_tail T
+  · rintro ⟨B₀, T'⟩ _
+    simp only [Fin.cons_zero, Fin.tail_cons]
+  · intro T _
+    rw [Fin.cons_self_tail]
+
+omit [DecidableEq ι] [DecidableEq J] [Fintype J] in
+/-- Zugehörigkeit einer vorangestellten Zahl zu den Kompositionen:
+`Fin.cons d c'` ist genau dann eine Komposition von `m` in `k+1` Teile,
+wenn `1 ≤ d ≤ m` gilt und `c'` eine Komposition von `m - d` ist. -/
+theorem mem_cons_compositionsF {m k d : ℕ} {c' : Fin k → ℕ} :
+    (Fin.cons d c' : Fin (k + 1) → ℕ) ∈ compositionsF m (k + 1)
+      ↔ 1 ≤ d ∧ d ≤ m ∧ c' ∈ compositionsF (m - d) k := by
+  have hsum : ∑ i, (Fin.cons d c' : Fin (k + 1) → ℕ) i = d + ∑ i, c' i := by
+    rw [Fin.sum_univ_succ, Fin.cons_zero]
+    exact congrArg _ (Finset.sum_congr rfl fun i _ => by rw [Fin.cons_succ])
+  rw [mem_compositionsF, mem_compositionsF, hsum]
+  constructor
+  · rintro ⟨hne, hs⟩
+    have hd : d ≠ 0 := by
+      have h := hne 0
+      rwa [Fin.cons_zero] at h
+    have hc' : ∀ i, c' i ≠ 0 := by
+      intro i
+      have h := hne i.succ
+      rwa [Fin.cons_succ] at h
+    exact ⟨Nat.one_le_iff_ne_zero.mpr hd, by omega, hc', by omega⟩
+  · rintro ⟨hd1, hd2, hc'ne, hc'sum⟩
+    refine ⟨fun i => ?_, by omega⟩
+    rcases Fin.eq_zero_or_eq_succ i with rfl | ⟨j, rfl⟩
+    · rw [Fin.cons_zero]
+      omega
+    · rw [Fin.cons_succ]
+      exact hc'ne j
+
+omit [DecidableEq ι] [DecidableEq J] [Fintype J] in
+/-- **Zerlegung der Kompositionen nach dem ersten Teil**: die Summe über
+`compositionsF m (k+1)` zerfällt in die Doppelsumme über den ersten Teil
+`d ∈ [1, m]` und die Kompositionen von `m - d` in `k` Teile. -/
+theorem sum_compositionsF_succ (m k : ℕ) (g : (Fin (k + 1) → ℕ) → ℝ) :
+    ∑ c ∈ compositionsF m (k + 1), g c
+      = ∑ d ∈ Finset.Icc 1 m, ∑ c' ∈ compositionsF (m - d) k,
+          g (Fin.cons d c') := by
+  refine Eq.trans ?_ (Finset.sum_sigma' (Finset.Icc 1 m)
+    (fun d => compositionsF (m - d) k) (fun d c' => g (Fin.cons d c'))).symm
+  refine Finset.sum_nbij'
+    (fun c => (⟨c 0, Fin.tail c⟩ : (_ : ℕ) × (Fin k → ℕ)))
+    (fun x => Fin.cons x.1 x.2) ?_ ?_ ?_ ?_ ?_
+  · intro c hc
+    have hc' : (Fin.cons (c 0) (Fin.tail c) : Fin (k + 1) → ℕ)
+        ∈ compositionsF m (k + 1) := by
+      rw [Fin.cons_self_tail]
+      exact hc
+    obtain ⟨h1, h2, h3⟩ := mem_cons_compositionsF.mp hc'
+    exact Finset.mem_sigma.mpr ⟨Finset.mem_Icc.mpr ⟨h1, h2⟩, h3⟩
+  · rintro ⟨d, c'⟩ hx
+    obtain ⟨hd, hc'⟩ := Finset.mem_sigma.mp hx
+    obtain ⟨h1, h2⟩ := Finset.mem_Icc.mp hd
+    exact mem_cons_compositionsF.mpr ⟨h1, h2, hc'⟩
+  · intro c _
+    exact Fin.cons_self_tail c
+  · rintro ⟨d, c'⟩ _
+    simp only [Fin.cons_zero, Fin.tail_cons]
+  · intro c _
+    rw [Fin.cons_self_tail]
+
+omit [DecidableEq ι] [DecidableEq J] [Fintype J] in
+/-- Eine nur von der Größe abhängige Summe über die nichtleeren
+Teilmengen von `A` bündelt sich zu einer Summe über die Größen mit den
+Binomialkoeffizienten als Vielfachheiten. -/
+theorem sum_powerset_nonempty_card (A : Finset J) (F : ℕ → ℝ) :
+    ∑ B ∈ A.powerset.filter (fun B => B.Nonempty), F B.card
+      = ∑ d ∈ Finset.Icc 1 A.card, (A.card.choose d : ℝ) * F d := by
+  have hmaps : ∀ B ∈ A.powerset.filter (fun B => B.Nonempty),
+      B.card ∈ Finset.Icc 1 A.card := by
+    intro B hB
+    obtain ⟨hpow, hne⟩ := Finset.mem_filter.mp hB
+    exact Finset.mem_Icc.mpr ⟨Finset.card_pos.mpr hne,
+      Finset.card_le_card (Finset.mem_powerset.mp hpow)⟩
+  rw [← Finset.sum_fiberwise_of_maps_to hmaps (fun B => F B.card)]
+  refine Finset.sum_congr rfl fun d hd => ?_
+  obtain ⟨hd1, -⟩ := Finset.mem_Icc.mp hd
+  have hfil : (A.powerset.filter (fun B => B.Nonempty)).filter
+      (fun B => B.card = d) = A.powersetCard d := by
+    ext B
+    rw [Finset.mem_filter, Finset.mem_filter, Finset.mem_powerset,
+      Finset.mem_powersetCard]
+    constructor
+    · rintro ⟨⟨hsub, -⟩, hcard⟩
+      exact ⟨hsub, hcard⟩
+    · rintro ⟨hsub, hcard⟩
+      exact ⟨⟨hsub, Finset.card_pos.mp (by omega)⟩, hcard⟩
+  rw [hfil, Finset.sum_congr rfl
+      (fun B hB => congrArg F (Finset.mem_powersetCard.mp hB).2),
+    Finset.sum_const, Finset.card_powersetCard, nsmul_eq_mul]
+
+omit [DecidableEq ι] [DecidableEq J] [Fintype J] in
+/-- Der Multinomial-Schritt in `ℝ`: Binomialkoeffizient mal
+Restfakultät über einem Nenner ist die volle Fakultät über dem um `d!`
+erweiterten Nenner. -/
+theorem choose_mul_factorial_div {m d : ℕ} (hd : d ≤ m) {Q : ℝ} (hQ : Q ≠ 0) :
+    (m.choose d : ℝ) * ((Nat.factorial (m - d) : ℝ) / Q)
+      = (Nat.factorial m : ℝ) / ((Nat.factorial d : ℝ) * Q) := by
+  have hfd : (Nat.factorial d : ℝ) ≠ 0 :=
+    Nat.cast_ne_zero.mpr (Nat.factorial_ne_zero d)
+  have hfr : (Nat.factorial (m - d) : ℝ) ≠ 0 :=
+    Nat.cast_ne_zero.mpr (Nat.factorial_ne_zero (m - d))
+  rw [Nat.cast_choose ℝ hd]
+  field_simp
+
+omit [DecidableEq ι] [Fintype J] in
+/-- **Größenprofil geordneter Partitionen**: eine nur von den
+Blockgrößen abhängige Summe über die geordneten Partitionen von `A` in
+`k` Blöcke ist die mit Multinomialkoeffizienten gewichtete Summe über
+die Kompositionen von `|A|` in `k` positive Teile. Beweis durch
+Induktion über `k` bei mitlaufendem `A`: Abspalten des ersten Blocks,
+Bündelung nach seiner Größe (Binomialkoeffizient) und die
+Multinomial-Identität `C(m,d) · (m−d)!/∏ = m!/(d!·∏)`. -/
+theorem sum_orderedPartitionsF_eq_compositions (A : Finset J) (k : ℕ)
+    (f : ℕ → ℝ) :
+    ∑ T ∈ orderedPartitionsF A k, ∏ i, f (T i).card
+      = ∑ c ∈ compositionsF A.card k,
+          ((Nat.factorial A.card : ℝ) / ∏ i, (Nat.factorial (c i) : ℝ)) *
+            ∏ i, f (c i) := by
+  induction k generalizing A with
+  | zero =>
+    by_cases hA : A = ∅
+    · subst hA
+      have h1 : orderedPartitionsF (∅ : Finset J) 0
+          = {(Fin.elim0 : Fin 0 → Finset J)} := by
+        ext T
+        rw [mem_orderedPartitionsF, Finset.mem_singleton]
+        constructor
+        · rintro -
+          funext i
+          exact i.elim0
+        · rintro rfl
+          refine ⟨fun i => i.elim0, fun i => i.elim0, ?_⟩
+          rw [Finset.univ_eq_empty, Finset.sup_empty]
+          rfl
+      have h2 : compositionsF 0 0 = {(Fin.elim0 : Fin 0 → ℕ)} := by
+        ext c
+        rw [mem_compositionsF, Finset.mem_singleton]
+        constructor
+        · rintro -
+          funext i
+          exact i.elim0
+        · rintro rfl
+          exact ⟨fun i => i.elim0,
+            by rw [Finset.univ_eq_empty, Finset.sum_empty]⟩
+      rw [h1, Finset.card_empty, h2, Finset.sum_singleton, Finset.sum_singleton,
+        Finset.univ_eq_empty, Finset.prod_empty, Finset.prod_empty,
+        Finset.prod_empty, Nat.factorial_zero, Nat.cast_one, div_one, mul_one]
+    · have h1 : orderedPartitionsF A 0 = ∅ := by
+        rw [Finset.eq_empty_iff_forall_notMem]
+        intro T hT
+        obtain ⟨-, -, hsup⟩ := mem_orderedPartitionsF.mp hT
+        rw [Finset.univ_eq_empty, Finset.sup_empty] at hsup
+        exact hA hsup.symm
+      have h2 : compositionsF A.card 0 = ∅ := by
+        rw [Finset.eq_empty_iff_forall_notMem]
+        intro c hc
+        obtain ⟨-, hsum⟩ := mem_compositionsF.mp hc
+        rw [Finset.univ_eq_empty, Finset.sum_empty] at hsum
+        exact hA (Finset.card_eq_zero.mp hsum.symm)
+      rw [h1, h2, Finset.sum_empty, Finset.sum_empty]
+  | succ k IH =>
+    have hconsCard : ∀ (B₀ : Finset J) (T' : Fin k → Finset J),
+        (∏ i, f ((Fin.cons B₀ T' : Fin (k + 1) → Finset J) i).card)
+          = f B₀.card * ∏ i, f (T' i).card := by
+      intro B₀ T'
+      rw [Fin.prod_univ_succ, Fin.cons_zero]
+      exact congrArg _ (Finset.prod_congr rfl fun i _ => by rw [Fin.cons_succ])
+    have hconsFac : ∀ (d : ℕ) (c' : Fin k → ℕ),
+        (∏ i, (Nat.factorial ((Fin.cons d c' : Fin (k + 1) → ℕ) i) : ℝ))
+          = (Nat.factorial d : ℝ) * ∏ i, (Nat.factorial (c' i) : ℝ) := by
+      intro d c'
+      rw [Fin.prod_univ_succ, Fin.cons_zero]
+      exact congrArg _ (Finset.prod_congr rfl fun i _ => by rw [Fin.cons_succ])
+    have hconsF : ∀ (d : ℕ) (c' : Fin k → ℕ),
+        (∏ i, f ((Fin.cons d c' : Fin (k + 1) → ℕ) i))
+          = f d * ∏ i, f (c' i) := by
+      intro d c'
+      rw [Fin.prod_univ_succ, Fin.cons_zero]
+      exact congrArg _ (Finset.prod_congr rfl fun i _ => by rw [Fin.cons_succ])
+    calc ∑ T ∈ orderedPartitionsF A (k + 1), ∏ i, f (T i).card
+        = ∑ B₀ ∈ A.powerset.filter (fun B => B.Nonempty),
+            ∑ T' ∈ orderedPartitionsF (A \ B₀) k,
+              ∏ i, f ((Fin.cons B₀ T' : Fin (k + 1) → Finset J) i).card :=
+          sum_orderedPartitionsF_succ A k
+            (fun T : Fin (k + 1) → Finset J => ∏ i, f (T i).card)
+      _ = ∑ B₀ ∈ A.powerset.filter (fun B => B.Nonempty),
+            f B₀.card * ∑ c' ∈ compositionsF (A.card - B₀.card) k,
+              ((Nat.factorial (A.card - B₀.card) : ℝ)
+                  / ∏ i, (Nat.factorial (c' i) : ℝ)) * ∏ i, f (c' i) := by
+          refine Finset.sum_congr rfl fun B₀ hB₀ => ?_
+          have hsub : B₀ ⊆ A :=
+            Finset.mem_powerset.mp (Finset.mem_filter.mp hB₀).1
+          have hstep : ∑ T' ∈ orderedPartitionsF (A \ B₀) k,
+                ∏ i, f ((Fin.cons B₀ T' : Fin (k + 1) → Finset J) i).card
+              = f B₀.card
+                  * ∑ T' ∈ orderedPartitionsF (A \ B₀) k,
+                      ∏ i, f (T' i).card := by
+            rw [Finset.mul_sum]
+            exact Finset.sum_congr rfl fun T' _ => hconsCard B₀ T'
+          rw [hstep, IH (A \ B₀), Finset.card_sdiff_of_subset hsub]
+      _ = ∑ d ∈ Finset.Icc 1 A.card, (A.card.choose d : ℝ) *
+            (f d * ∑ c' ∈ compositionsF (A.card - d) k,
+              ((Nat.factorial (A.card - d) : ℝ)
+                  / ∏ i, (Nat.factorial (c' i) : ℝ)) * ∏ i, f (c' i)) :=
+          sum_powerset_nonempty_card A (fun d : ℕ =>
+            f d * ∑ c' ∈ compositionsF (A.card - d) k,
+              ((Nat.factorial (A.card - d) : ℝ)
+                  / ∏ i, (Nat.factorial (c' i) : ℝ)) * ∏ i, f (c' i))
+      _ = ∑ d ∈ Finset.Icc 1 A.card, ∑ c' ∈ compositionsF (A.card - d) k,
+            ((Nat.factorial A.card : ℝ)
+                / ∏ i, (Nat.factorial
+                    ((Fin.cons d c' : Fin (k + 1) → ℕ) i) : ℝ))
+              * ∏ i, f ((Fin.cons d c' : Fin (k + 1) → ℕ) i) := by
+          refine Finset.sum_congr rfl fun d hd => ?_
+          obtain ⟨-, hd2⟩ := Finset.mem_Icc.mp hd
+          rw [Finset.mul_sum, Finset.mul_sum]
+          refine Finset.sum_congr rfl fun c' _ => ?_
+          have hQ : (∏ i, (Nat.factorial (c' i) : ℝ)) ≠ 0 :=
+            Finset.prod_ne_zero_iff.mpr fun i _ =>
+              Nat.cast_ne_zero.mpr (Nat.factorial_ne_zero _)
+          rw [hconsFac d c', hconsF d c', ← choose_mul_factorial_div hd2 hQ]
+          ring
+      _ = ∑ c ∈ compositionsF A.card (k + 1),
+            ((Nat.factorial A.card : ℝ) / ∏ i, (Nat.factorial (c i) : ℝ)) *
+              ∏ i, f (c i) :=
+          (sum_compositionsF_succ A.card k (fun c : Fin (k + 1) → ℕ =>
+            ((Nat.factorial A.card : ℝ) / ∏ i, (Nat.factorial (c i) : ℝ)) *
+              ∏ i, f (c i))).symm
+
+omit [DecidableEq ι] [Fintype J] in
+/-- **Multinomialzählung der Partitionen**: eine nur von den Blockgrößen
+abhängige Summe über alle Partitionen von `A` ist die nach Blockzahl und
+Größenprofil sortierte Kompositionssumme. Das ist die kombinatorische
+Brücke zwischen der Partitionsform der Zustandssumme und der
+Kompositionsform des Exponentials. -/
+theorem sum_partitionsOf_card (A : Finset J) (f : ℕ → ℝ) :
+    ∑ C ∈ partitionsOf A, ∏ B ∈ C, f B.card
+      = ∑ k ∈ Finset.range (A.card + 1), (Nat.factorial k : ℝ)⁻¹ *
+          ∑ c ∈ compositionsF A.card k,
+            ((Nat.factorial A.card : ℝ) / ∏ i, (Nat.factorial (c i) : ℝ)) *
+              ∏ i, f (c i) := by
+  have hmaps : ∀ C ∈ partitionsOf A, C.card ∈ Finset.range (A.card + 1) :=
+    fun C hC =>
+      Finset.mem_range.mpr (Nat.lt_succ_of_le (card_le_of_mem_partitionsOf hC))
+  rw [← Finset.sum_fiberwise_of_maps_to hmaps (fun C => ∏ B ∈ C, f B.card)]
+  refine Finset.sum_congr rfl fun k _ => ?_
+  have hfac : (Nat.factorial k : ℝ) ≠ 0 :=
+    Nat.cast_ne_zero.mpr (Nat.factorial_ne_zero k)
+  rw [← sum_orderedPartitionsF_eq_compositions A k f,
+    sum_orderedPartitionsF_eq A k f, ← mul_assoc, inv_mul_cancel₀ hfac, one_mul]
 
 /-! ## Die Partitionsidentität des Unabhängigkeits-Indikators -/
 
@@ -1368,5 +1754,123 @@ theorem exp_tsum_eq (v : ℕ → ℝ) (hv0 : v 0 = 0) {r : ℝ} (hr0 : 0 ≤ r)
           have := card_le_of_mem_compositionsF hc
           omega
         rw [hempty, Finset.sum_empty, mul_zero]
+
+/-! ## Die Exponentialformel -/
+
+omit [DecidableEq J] [Fintype J] in
+/-- Oberhalb der Kardinalität von `Λ` verschwindet die Tupel-Z-Summe:
+es gibt keine `m`-elementigen unabhängigen Teilmengen mehr. -/
+theorem tupleZ_univ_vanish (w : ι → ℝ) (Λ : Finset ι) (γstar : ι) {m : ℕ}
+    (hm : Λ.card < m) :
+    tupleZ P w Λ γstar (Finset.univ : Finset (Fin m)) = 0 := by
+  rw [tupleZ_univ_eq]
+  have hempty : Λ.powerset.filter (fun S => Indep P S ∧ S.card = m) = ∅ := by
+    rw [Finset.eq_empty_iff_forall_notMem]
+    intro S hS
+    obtain ⟨hSpow, -, hScard⟩ := Finset.mem_filter.mp hS
+    have := Finset.card_le_card (Finset.mem_powerset.mp hSpow)
+    omega
+  rw [hempty, Finset.sum_empty, mul_zero]
+
+omit [DecidableEq J] [Fintype J] in
+/-- **Exponentialformel der Cluster-Entwicklung**: im Kleinheitsregime
+`e · ∑_Λ |w| < 1` ist die Zustandssumme das Exponential der
+Cluster-Reihe.
+
+Der Beweis führt die fünf Bausteine zusammen: der analytische
+Exponentialschritt (`exp_tsum_eq`) entwickelt `exp` der Reihe in
+Kompositionen; die Multinomialzählung (`sum_partitionsOf_card`)
+übersetzt sie in Partitionssummen; Blockzerlegung
+(`tupleZ_eq_sum_partitions`) und Blockreduktion
+(`tupleU_eq_clusterOrderSum`) identifizieren diese mit `tupleZ`; und
+die Schichtzählung (`Z_eq_sum_tupleZ`) summiert die Schichten zu `Z`.
+Die Reihe bricht bei `|Λ|` ab, weil es keine größeren unabhängigen
+Mengen gibt. -/
+theorem exp_clusterSeries_eq_Z (w : ι → ℝ) (Λ : Finset ι)
+    (hsmall : Real.exp 1 * ∑ x ∈ Λ, |w x| < 1) :
+    Real.exp (clusterSeries P w Λ) = Z P w Λ := by
+  rcases Λ.eq_empty_or_nonempty with rfl | hne
+  · rw [clusterSeries_empty, Real.exp_zero, Z_empty]
+  obtain ⟨γstar, -⟩ := hne
+  have hr0 : (0 : ℝ) ≤ Real.exp 1 * ∑ x ∈ Λ, |w x| :=
+    mul_nonneg (Real.exp_pos 1).le (Finset.sum_nonneg fun x _ => abs_nonneg _)
+  -- Schritt 1: `exp` der Reihe als umgruppierte Kompositionssumme.
+  have hexp := exp_tsum_eq (seriesSeq P w Λ) (seriesSeq_zero P w Λ) hr0 hsmall
+    (abs_seriesSeq_le P w Λ)
+  rw [tsum_seriesSeq P w Λ hsmall] at hexp
+  -- Schritt 2: das `m`-te Glied ist `tupleZ (univ : Fin m) / m!`.
+  have hterm : ∀ m : ℕ,
+      (∑ k ∈ Finset.range (m + 1), (Nat.factorial k : ℝ)⁻¹ *
+        ∑ c ∈ compositionsF m k, ∏ i, seriesSeq P w Λ (c i))
+      = tupleZ P w Λ γstar (Finset.univ : Finset (Fin m))
+          / (Nat.factorial m : ℝ) := by
+    intro m
+    have hcard : (Finset.univ : Finset (Fin m)).card = m := by
+      rw [Finset.card_univ, Fintype.card_fin]
+    have h1 : tupleZ P w Λ γstar (Finset.univ : Finset (Fin m))
+        = ∑ C ∈ partitionsOf (Finset.univ : Finset (Fin m)),
+            ∏ B ∈ C, (fun s => clusterOrderSum P w Λ (s - 1)) B.card := by
+      rw [tupleZ_eq_sum_partitions P w Λ γstar]
+      refine Finset.sum_congr rfl fun C hC => ?_
+      obtain ⟨-, hICC, -⟩ := mem_partitionsOf.mp hC
+      exact Finset.prod_congr rfl fun B hB =>
+        tupleU_eq_clusterOrderSum P w Λ γstar (hICC.1 B hB)
+    rw [h1, sum_partitionsOf_card (Finset.univ : Finset (Fin m))
+      (fun s => clusterOrderSum P w Λ (s - 1)), hcard]
+    rw [eq_div_iff (by positivity : (Nat.factorial m : ℝ) ≠ 0), Finset.sum_mul]
+    refine Finset.sum_congr rfl fun k _ => ?_
+    rw [mul_assoc, Finset.sum_mul]
+    congr 1
+    refine Finset.sum_congr rfl fun c hc => ?_
+    obtain ⟨hpos, -⟩ := mem_compositionsF.mp hc
+    have hv : ∀ i, seriesSeq P w Λ (c i)
+        = clusterOrderSum P w Λ (c i - 1) / (Nat.factorial (c i) : ℝ) := by
+      intro i
+      unfold seriesSeq
+      rw [if_neg (hpos i)]
+      unfold clusterCoeff
+      have hci : c i - 1 + 1 = c i := by have := hpos i; omega
+      rw [hci]
+    rw [Finset.prod_congr rfl fun i _ => hv i, Finset.prod_div_distrib]
+    have hfacne : (∏ i, (Nat.factorial (c i) : ℝ)) ≠ 0 := by
+      refine Finset.prod_ne_zero_iff.mpr fun i _ => ?_
+      exact_mod_cast (Nat.factorial_pos (c i)).ne'
+    field_simp
+  -- Schritt 3: die Reihe bricht bei `|Λ|` ab und ist die Zustandssumme.
+  have hvanish : ∀ m ∉ Finset.range (Λ.card + 1),
+      tupleZ P w Λ γstar (Finset.univ : Finset (Fin m))
+        / (Nat.factorial m : ℝ) = 0 := by
+    intro m hm
+    rw [Finset.mem_range] at hm
+    rw [tupleZ_univ_vanish P w Λ γstar (by omega), zero_div]
+  calc Real.exp (clusterSeries P w Λ)
+      = ∑' m, ∑ k ∈ Finset.range (m + 1), (Nat.factorial k : ℝ)⁻¹ *
+          ∑ c ∈ compositionsF m k, ∏ i, seriesSeq P w Λ (c i) := hexp
+    _ = ∑' m, tupleZ P w Λ γstar (Finset.univ : Finset (Fin m))
+          / (Nat.factorial m : ℝ) := tsum_congr hterm
+    _ = ∑ m ∈ Finset.range (Λ.card + 1),
+          tupleZ P w Λ γstar (Finset.univ : Finset (Fin m))
+            / (Nat.factorial m : ℝ) := tsum_eq_sum hvanish
+    _ = Z P w Λ := (Z_eq_sum_tupleZ P w Λ γstar le_rfl).symm
+
+omit [DecidableEq J] [Fintype J] in
+/-- Im Kleinheitsregime ist die Zustandssumme strikt positiv — sie ist
+ein Exponential. Insbesondere ist sie nichtnull, ohne Umweg über die
+Konvergenzkriterien. -/
+theorem Z_pos_of_small (w : ι → ℝ) (Λ : Finset ι)
+    (hsmall : Real.exp 1 * ∑ x ∈ Λ, |w x| < 1) :
+    0 < Z P w Λ := by
+  rw [← exp_clusterSeries_eq_Z P w Λ hsmall]
+  exact Real.exp_pos _
+
+omit [DecidableEq J] [Fintype J] in
+/-- **`log Z` ist die Cluster-Reihe**: im Kleinheitsregime stimmt der
+Logarithmus der Zustandssumme mit der Cluster-Reihe überein. Zusammen
+mit `abs_clusterSeries_le` liefert das die volumenlineare Kontrolle von
+`log Z` direkt aus der Reihe. -/
+theorem log_Z_eq_clusterSeries (w : ι → ℝ) (Λ : Finset ι)
+    (hsmall : Real.exp 1 * ∑ x ∈ Λ, |w x| < 1) :
+    Real.log (Z P w Λ) = clusterSeries P w Λ := by
+  rw [← exp_clusterSeries_eq_Z P w Λ hsmall, Real.log_exp]
 
 end ClusterExpansion
