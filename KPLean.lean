@@ -12,4 +12,5 @@ import KPLean.Trees
 import KPLean.TreeDecomp
 import KPLean.TreeRelabel
 import KPLean.TreeLink
+import KPLean.TreePeel
 import KPLean.SharpKP

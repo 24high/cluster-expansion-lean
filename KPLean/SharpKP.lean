@@ -3,7 +3,7 @@ Copyright (c) 2026 Dennis Michael Heine. All rights reserved.
 Released under the CC BY-NC-SA 4.0 license as described in the file LICENSE.
 Authors: Dennis Michael Heine
 -/
-import KPLean.TreeDecomp
+import KPLean.TreePeel
 import KPLean.TreeRelabel
 import KPLean.TreeLink
 
@@ -64,11 +64,7 @@ normierte Baumkoeffizient der Ordnung `n` durch die nach Blockzahl und
 Größenprofil sortierte Kompositionssumme der Nachbarterme beschränkt
 ist. -/
 theorem treeCoeff_div_le (w : ι → ℝ) (Λ : Finset ι) (γ₀ : ι) (n : ℕ)
-    (hpeel : ∀ {K : Type} [DecidableEq K] [Fintype K] (r : K) (A : Finset K),
-      r ∉ A → ∀ a₀ ∈ A,
-      treeSum P w Λ γ₀ r A
-        ≤ ∑ B₀ ∈ A.powerset.filter (fun B => a₀ ∈ B),
-            blockFactor P w Λ γ₀ B₀ * treeSum P w Λ γ₀ r (A \ B₀)) :
+ :
     treeCoeff P w Λ γ₀ n / (Nat.factorial n : ℝ)
       ≤ ∑ k ∈ Finset.range (n + 1), (Nat.factorial k : ℝ)⁻¹ *
           ∑ c ∈ compositionsF n k, ∏ j, nbhdTerm P w Λ γ₀ (c j) := by
@@ -100,7 +96,9 @@ theorem treeCoeff_div_le (w : ι → ℝ) (Λ : Finset ι) (γ₀ : ι) (n : ℕ
             ((Nat.factorial n : ℝ) / ∏ j, (Nat.factorial (c j) : ℝ)) *
               ∏ j, blockTerm P w Λ γ₀ (c j) := by
     unfold treeCoeff
-    have hDecomp := treeSum_le_sum_partitions P w Λ γ₀ hpeel (0 : Fin (n + 1))
+    have hDecomp := treeSum_le_sum_partitions P w Λ γ₀
+      (fun r A hr a₀ ha₀ => treeSum_le_peel P w Λ γ₀ r hr ha₀)
+      (0 : Fin (n + 1))
       (Finset.notMem_erase (0 : Fin (n + 1)) Finset.univ)
     refine hDecomp.trans (le_of_eq ?_)
     have hcongr : ∑ C ∈ partitionsOf (Finset.univ.erase (0 : Fin (n + 1))),
@@ -139,18 +137,14 @@ Betragsreihe der Cluster-Entwicklung durch `|w γ₀| · exp (a γ₀)`
 beschränkt — gleichmäßig im Volumen und ohne Kleinheitsvoraussetzung. -/
 theorem tsum_pinned_le_of_kp (w : ι → ℝ) (a : ι → ℝ) (Λ : Finset ι) (γ₀ : ι)
     (hγ₀ : γ₀ ∈ Λ) (hKP : KPCondition P w a Λ)
-    (hpeel : ∀ (γ : ι) {K : Type} [DecidableEq K] [Fintype K] (r : K)
-      (A : Finset K), r ∉ A → ∀ a₀ ∈ A,
-      treeSum P w Λ γ r A
-        ≤ ∑ B₀ ∈ A.powerset.filter (fun B => a₀ ∈ B),
-            blockFactor P w Λ γ B₀ * treeSum P w Λ γ r (A \ B₀)) :
+ :
     ∑' n, pinnedOrderSum P w Λ γ₀ n / (Nat.factorial n : ℝ)
       ≤ |w γ₀| * Real.exp (a γ₀) := by
   have hRec : ∀ γ ∈ Λ, ∀ n : ℕ,
       treeCoeff P w Λ γ n / (Nat.factorial n : ℝ)
         ≤ ∑ k ∈ Finset.range (n + 1), (Nat.factorial k : ℝ)⁻¹ *
             ∑ c ∈ compositionsF n k, ∏ j, nbhdTerm P w Λ γ (c j) :=
-    fun γ _ n => treeCoeff_div_le P w Λ γ n (hpeel γ)
+    fun γ _ n => treeCoeff_div_le P w Λ γ n
   refine Real.tsum_le_of_sum_range_le (fun n => ?_) (fun N => ?_)
   · exact div_nonneg (pinnedOrderSum_nonneg P w Λ γ₀ n) (by positivity)
   · have hstep : ∀ n ∈ Finset.range N,
