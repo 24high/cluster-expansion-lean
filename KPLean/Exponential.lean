@@ -1760,7 +1760,7 @@ theorem exp_tsum_eq (v : ℕ → ℝ) (hv0 : v 0 = 0)
 
 /-! ## Die Exponentialformel -/
 
-omit [DecidableEq J] [Fintype J] in
+omit [DecidableEq ι] [DecidableEq J] [Fintype J] in
 /-- Oberhalb der Kardinalität von `Λ` verschwindet die Tupel-Z-Summe:
 es gibt keine `m`-elementigen unabhängigen Teilmengen mehr. -/
 theorem tupleZ_univ_vanish (w : ι → ℝ) (Λ : Finset ι) (γstar : ι) {m : ℕ}

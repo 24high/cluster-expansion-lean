@@ -78,6 +78,7 @@ def Indep (S : Finset ι) : Prop :=
 instance (S : Finset ι) : Decidable (Indep P S) := by
   unfold Indep; infer_instance
 
+omit [DecidableEq ι] in
 /-- Unabhängigkeit vererbt sich auf Teilmengen. -/
 theorem Indep.mono {S T : Finset ι} (hT : T ⊆ S) (hS : Indep P S) : Indep P T :=
   fun γ hγ δ hδ hne => hS γ (hT hγ) δ (hT hδ) hne
@@ -744,7 +745,7 @@ def FPCondition (Λ : Finset ι) : Prop :=
 /-- Nichtnegativität: `0 ≤ Z_A(μ)` für `μ ≥ 0` auf `A`. -/
 theorem Z_nonneg_of_nonneg (A : Finset ι) (hpos : ∀ δ ∈ A, 0 ≤ μ δ) :
     0 ≤ Z P μ A :=
-  Finset.sum_nonneg fun S hS => Finset.prod_nonneg fun δ hδ =>
+  Finset.sum_nonneg fun _S hS => Finset.prod_nonneg fun δ hδ =>
     hpos δ (mem_powerset.mp (mem_filter.mp hS).1 hδ)
 
 /-- Die leere Menge trägt `1` bei: `1 ≤ Z_A(μ)` für `μ ≥ 0` auf `A`. -/
@@ -1091,7 +1092,7 @@ private theorem fp_aux (Λ : Finset ι) (p : ι → ℝ)
         have hZ1 : 0 < Z P μ (Λ \ S) := hμS _ sdiff_subset
         have hZ2 : 0 < Z P μ (Λ \ S.erase x) := hμS _ sdiff_subset
         by_contra hcon
-        push_neg at hcon
+        push Not at hcon
         have hle : Z P (fun γ => -(p γ)) S * Z P μ (Λ \ S.erase x) ≤ 0 := by
           calc Z P (fun γ => -(p γ)) S * Z P μ (Λ \ S.erase x)
               ≤ 0 * Z P μ (Λ \ S.erase x) :=
@@ -1260,7 +1261,7 @@ private theorem fp_transfer_aux (Λ : Finset ι) (h : FPCondition P wr μ Λ) :
 FP-Bedingung: `0 < Z_Λ(-‖w‖)`. Rein reelle Aussage. -/
 theorem Z_neg_pos_of_fp (Λ : Finset ι) (h : FPCondition P wr μ Λ) :
     0 < Z P (fun γ => -‖wr γ‖) Λ :=
-  (fp_aux P μ Λ (fun γ => ‖wr γ‖) h.1 (fun γ _ => norm_nonneg _) h.2
+  (fp_aux P μ Λ (fun γ => ‖wr γ‖) h.1 (fun _ _ => norm_nonneg _) h.2
     Λ.card Λ (Finset.Subset.refl Λ) le_rfl).1
 
 /-- **Fernández-Procacci-Kriterium, Teil 1** (Fernández–Procacci,
