@@ -512,6 +512,58 @@ theorem tree_weight_le_prod_blocks (w : ι → ℝ) (Λ : Finset ι) (γ₀ : ι
   obtain ⟨c, hc, rfl⟩ := Finset.mem_image.mp hB
   exact block_weight_le P w Λ γ₀ hp hr hh hinc hc
 
+
+/-- Kern der Induktion: aus der Peel-Ungleichung — Abspalten des Blocks,
+der einen festen Knoten enthält — folgt per Induktion über die
+Knotenzahl die Schranke durch die Partitionssumme der Blockfaktoren. -/
+theorem treeSum_le_sum_partitions_aux (w : ι → ℝ) (Λ : Finset ι) (γ₀ : ι)
+    (hpeel : ∀ (r : J) (A : Finset J), r ∉ A → ∀ a₀ ∈ A,
+      treeSum P w Λ γ₀ r A
+        ≤ ∑ B₀ ∈ A.powerset.filter (fun B => a₀ ∈ B),
+            blockFactor P w Λ γ₀ B₀ * treeSum P w Λ γ₀ r (A \ B₀)) :
+    ∀ (N : ℕ) (A : Finset J), A.card ≤ N → ∀ r : J, r ∉ A →
+      treeSum P w Λ γ₀ r A
+        ≤ ∑ C ∈ partitionsOf A, ∏ B ∈ C, blockFactor P w Λ γ₀ B := by
+  intro N
+  induction N with
+  | zero =>
+    intro A hcard r _
+    have hA : A = ∅ := Finset.card_eq_zero.mp (Nat.le_zero.mp hcard)
+    subst hA
+    rw [treeSum_empty, partitionsOf_empty, Finset.sum_singleton,
+      Finset.prod_empty]
+  | succ N IH =>
+    intro A hcard r hr
+    rcases A.eq_empty_or_nonempty with rfl | hne
+    · rw [treeSum_empty, partitionsOf_empty, Finset.sum_singleton,
+        Finset.prod_empty]
+    obtain ⟨a₀, ha₀⟩ := hne
+    refine (hpeel r A hr a₀ ha₀).trans ?_
+    rw [sum_partitionsOf_peel A ha₀ (fun B => blockFactor P w Λ γ₀ B)]
+    refine Finset.sum_le_sum fun B₀ hB₀ => ?_
+    obtain ⟨hpow, hmem⟩ := Finset.mem_filter.mp hB₀
+    have hB₀A : B₀ ⊆ A := Finset.mem_powerset.mp hpow
+    have hcard' : (A \ B₀).card ≤ N := by
+      have h1 : (A \ B₀).card = A.card - B₀.card :=
+        Finset.card_sdiff_of_subset hB₀A
+      have h2 : 1 ≤ B₀.card := Finset.card_pos.mpr ⟨a₀, hmem⟩
+      omega
+    have hr' : r ∉ A \ B₀ := fun h => hr (Finset.mem_sdiff.mp h).1
+    exact mul_le_mul_of_nonneg_left (IH (A \ B₀) hcard' r hr')
+      (blockFactor_nonneg P w Λ γ₀ B₀)
+
+/-- **Die Wurzelzerlegung als Ungleichung**: die Baumsumme ist durch die
+Partitionssumme der Blockfaktoren beschränkt. -/
+theorem treeSum_le_sum_partitions (w : ι → ℝ) (Λ : Finset ι) (γ₀ : ι)
+    (hpeel : ∀ (r : J) (A : Finset J), r ∉ A → ∀ a₀ ∈ A,
+      treeSum P w Λ γ₀ r A
+        ≤ ∑ B₀ ∈ A.powerset.filter (fun B => a₀ ∈ B),
+            blockFactor P w Λ γ₀ B₀ * treeSum P w Λ γ₀ r (A \ B₀))
+    (r : J) {A : Finset J} (hr : r ∉ A) :
+    treeSum P w Λ γ₀ r A
+      ≤ ∑ C ∈ partitionsOf A, ∏ B ∈ C, blockFactor P w Λ γ₀ B :=
+  treeSum_le_sum_partitions_aux P w Λ γ₀ hpeel A.card A le_rfl r hr
+
 end Polymer
 
 end ClusterExpansion
