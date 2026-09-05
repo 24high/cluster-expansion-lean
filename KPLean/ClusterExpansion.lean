@@ -216,8 +216,10 @@ def DobrushinCondition (Λ : Finset ι) : Prop :=
   ∀ γ ∈ Λ,
     ‖wr γ‖ * ∏ δ ∈ Λ.filter (fun δ => P.incomp γ δ = true), (1 + μ δ) ≤ μ γ
 
+omit [DecidableEq ι] in
 private theorem one_le_prod_one_add :
     ∀ s : Finset ι, (∀ δ ∈ s, 0 ≤ μ δ) → (1:ℝ) ≤ ∏ δ ∈ s, (1 + μ δ) := by
+  classical
   intro s
   induction s using Finset.induction_on with
   | empty => intro _; simp
@@ -230,10 +232,12 @@ private theorem one_le_prod_one_add :
       IH fun x hx => hpos x (mem_insert_of_mem hx)
     nlinarith
 
+omit [DecidableEq ι] in
 /-- Die Dobrushin-Bedingung vererbt sich auf Teilmengen: die Produkte
 verlieren nur Faktoren `≥ 1`. -/
 theorem DobrushinCondition.mono {Λ' Λ : Finset ι} (hsub : Λ' ⊆ Λ)
     (h : DobrushinCondition P wr μ Λ) : DobrushinCondition P wr μ Λ' := by
+  classical
   obtain ⟨hpos, hbd⟩ := h
   refine ⟨fun γ hγ => hpos γ (hsub hγ), fun γ hγ => ?_⟩
   have hfsub : Λ'.filter (fun δ => P.incomp γ δ = true)
