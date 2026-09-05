@@ -83,8 +83,8 @@ convergence theorem, that the free energy is analytic in the fugacity
 both in finite volume and in the thermodynamic limit --- no phase
 transition in the Kotecký--Preiss regime. The derivatives of the pressure
 --- the correlation functions --- are then analytic to every order and
-converge with the volume, and the first Taylor coefficient is the total
-activity. A worked example exhibits weights satisfying every hypothesis,
+converge with the volume, and the cluster coefficients are exactly the
+Taylor coefficients of the pressure. A worked example exhibits weights satisfying every hypothesis,
 so that none of the results is vacuous.
 An earlier version of this note claimed that the sum form was not
 obtainable from the product form; the formalisation of the comparison
@@ -164,11 +164,12 @@ Section~\ref{sec:limit}). Fourteenth, the fugacity expansion and the
 analyticity of the pressure, in finite volume and in the limit
 (Theorems~\ref{thm:analytic} and~\ref{thm:limitanalytic},
 Section~\ref{sec:fugacity}). Fifteenth, the derivatives of the pressure:
-the first Taylor coefficient is the total activity, every order is
-analytic, and the finite-volume correlation functions converge to the
-infinite-volume ones (Theorem~\ref{thm:corr}, Section~\ref{sec:corr});
+the cluster coefficients are exactly the Taylor coefficients of the
+pressure, every order is analytic, and the finite-volume correlation
+functions converge to the infinite-volume ones (Theorem~\ref{thm:corr},
+Section~\ref{sec:corr});
 and a worked example showing that none of this is vacuous
-(Section~\ref{sec:examples}). The development is about 9250 lines of Lean
+(Section~\ref{sec:examples}). The development is about 9300 lines of Lean
 in nineteen files, compiles against current \textsf{mathlib}, and
 contains no \texttt{sorry} placeholders.
 Section~\ref{sec:kp} documents a claim made in an earlier version of this
@@ -1084,6 +1085,21 @@ the pressure: an independent computation in the free system of
 Section~\ref{sec:examples}, where $\log Z(zw) = \sum_\gamma \log(1 + z
 w(\gamma))$, gives the same answer, and the formalisation records the
 agreement.
+
+The identification holds at every order, not just the first. Applying
+\texttt{HasFPowerSeriesOnBall.factorial\_smul} to the fugacity series
+gives
+\[
+  \frac{\mathrm d^{\,n}}{\mathrm d z^{\,n}}
+    \Bigl(\sum_{m \ge 0} c_m(zw)\Bigr)\Big|_{z=0}
+  = n!\, a_n ,
+  \qquad a_{n+1} = c_n ,
+\]
+(\texttt{iteratedDeriv\_clusterSeries\_scale\_zero},
+\texttt{iteratedDeriv\_succ\_clusterSeries\_scale\_zero}): what the
+combinatorics produces as a cluster sum is exactly what analysis reads
+off the pressure as a Taylor coefficient. The case $n = 0$ says
+$\log Z(0) = 0$, as it must.
 
 Analyticity propagates to every order, in finite volume
 (\texttt{analyticOnNhd\_iterated\_deriv\_clusterSeries}) and in the limit

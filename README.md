@@ -312,7 +312,14 @@ literally the `K = ℝ` case.
   correlation functions converge locally uniformly to the infinite-volume
   ones (`tendstoLocallyUniformlyOn_deriv_clusterSeries`) — the second
   half of the Weierstrass theorem, and the reason uniform convergence was
-  worth more than pointwise.
+  worth more than pointwise. The identification is then completed for
+  every order:
+
+  `iteratedDeriv n (z ↦ log Z(z·w)) 0 = n! · (n-th cluster coefficient)`
+
+  (`iteratedDeriv_clusterSeries_scale_zero`) — what the combinatorics
+  produces as a cluster sum is exactly what analysis reads off the
+  pressure as a Taylor coefficient.
 
 None of this is vacuous: `KPLean/Examples.lean` exhibits a polymer
 system and weights satisfying every hypothesis, and applies each
@@ -361,7 +368,7 @@ The toolchain (`lean-toolchain`) and the mathlib revision
 | `KPLean/ThermodynamicLimit.lean` | the global KP condition, the volume-difference bound, convergence of `log Z` and bounds on the limit |
 | `KPLean/Fugacity.lean` | homogeneity in the fugacity, the power series, radius `≥ 1`, analyticity in finite volume |
 | `KPLean/LimitAnalyticity.lean` | uniform convergence on the disc; analyticity of the free energy in the thermodynamic limit |
-| `KPLean/Correlations.lean` | derivatives of the pressure: the first Taylor coefficient, analyticity of all orders, convergence of the correlation functions |
+| `KPLean/Correlations.lean` | derivatives of the pressure: the cluster coefficients as Taylor coefficients, analyticity of all orders, convergence of the correlation functions |
 | `KPLean/Examples.lean` | the free polymer system, `Z = ∏ (1 + w)`, and a worked instance of every headline theorem |
 | `paper/kp-formalisation.tex` | LaTeX note describing the formalisation |
 

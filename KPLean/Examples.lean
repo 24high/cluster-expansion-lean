@@ -177,4 +177,15 @@ example : AnalyticOnNhd ℂ (deriv (clusterLimit (freeSystem ℕ) exampleWeight)
   analyticOnNhd_deriv_clusterLimit (freeSystem ℕ) exampleWeight (fun _ => 1)
     globalKP_example summable_example
 
+
+/-- **Die Cluster-Koeffizienten sind die Taylor-Koeffizienten**, am
+Beispiel: die `(n+1)`-te Ableitung des Drucks im Ursprung ist `(n+1)!`
+mal dem Reihenglied der Ordnung `n`. -/
+example (Λ : Finset ℕ) (n : ℕ) :
+    iteratedDeriv (n + 1) (fun z : ℂ =>
+      clusterSeries (freeSystem ℕ) (fun γ => z * exampleWeight γ) Λ) 0
+      = (Nat.factorial (n + 1) : ℂ) * clusterCoeff (freeSystem ℕ) exampleWeight Λ n :=
+  iteratedDeriv_succ_clusterSeries_scale_zero (freeSystem ℕ) exampleWeight
+    (fun _ => 1) Λ (globalKP_example.toKP (freeSystem ℕ) Λ) n
+
 end ClusterExpansion

@@ -243,7 +243,13 @@ formalised, with no `sorry`s at any completed step.
       the infinite-volume ones
       (`tendstoLocallyUniformlyOn_deriv_clusterSeries`) — the second half
       of the Weierstrass theorem, and the reason uniform convergence was
-      worth more than pointwise.
+      worth more than pointwise. Finally the identification is completed
+      for **every** order: the `n`-th derivative of the pressure at the
+      origin is `n!` times the `n`-th coefficient of the fugacity series
+      (`iteratedDeriv_clusterSeries_scale_zero`,
+      `iteratedDeriv_succ_clusterSeries_scale_zero`) — what the
+      combinatorics produces as a cluster sum is exactly what analysis
+      reads off the pressure as a Taylor coefficient.
 
       Writing the example exposed a real defect: the downstream theorems
       had `Classical.propDecidable` baked into their statements, so none
@@ -265,11 +271,17 @@ functions.
 Everything is stated over `ℝ` and `ℂ` alike, so contour activities are
 covered.
 
-Natural continuations, in rough order of size: the translation-invariant
-setting, where the free energy *density* and its limit make sense;
-explicit formulas for the higher Taylor coefficients in terms of Ursell
-functions; and, further out, the Balaban-style renormalisation group
-estimates this infrastructure was built for.
+What remains is not unfinished business but new research layers. The
+nearest is the **translation-invariant setting**, where a free energy
+*density* becomes definable at all: the abstract polymer system carries
+no notion of volume, so this needs a group action on the polymer set and
+a van Hove or Følner exhaustion before anything can be stated. Beyond
+that lie the Balaban-style renormalisation group estimates this
+infrastructure was built for, in the sense of Dimock's expositions.
+
+Neither is a gap in what is claimed here. Everything stated is proved,
+`sorry`-free, exhibited on a worked example, and checked to depend on no
+axioms beyond `propext`, `Classical.choice` and `Quot.sound`.
 
 ## Beyond
 

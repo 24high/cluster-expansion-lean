@@ -144,4 +144,46 @@ theorem analyticOnNhd_iterated_deriv_clusterLimit (w : ι → ℂ) (a : ι → �
       (Metric.eball (0 : ℂ) 1) :=
   (analyticOnNhd_clusterLimit P w a hKP hsum).iterated_deriv n
 
+
+/-! ## Die Cluster-Koeffizienten sind die Taylor-Koeffizienten -/
+
+omit [DecidableEq ι] in
+/-- **Die Cluster-Entwicklung ist die Taylorreihe des Drucks**: die
+`n`-te Ableitung im Ursprung ist `n!` mal dem `n`-ten
+Fugazitätskoeffizienten.
+
+`deriv_clusterSeries_scale_zero` ist der Fall `n = 1`; hier steht die
+Aussage für jede Ordnung. Damit ist die Identifikation vollstaendig:
+was die Kombinatorik als Cluster-Summe erzeugt, ist genau das, was die
+Analysis als Taylor-Koeffizient aus dem Druck herausliest. -/
+theorem iteratedDeriv_clusterSeries_scale_zero (w : ι → K) (a : ι → ℝ)
+    (Λ : Finset ι) (hKP : KPCondition P w a Λ) (n : ℕ) :
+    iteratedDeriv n (fun z : K => clusterSeries P (fun γ => z * w γ) Λ) 0
+      = (Nat.factorial n : K) * fugacityCoeff P w Λ n := by
+  have h := (hasFPowerSeriesOnBall_clusterSeries P w a Λ hKP).factorial_smul
+    (y := 1) n
+  rw [iteratedDeriv_eq_iteratedFDeriv, ← h, fugacitySeries,
+    FormalMultilinearSeries.ofScalars_apply_eq, one_pow, smul_eq_mul,
+    mul_one, nsmul_eq_mul]
+
+omit [DecidableEq ι] in
+/-- Dasselbe, mit dem Cluster-Koeffizienten ausgeschrieben: die
+`(n+1)`-te Ableitung des Drucks im Ursprung ist `(n+1)!` mal dem
+Glied der Ordnung `n` der Cluster-Reihe. -/
+theorem iteratedDeriv_succ_clusterSeries_scale_zero (w : ι → K) (a : ι → ℝ)
+    (Λ : Finset ι) (hKP : KPCondition P w a Λ) (n : ℕ) :
+    iteratedDeriv (n + 1) (fun z : K => clusterSeries P (fun γ => z * w γ) Λ) 0
+      = (Nat.factorial (n + 1) : K) * clusterCoeff P w Λ n := by
+  rw [iteratedDeriv_clusterSeries_scale_zero P w a Λ hKP, fugacityCoeff_succ]
+
+omit [DecidableEq ι] in
+/-- Bei verschwindender Fugazität ist der Druck null — die leere
+Konfiguration hat `Z = 1`. Das ist der Fall `n = 0`. -/
+theorem clusterSeries_scale_zero (w : ι → K) (a : ι → ℝ) (Λ : Finset ι)
+    (hKP : KPCondition P w a Λ) :
+    clusterSeries P (fun γ => (0 : K) * w γ) Λ = 0 := by
+  have h := iteratedDeriv_clusterSeries_scale_zero P w a Λ hKP 0
+  rw [iteratedDeriv_zero, fugacityCoeff_zero, mul_zero] at h
+  exact h
+
 end ClusterExpansion
